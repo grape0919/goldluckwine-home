@@ -26,16 +26,6 @@ module.exports = {
   rules: {
     'react/react-in-jsx-scope': 'off',
     'import/order': ['error'],
-    "import/extensions": [
-      "error",
-      "ignorePackages",
-      {
-        "js": "never",
-        "jsx": "never",
-        "ts": "never",
-        "tsx": "never"
-      }
-    ]
   },
   settings: {
     react: { version: 'detect' },

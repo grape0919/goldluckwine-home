@@ -1,11 +1,10 @@
 import { PropsWithChildren } from 'react';
 import { Layout, Menu, theme } from 'antd';
+import { Link } from 'react-router-dom';
+import { IoIosWine } from 'react-icons/io';
+import { customedTheme } from '@/styles/theme';
 
 const { Header, Content, Footer } = Layout;
-const items = new Array(3).fill(null).map((_, index) => ({
-  key: String(index + 1),
-  label: `nav ${index + 1}`,
-}));
 
 const PageLayout = ({ children }: PropsWithChildren) => {
   const {
@@ -24,20 +23,40 @@ const PageLayout = ({ children }: PropsWithChildren) => {
           alignItems: 'center',
         }}
       >
-        <div className='demo-logo' />
+        <Link
+          to={'/'}
+          style={{ color: customedTheme.color.black }}
+        >
+          <IoIosWine fontSize={customedTheme.fontSize.s6} />
+        </Link>
         <Menu
           theme='light'
           mode='horizontal'
-          defaultSelectedKeys={['2']}
-          items={items}
-          style={{ flex: 1, minWidth: 0 }}
-        />
+          selectedKeys={[location.pathname]}
+          defaultSelectedKeys={['/']}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            justifyContent: 'center',
+            gap: '20px',
+          }}
+        >
+          <Menu.Item key='/importer'>
+            <Link to='/importer'>Importer Introduction</Link>
+          </Menu.Item>
+          <Menu.Item key='/wineries'>
+            <Link to='/wineries'>Wineries</Link>
+          </Menu.Item>
+          <Menu.Item key='/order'>
+            <Link to='/order'>Order Wine</Link>
+          </Menu.Item>
+        </Menu>
       </Header>
-      <Content>
+      <Content style={{ height: '85vh' }}>
         <div
           style={{
             padding: 24,
-            minHeight: 380,
+            minHeight: '100%',
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
           }}
@@ -46,7 +65,13 @@ const PageLayout = ({ children }: PropsWithChildren) => {
         </div>
       </Content>
 
-      <Footer style={{ textAlign: 'center' }}>
+      <Footer
+        style={{
+          textAlign: 'center',
+          fontSize: customedTheme.fontSize.s1,
+          color: customedTheme.color.text.mute,
+        }}
+      >
         2024.04.20 Created by Gold Luck Wine
       </Footer>
     </Layout>
