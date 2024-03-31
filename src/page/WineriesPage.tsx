@@ -1,10 +1,10 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { wineries } from '@/dummy';
-import PageLayout from '@/components/layout/PageLayout.tsx';
 
 const WineriesPage: React.FC = () => {
   return (
-    <PageLayout>
+    <div>
       <h2>Wineries</h2>
       <ul>
         {wineries.map((winery) => (
@@ -13,7 +13,7 @@ const WineriesPage: React.FC = () => {
           </li>
         ))}
       </ul>
-    </PageLayout>
+    </div>
   );
 };
 

@@ -1,34 +1,25 @@
 import React from 'react';
-import { GiWineBottle } from 'react-icons/gi';
+import styled from 'styled-components';
 import FeaturedWines from './FeaturedWines';
-import PageLayout from '@/components/layout/PageLayout.tsx';
-import { WineType } from '@/types/wine.ts';
-import { customedTheme } from '@/styles/theme.ts';
-
-// Mock data for featured wines
-const wines: WineType[] = [
-  // Add your wine items here
-  {
-    id: 1,
-    name: 'GoldLuckWine1',
-    price: '1,000,000',
-    image: (
-      <GiWineBottle
-        style={{ fontSize: '100px', color: customedTheme.color.primary }}
-      />
-    ),
-  },
-];
-
 function HomePage() {
   return (
-    <PageLayout>
-      <div className='main-content'>
-        <FeaturedWines wines={wines} />
-        {/* Additional content can be added here */}
-      </div>
-    </PageLayout>
+    <Wrapper>
+      <video
+        src={import.meta.env.VITE_PUBLIC_URL + 'video-sample.mp4'}
+        autoPlay
+        loop
+        muted
+        width={'100%'}
+      />
+      <div className='main-content'>aa</div>
+    </Wrapper>
   );
 }
+
+const Wrapper = styled.div`
+  .main-content {
+    padding: 0 130px;
+  }
+`;
 
 export default HomePage;

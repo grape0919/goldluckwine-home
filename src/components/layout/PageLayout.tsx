@@ -1,15 +1,43 @@
-import { PropsWithChildren } from 'react';
-import { Layout, Menu, theme } from 'antd';
-import { Link } from 'react-router-dom';
-import { IoIosWine } from 'react-icons/io';
+import { useCallback, useState } from 'react';
+import { Flex, Layout, Menu, theme } from 'antd';
+import { Link, Outlet } from 'react-router-dom';
+import { MenuItemType } from 'antd/es/menu/hooks/useItems';
+import { ItemType } from 'antd/lib/menu/hooks/useItems';
 import { customedTheme } from '@/styles/theme';
 
 const { Header, Content, Footer } = Layout;
 
-const PageLayout = ({ children }: PropsWithChildren) => {
+const PageLayout = () => {
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+
+  const menuItems: MenuItemType[] = [
+    {
+      key: '/importer',
+      label: <Link to='/importer'>Importer Introduction</Link>,
+    },
+    {
+      key: '/wineries',
+      label: <Link to='/wineries'>Wineries</Link>,
+    },
+    {
+      key: '/order',
+      label: <Link to='/importer'>Order Wine</Link>,
+    },
+  ];
+
+  const [selectedMenu, setSelectedMenu] = useState(location.pathname);
+
+  const handleSelectMenu = useCallback(
+    (value: ItemType<MenuItemType>) => {
+      console.log(value);
+      if (value && value.key) {
+        setSelectedMenu(value.key.toString());
+      }
+    },
+    [setSelectedMenu],
+  );
 
   return (
     <Layout>
@@ -25,43 +53,38 @@ const PageLayout = ({ children }: PropsWithChildren) => {
       >
         <Link
           to={'/'}
-          style={{ color: customedTheme.color.black }}
+          style={{
+            color: customedTheme.color.black,
+            display: 'flex',
+            justifyContent: 'center',
+          }}
         >
-          <IoIosWine fontSize={customedTheme.fontSize.s6} />
+          <img
+            src={import.meta.env.VITE_PUBLIC_URL + '/goldluckwine-logo.png'}
+            height={'48px'}
+            alt=''
+          />
         </Link>
         <Menu
           theme='light'
           mode='horizontal'
-          selectedKeys={[location.pathname]}
-          defaultSelectedKeys={['/']}
-          style={{
-            flex: 1,
-            minWidth: 0,
-            justifyContent: 'center',
-            gap: '20px',
-          }}
-        >
-          <Menu.Item key='/importer'>
-            <Link to='/importer'>Importer Introduction</Link>
-          </Menu.Item>
-          <Menu.Item key='/wineries'>
-            <Link to='/wineries'>Wineries</Link>
-          </Menu.Item>
-          <Menu.Item key='/order'>
-            <Link to='/order'>Order Wine</Link>
-          </Menu.Item>
-        </Menu>
+          selectedKeys={[selectedMenu]}
+          onSelect={handleSelectMenu}
+          items={menuItems}
+          style={{ flex: 1, gap: '1rem', justifyContent: 'center' }}
+        />
       </Header>
-      <Content style={{ height: '85vh' }}>
+      <Content
+        style={{ background: customedTheme.color.white, minHeight: '85vh' }}
+      >
         <div
           style={{
-            padding: 24,
             minHeight: '100%',
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
           }}
         >
-          {children}
+          <Outlet />
         </div>
       </Content>
 

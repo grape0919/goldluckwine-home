@@ -4,5 +4,5 @@ export interface WineType {
   id: number;
   name: string;
   image: ReactNode;
-  price: string;
+  description: string;
 }

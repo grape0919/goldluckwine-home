@@ -1,13 +1,11 @@
-// ImporterIntroPage.tsx
 import React from 'react';
-import PageLayout from '@/components/layout/PageLayout.tsx';
 
 const ImporterIntroPage: React.FC = () => {
   return (
-    <PageLayout>
+    <div>
       <h1>Importer Introduction Page</h1>
       {/* Add your content here */}
-    </PageLayout>
+    </div>
   );
 };
 

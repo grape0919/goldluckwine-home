@@ -1,8 +1,7 @@
 import React from 'react';
 import { Card, Row, Col } from 'antd';
-import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { WineType } from '@/types/wine.ts';
+import { WineType } from '@/types/wine';
 
 interface Props {
   wines: WineType[];
@@ -11,7 +10,7 @@ interface Props {
 const FeaturedWines = ({ wines }: Props) => {
   return (
     <Wrapper className='featured-wines'>
-      <h2>Featured Wines</h2>
+      <h2>와인 리스트</h2>
       <Row gutter={[16, 16]}>
         {wines.map((wine) => (
           <Col
@@ -27,9 +26,9 @@ const FeaturedWines = ({ wines }: Props) => {
             >
               <Card.Meta
                 title={wine.name}
-                description={`$${wine.price}`}
+                description={`${wine.description}`}
               />
-              <Link to={`/wines/${wine.id}`}>Learn More</Link>
+              {/*<Link to={`/wines/${wine.id}`}>Learn More</Link>*/}
             </Card>
           </Col>
         ))}
