@@ -71,7 +71,11 @@ const PageLayout = () => {
           selectedKeys={[selectedMenu]}
           onSelect={handleSelectMenu}
           items={menuItems}
-          style={{ flex: 1, gap: '1rem', justifyContent: 'center' }}
+          style={{
+            flex: 1,
+            gap: '1rem',
+            justifyContent: 'center',
+          }}
         />
       </Header>
       <Content

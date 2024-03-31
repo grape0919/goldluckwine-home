@@ -1,6 +1,5 @@
 import React from 'react';
 import styled from 'styled-components';
-import FeaturedWines from './FeaturedWines';
 function HomePage() {
   return (
     <Wrapper>
