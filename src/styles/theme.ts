@@ -27,5 +27,6 @@ export const customedTheme = {
     semiBold: 600,
     bold: 'bold',
     bolder: 800,
+    boldest: 900,
   },
 };

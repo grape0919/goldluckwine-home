@@ -40,8 +40,9 @@ function HomePage() {
             className={'main-company-text'}
             style={{
               color: customedTheme.color.white,
-              fontSize: '7rem',
+              fontSize: '6rem',
               fontWeight: customedTheme.fontWeight.bolder,
+              textAlign: 'center',
             }}
           >
             GOLD LUCK WINE
