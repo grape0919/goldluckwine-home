@@ -2,6 +2,7 @@ export const customedTheme = {
   color: {
     text: {
       mute: '#9f9f9f',
+      forgyWhite: '#dedede',
     },
     bg: {},
     primary: '#7e6ac9',
@@ -23,7 +24,7 @@ export const customedTheme = {
   fontWeight: {
     light: 'light',
     normal: 'normal',
-    medium: 'medium',
+    medium: 500,
     semiBold: 600,
     bold: 'bold',
     bolder: 800,

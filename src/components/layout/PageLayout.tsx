@@ -44,6 +44,9 @@ const PageLayout = () => {
           alignItems: 'center',
           justifyContent: 'center',
           background: customedTheme.color.white,
+          position: 'sticky',
+          top: '0px',
+          zIndex: '10',
         }}
       >
         <Link
@@ -68,6 +71,7 @@ const PageLayout = () => {
             display: 'flex',
             justifyContent: 'center',
             gap: '1rem',
+            fontWeight: customedTheme.fontWeight.bold,
           }}
         />
       </Header>

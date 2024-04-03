@@ -1,60 +1,24 @@
 import React from 'react';
 import styled from 'styled-components';
+import { Flex } from 'antd';
 import { customedTheme } from '@/styles/theme';
+import HomePageSection1 from '@/page/home/section1';
+import HomePageSection2 from '@/page/home/section2';
 function HomePage() {
   return (
-    <Wrapper>
-      {/*<video*/}
-      {/*  src={import.meta.env.VITE_PUBLIC_URL + 'video-sample.mp4'}*/}
-      {/*  autoPlay*/}
-      {/*  loop*/}
-      {/*  muted*/}
-      {/*  width={'100%'}*/}
-      {/*/>*/}
-      <div
-        className={'landing-top'}
-        style={{ position: 'relative' }}
-      >
-        <img
-          src={import.meta.env.VITE_PUBLIC_URL + 'main-background.png'}
-          width={'100%'}
-          style={{
-            position: 'absolute',
-            top: 0,
-            opacity: '0.7',
-            zIndex: '1',
-          }}
-        />
-        <div
-          className={'landing-top-over'}
-          style={{
-            position: 'relative',
-            top: '90px',
-            zIndex: '2',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <div
-            className={'main-company-text'}
-            style={{
-              color: customedTheme.color.white,
-              fontSize: '6rem',
-              fontWeight: customedTheme.fontWeight.bolder,
-              textAlign: 'center',
-            }}
-          >
-            GOLD LUCK WINE
-          </div>
-        </div>
+    <Wrapper
+      vertical
+      gap={'1rem'}
+    >
+      <div style={{ height: 'fit-content' }}>
+        <HomePageSection1 />
       </div>
-      <div className='main-content'></div>
+      <HomePageSection2 />
     </Wrapper>
   );
 }
 
-const Wrapper = styled.div`
+const Wrapper = styled(Flex)`
   .main-content {
     padding: 0 130px;
   }
