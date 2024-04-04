@@ -8,7 +8,7 @@ function HomePage() {
   return (
     <Wrapper
       vertical
-      gap={'1rem'}
+      gap={'4rem'}
     >
       <div style={{ height: 'fit-content' }}>
         <HomePageSection1 />
@@ -19,9 +19,7 @@ function HomePage() {
 }
 
 const Wrapper = styled(Flex)`
-  .main-content {
-    padding: 0 130px;
-  }
+  background: ${customedTheme.color.bg.light};
 `;
 
 export default HomePage;
