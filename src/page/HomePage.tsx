@@ -1,4 +1,3 @@
-import React from 'react';
 import styled from 'styled-components';
 import { Flex } from 'antd';
 import { customedTheme } from '@/styles/theme';
@@ -10,9 +9,7 @@ function HomePage() {
       vertical
       gap={'4rem'}
     >
-      <div style={{ height: 'fit-content' }}>
-        <HomePageSection1 />
-      </div>
+      <HomePageSection1 />
       <HomePageSection2 />
     </Wrapper>
   );

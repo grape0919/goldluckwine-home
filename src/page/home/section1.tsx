@@ -18,13 +18,12 @@ const HomePageSection1 = () => {
 
 const Wrapper = styled.div`
   .landing-top {
-    position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
 
     padding: 0;
-    height: fit-content;
+    width: 100%;
   }
 `;
 export default HomePageSection1;

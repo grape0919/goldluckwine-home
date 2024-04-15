@@ -36,6 +36,7 @@ const HomePageSection2 = () => {
         <Flex
           vertical
           gap={customedTheme.space.md}
+          style={{ width: '100%' }}
         >
           <div className={'domain-text'}>Domaine7</div>
           <div className={'wine-list'}>
@@ -51,10 +52,9 @@ const HomePageSection2 = () => {
               }}
               dataSource={data}
               renderItem={(item) => (
-                <List.Item>
+                <List.Item style={{ width: '300px' }}>
                   <Card
                     style={{
-                      width: 'fit-content',
                       background: customedTheme.color.bg.light,
                       padding: customedTheme.space.md,
                     }}
@@ -69,6 +69,9 @@ const HomePageSection2 = () => {
                         }}
                       />
                     }
+                    onClick={() => {
+                      console.log(item.id);
+                    }}
                   >
                     <div
                       style={{
@@ -97,7 +100,7 @@ const HomePageSection2 = () => {
 };
 
 const Wrapper = styled.div`
-  padding: 1rem 8rem;
+  padding: 1rem 3rem;
   .section2-title {
     margin-bottom: ${customedTheme.space.lg};
     font-size: ${customedTheme.fontSize.s4};
@@ -107,17 +110,6 @@ const Wrapper = styled.div`
   .domain-text {
     font-size: ${customedTheme.fontSize.s3};
     font-weight: ${customedTheme.fontWeight.semiBold};
-  }
-  @media (max-width: 1023px) {
-    .profile-list {
-      flex-direction: row;
-    }
-  }
-  @media (max-width: 767px) {
-    .card-profile-layout {
-      flex-direction: column;
-      align-items: center;
-    }
   }
 `;
 export default HomePageSection2;
