@@ -1,34 +1,13 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Button, Card, Flex, Typography, List } from 'antd';
+import { Card, Flex, List } from 'antd';
+import { IoIosWine } from 'react-icons/io';
 import { customedTheme } from '@/styles/theme';
-
-const data: {
-  id: number;
-  wineNameKR: string;
-  wineNameOrigin: string;
-  wineImagePath: string;
-  description: string;
-}[] = [
-  {
-    id: 1,
-    wineNameKR: '라 기마르디에',
-    wineNameOrigin: 'La guimardiere 2020',
-    wineImagePath: import.meta.env.VITE_PUBLIC_URL + '/wines/aozina/moon.png',
-    description: '',
-  },
-  {
-    id: 2,
-    wineNameKR: '라 기마르디에',
-    wineNameOrigin: 'La guimardiere 2020',
-    wineImagePath: import.meta.env.VITE_PUBLIC_URL + '/wines/aozina/moon.png',
-    description: '',
-  },
-];
+import { wines } from '@/dummy/wines';
 const HomePageSection2 = () => {
   return (
     <Wrapper>
-      <div className={'section2-title'}>와인리스트</div>
+      <div className={'section2-title'}>WINE</div>
       <Flex
         vertical
         gap={customedTheme.space.lg}
@@ -38,7 +17,6 @@ const HomePageSection2 = () => {
           gap={customedTheme.space.md}
           style={{ width: '100%' }}
         >
-          <div className={'domain-text'}>Domaine7</div>
           <div className={'wine-list'}>
             <List
               grid={{
@@ -50,18 +28,18 @@ const HomePageSection2 = () => {
                 xl: 6,
                 xxl: 3,
               }}
-              dataSource={data}
+              dataSource={wines}
               renderItem={(item) => (
-                <List.Item style={{ width: '300px' }}>
+                <List.Item>
                   <Card
                     style={{
-                      background: customedTheme.color.bg.light,
+                      background: customedTheme.color.white,
                       padding: customedTheme.space.md,
                     }}
                     hoverable
                     cover={
                       <img
-                        alt={item.wineNameOrigin}
+                        alt={item.wineNameEN}
                         src={item.wineImagePath}
                         style={{
                           height: 300,
@@ -70,24 +48,41 @@ const HomePageSection2 = () => {
                       />
                     }
                     onClick={() => {
-                      console.log(item.id);
+                      console.log(item.wineId);
                     }}
                   >
-                    <div
-                      style={{
-                        fontWeight: customedTheme.fontWeight.semiBold,
-                        textAlign: 'center',
-                      }}
+                    <Flex
+                      gap={'0.5rem'}
+                      align={'center'}
+                      justify={'center'}
                     >
-                      {item.wineNameOrigin}
-                    </div>
-                    <div
-                      style={{
-                        textAlign: 'center',
-                      }}
-                    >
-                      {item.wineNameKR}
-                    </div>
+                      <div
+                        style={{
+                          fontSize: customedTheme.fontSize.s5,
+                          color: customedTheme.color.wine[item.wineType],
+                        }}
+                      >
+                        <IoIosWine />
+                      </div>
+                      <Flex vertical>
+                        <div
+                          style={{
+                            fontWeight: customedTheme.fontWeight.semiBold,
+                            textAlign: 'center',
+                          }}
+                        >
+                          {item.wineNameEN}
+                        </div>
+                        <div
+                          style={{
+                            fontWeight: customedTheme.fontWeight.semiBold,
+                            textAlign: 'center',
+                          }}
+                        >
+                          {item.wineNameKR}
+                        </div>
+                      </Flex>
+                    </Flex>
                   </Card>
                 </List.Item>
               )}
@@ -104,7 +99,7 @@ const Wrapper = styled.div`
   .section2-title {
     margin-bottom: ${customedTheme.space.lg};
     font-size: ${customedTheme.fontSize.s4};
-    font-weight: ${customedTheme.fontWeight.bold};
+    font-weight: ${customedTheme.fontWeight.bolder};
   }
 
   .domain-text {

@@ -13,3 +13,11 @@ export interface Winery extends WineryBase {
   name: string;
   wines: Wine[];
 }
+
+export interface WineryInfoType {
+  id: number;
+  domaine: string;
+  location: string;
+  description: string;
+  imagePath: string;
+}

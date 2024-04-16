@@ -94,6 +94,8 @@ const PageLayout = () => {
           textAlign: 'center',
           fontSize: customedTheme.fontSize.s1,
           color: customedTheme.color.text.mute,
+          background: customedTheme.color.primaryLight,
+          borderTop: customedTheme.border.default,
         }}
       >
         2024.04.20 Created by Gold Luck Wine

@@ -1,18 +1,16 @@
 import { useParams } from 'react-router-dom';
 import React from 'react';
-import { wineries } from '@/dummy';
-import { Winery } from '@/types/winery.ts';
-import PageLayout from '@/components/layout/PageLayout.tsx';
+import PageLayout from '@/components/layout/PageLayout';
 
 const WineIntroPage: React.FC = () => {
   const { wineryId } = useParams<{ wineryId: string }>();
-  const winery: Winery | undefined = wineries.find(
-    (winery) => winery.id === Number(wineryId),
-  );
-
-  if (!winery) {
-    return <div>Winery not found</div>;
-  }
+  // const winery: Winery | undefined = wineries.find(
+  //   (winery) => winery.id === Number(wineryId),
+  // );
+  //
+  // if (!winery) {
+  //   return <div>Winery not found</div>;
+  // }
 
   return (
     <PageLayout>

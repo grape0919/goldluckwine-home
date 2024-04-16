@@ -8,12 +8,22 @@ export const customedTheme = {
       light: '#f8f8f8',
     },
     primary: '#7e6ac9',
+    primaryLight: '#f6edff',
     info: '#0d6efd',
     success: '#198754',
     warning: '#ffc107',
     error: '#dc3545',
     white: '#ffffff',
     black: '#000000',
+
+    wine: {
+      Petnat: '#ffef95',
+      White: '#ffd93b',
+      Red: '#8a2525',
+      Sweet: '#B47720',
+      Orange: '#ea843b',
+      Rose: '#ff7777',
+    },
   },
   fontSize: {
     s1: '0.6rem',
@@ -41,5 +51,8 @@ export const customedTheme = {
     lg: '1.4rem',
     xl: '1.8rem',
     xxl: '2rem',
+  },
+  border: {
+    default: 'solid 1px #dedede',
   },
 };
