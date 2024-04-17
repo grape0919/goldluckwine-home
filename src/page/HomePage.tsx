@@ -1,8 +1,9 @@
 import styled from 'styled-components';
-import { Flex } from 'antd';
+import { Flex, FloatButton } from 'antd';
 import { customedTheme } from '@/styles/theme';
 import HomePageSection1 from '@/page/home/section1';
 import HomePageSection2 from '@/page/home/section2';
+import ContactFooter from '@/page/ContactFooter';
 function HomePage() {
   return (
     <Wrapper
@@ -11,6 +12,9 @@ function HomePage() {
     >
       <HomePageSection1 />
       <HomePageSection2 />
+      <ContactFooter />
+
+      {/*<FloatButton.BackTop />*/}
     </Wrapper>
   );
 }

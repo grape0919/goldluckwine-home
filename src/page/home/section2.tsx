@@ -1,13 +1,18 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Card, Flex, List } from 'antd';
+import { Card, Divider, Flex, List } from 'antd';
 import { IoIosWine } from 'react-icons/io';
 import { customedTheme } from '@/styles/theme';
 import { wines } from '@/dummy/wines';
 const HomePageSection2 = () => {
   return (
     <Wrapper>
-      <div className={'section2-title'}>WINE</div>
+      <Divider
+        orientation='left'
+        className={['section2-title'].join(',')}
+      >
+        WINE
+      </Divider>
       <Flex
         vertical
         gap={customedTheme.space.lg}
@@ -20,12 +25,12 @@ const HomePageSection2 = () => {
           <div className={'wine-list'}>
             <List
               grid={{
-                gutter: 16,
+                gutter: 25,
                 xs: 1,
                 sm: 2,
                 md: 4,
                 lg: 4,
-                xl: 6,
+                xl: 4,
                 xxl: 3,
               }}
               dataSource={wines}
@@ -42,7 +47,7 @@ const HomePageSection2 = () => {
                         alt={item.wineNameEN}
                         src={item.wineImagePath}
                         style={{
-                          height: 300,
+                          height: 350,
                           objectFit: 'contain',
                         }}
                       />
@@ -64,23 +69,14 @@ const HomePageSection2 = () => {
                       >
                         <IoIosWine />
                       </div>
-                      <Flex vertical>
-                        <div
-                          style={{
-                            fontWeight: customedTheme.fontWeight.semiBold,
-                            textAlign: 'center',
-                          }}
-                        >
-                          {item.wineNameEN}
-                        </div>
-                        <div
-                          style={{
-                            fontWeight: customedTheme.fontWeight.semiBold,
-                            textAlign: 'center',
-                          }}
-                        >
-                          {item.wineNameKR}
-                        </div>
+                      <Flex
+                        vertical
+                        style={{
+                          fontWeight: customedTheme.fontWeight.semiBold,
+                        }}
+                      >
+                        <div>{item.wineNameEN}</div>
+                        <div>{item.wineNameKR}</div>
                       </Flex>
                     </Flex>
                   </Card>
@@ -98,11 +94,13 @@ const Wrapper = styled.div`
   padding: 1rem 3rem;
   .section2-title {
     margin-bottom: ${customedTheme.space.lg};
-    font-size: ${customedTheme.fontSize.s4};
-    font-weight: ${customedTheme.fontWeight.bolder};
+    font-family: 'Lora', serif;
+    font-size: ${customedTheme.fontSize.s6};
+    font-weight: ${customedTheme.fontWeight.semiBold};
   }
 
   .domain-text {
+    font-family: 'Lora', serif;
     font-size: ${customedTheme.fontSize.s3};
     font-weight: ${customedTheme.fontWeight.semiBold};
   }

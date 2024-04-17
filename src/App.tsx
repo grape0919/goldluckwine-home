@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ConfigProvider } from 'antd';
+import { App as AntdApp, ConfigProvider } from 'antd';
 import { customedTheme } from '@/styles/theme';
 import WineriesPage from '@/page/WineriesPage';
 import ImporterIntroPage from '@/page/ImporterIntroPage';
@@ -31,43 +31,45 @@ function App() {
         },
       }}
     >
-      <BrowserRouter>
-        <Routes>
-          <Route
-            path='/'
-            element={<PageLayout />}
-          >
+      <AntdApp message={{ maxCount: 1 }}>
+        <BrowserRouter>
+          <Routes>
             <Route
               path='/'
-              element={<HomePage />}
-            />
+              element={<PageLayout />}
+            >
+              <Route
+                path='/'
+                element={<HomePage />}
+              />
+              <Route
+                path='/importer'
+                element={<ImporterIntroPage />}
+              />
+              <Route
+                path='/wineries'
+                element={<WineriesPage />}
+              />
+              <Route
+                path='/wineries/:wineryId'
+                element={<WineIntroPage />}
+              />
+              <Route
+                path='/order'
+                element={<OrderWinePage />}
+              />
+              <Route
+                path='/test'
+                element={<TestPage />}
+              />
+            </Route>
             <Route
-              path='/importer'
-              element={<ImporterIntroPage />}
+              path='*'
+              element={<>Not Found Page</>}
             />
-            <Route
-              path='/wineries'
-              element={<WineriesPage />}
-            />
-            <Route
-              path='/wineries/:wineryId'
-              element={<WineIntroPage />}
-            />
-            <Route
-              path='/order'
-              element={<OrderWinePage />}
-            />
-            <Route
-              path='/test'
-              element={<TestPage />}
-            />
-          </Route>
-          <Route
-            path='*'
-            element={<>Not Found Page</>}
-          />
-        </Routes>
-      </BrowserRouter>
+          </Routes>
+        </BrowserRouter>
+      </AntdApp>
     </ConfigProvider>
   );
 }

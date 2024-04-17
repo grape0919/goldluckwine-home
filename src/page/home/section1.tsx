@@ -1,6 +1,5 @@
 import React from 'react';
 import styled from 'styled-components';
-import { customedTheme } from '@/styles/theme';
 
 const HomePageSection1 = () => {
   return (
