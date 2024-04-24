@@ -51,7 +51,7 @@ const PageLayout = () => {
           style={{ display: 'flex', justifyContent: 'center' }}
         >
           <img
-            src={import.meta.env.VITE_PUBLIC_URL + '/goldluckwine-logo.png'}
+            src={'/goldluckwine-logo.png'}
             height={'48px'}
             alt=''
           />

@@ -11,7 +11,7 @@ const wines: WineType[] = [
     description: 'this wine is good.',
     image: (
       <img
-        src={import.meta.env.VITE_PUBLIC_URL + 'mille-sabords.png'}
+        src={'/mille-sabords.png'}
         alt=''
       />
     ),
