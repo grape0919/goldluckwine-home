@@ -12,16 +12,16 @@ const PageLayout = () => {
 
   const menuItems: MenuProps['items'] = [
     {
-      key: '/importer',
-      label: <Link to='/importer'>Gold Luck Wine</Link>,
+      key: '/',
+      label: <Link to='/'>Gold Luck Wine</Link>,
     },
     {
       key: '/wineries',
       label: <Link to='/wineries'>Wineries</Link>,
     },
     {
-      key: '/order',
-      label: <Link to='/importer'>Contect</Link>,
+      key: '/contect',
+      label: <Link to='/contect'>Contect</Link>,
     },
   ];
 

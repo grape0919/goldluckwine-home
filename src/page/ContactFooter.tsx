@@ -1,9 +1,8 @@
 import styled from 'styled-components';
 import { FaInstagram, FaRegCopy } from 'react-icons/fa6';
-import { App, Button, Divider, Flex, Space, Typography } from 'antd';
-import { CopyToClipboard } from 'react-copy-to-clipboard';
+import { App, Button, Divider, Flex, Typography } from 'antd';
 import { customedTheme } from '@/styles/theme';
-const { Text, Link } = Typography;
+const { Link } = Typography;
 const ContactFooter = () => {
   const { message } = App.useApp();
   return (
@@ -21,7 +20,7 @@ const ContactFooter = () => {
         gap={customedTheme.space.md}
       >
         <div>Gold Luck Wine</div>
-        <div>+82 10 9594 1426</div>
+        <div>+821095941426</div>
 
         <Flex
           align={'center'}
@@ -36,19 +35,16 @@ const ContactFooter = () => {
           >
             goldluckwine@gmail.com
           </Link>
-          <CopyToClipboard
-            text={'goldluckwine@gmail.com'}
-            onCopy={() =>
-              void message.success('메일 주소를 클립보드에 복사했어요!')
-            }
+          <Button
+            type={'text'}
+            style={{ padding: 8 }}
+            onClick={(e) => {
+              navigator.clipboard.writeText('goldluckwine@gmail.com');
+              void message.success('메일 주소를 클립보드에 복사했어요!');
+            }}
           >
-            <Button
-              type={'text'}
-              style={{ padding: 8 }}
-            >
-              <FaRegCopy />
-            </Button>
-          </CopyToClipboard>
+            <FaRegCopy />
+          </Button>
         </Flex>
         <Flex
           align={'center'}

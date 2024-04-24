@@ -4,7 +4,7 @@ import { Card, Divider, Flex, List } from 'antd';
 import { IoIosWine } from 'react-icons/io';
 import { customedTheme } from '@/styles/theme';
 import { wines } from '@/dummy/wines';
-const HomePageSection2 = () => {
+const HomePageSection2: React.FC = () => {
   return (
     <Wrapper>
       <Divider

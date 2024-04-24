@@ -8,6 +8,7 @@ import OrderWinePage from '@/page/OrderWinePage';
 import HomePage from '@/page/HomePage';
 import PageLayout from '@/components/layout/PageLayout';
 import TestPage from '@/page/TestPage';
+import ContactFooter from '@/page/ContactFooter';
 
 function App() {
   return (
@@ -34,10 +35,7 @@ function App() {
       <AntdApp message={{ maxCount: 1 }}>
         <BrowserRouter>
           <Routes>
-            <Route
-              path='/'
-              element={<PageLayout />}
-            >
+            <Route element={<PageLayout />}>
               <Route
                 path='/'
                 element={<HomePage />}
@@ -55,8 +53,8 @@ function App() {
                 element={<WineIntroPage />}
               />
               <Route
-                path='/order'
-                element={<OrderWinePage />}
+                path='/contect'
+                element={<ContactFooter />}
               />
               <Route
                 path='/test'

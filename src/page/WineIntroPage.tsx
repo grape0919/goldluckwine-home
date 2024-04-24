@@ -14,16 +14,16 @@ const WineIntroPage: React.FC = () => {
 
   return (
     <PageLayout>
-      <h2>{winery.name}</h2>
-      <h3>Wines</h3>
-      <ul>
-        {winery.wines.map((wine) => (
-          <li key={wine.id}>
-            <h4>{wine.name}</h4>
-            <p>{wine.description}</p>
-          </li>
-        ))}
-      </ul>
+      {/*<h2>{winery.name}</h2>*/}
+      {/*<h3>Wines</h3>*/}
+      {/*<ul>*/}
+      {/*  {winery.wines.map((wine) => (*/}
+      {/*    <li key={wine.id}>*/}
+      {/*      <h4>{wine.name}</h4>*/}
+      {/*      <p>{wine.description}</p>*/}
+      {/*    </li>*/}
+      {/*  ))}*/}
+      {/*</ul>*/}
     </PageLayout>
   );
 };
