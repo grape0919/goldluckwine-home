@@ -4,7 +4,6 @@ import { customedTheme } from '@/styles/theme';
 import WineriesPage from '@/page/WineriesPage';
 import ImporterIntroPage from '@/page/ImporterIntroPage';
 import WineIntroPage from '@/page/WineIntroPage';
-import OrderWinePage from '@/page/OrderWinePage';
 import HomePage from '@/page/HomePage';
 import PageLayout from '@/components/layout/PageLayout';
 import TestPage from '@/page/TestPage';

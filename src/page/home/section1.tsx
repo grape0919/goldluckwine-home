@@ -6,7 +6,7 @@ const HomePageSection1 = () => {
     <Wrapper>
       <div className={'landing-top'}>
         <img
-          src={import.meta.env.VITE_PUBLIC_URL + '/main-background.png'}
+          src={'/main-background.png'}
           width={'100%'}
           alt={''}
         />
