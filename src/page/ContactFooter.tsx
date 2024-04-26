@@ -1,10 +1,10 @@
 import styled from 'styled-components';
-import { FaInstagram, FaRegCopy } from 'react-icons/fa6';
-import { App, Button, Divider, Flex, Typography } from 'antd';
+import { FaInstagram, FaRegEnvelope, FaRegBuilding } from 'react-icons/fa6';
+import { MailOutlined } from '@ant-design/icons';
+import { Divider, Flex, Typography } from 'antd';
 import { customedTheme } from '@/styles/theme';
-const { Link } = Typography;
+const { Link, Paragraph } = Typography;
 const ContactFooter = () => {
-  const { message } = App.useApp();
   return (
     <Wrapper>
       <Divider
@@ -19,13 +19,17 @@ const ContactFooter = () => {
         vertical
         gap={customedTheme.space.md}
       >
-        <div>Gold Luck Wine</div>
-        <div>+821095941426</div>
-
         <Flex
           align={'center'}
           gap={customedTheme.space.sm}
         >
+          <FaRegBuilding /> <div>Gold Luck Wine</div>
+        </Flex>
+        <Flex
+          align={'center'}
+          gap={customedTheme.space.sm}
+        >
+          <FaRegEnvelope />
           <Link
             href='#'
             onClick={(e) => {
@@ -33,18 +37,8 @@ const ContactFooter = () => {
               e.preventDefault();
             }}
           >
-            goldluckwine@gmail.com
+            <Paragraph copyable>goldluckwine@gmail.com</Paragraph>
           </Link>
-          <Button
-            type={'text'}
-            style={{ padding: 8 }}
-            onClick={(e) => {
-              navigator.clipboard.writeText('goldluckwine@gmail.com');
-              void message.success('메일 주소를 클립보드에 복사했어요!');
-            }}
-          >
-            <FaRegCopy />
-          </Button>
         </Flex>
         <Flex
           align={'center'}
@@ -76,6 +70,9 @@ const Wrapper = styled.div`
     padding: ${customedTheme.space.md} ${customedTheme.space.xxl};
     font-size: ${customedTheme.fontSize.s3};
     font-weight: ${customedTheme.fontWeight.semiBold};
+  }
+  .ant-typography .css-dev-only-do-not-override-hon4ta {
+    margin: 0;
   }
 `;
 export default ContactFooter;
