@@ -2,9 +2,11 @@ import React from 'react';
 import styled from 'styled-components';
 import { Card, Divider, Flex, List } from 'antd';
 import { IoIosWine } from 'react-icons/io';
+import { useNavigate } from 'react-router-dom';
 import { customedTheme } from '@/styles/theme';
 import { wines } from '@/dummy/wines';
 const HomePageSection2: React.FC = () => {
+  const navigate = useNavigate();
   return (
     <Wrapper>
       <Divider
@@ -35,7 +37,11 @@ const HomePageSection2: React.FC = () => {
               }}
               dataSource={wines}
               renderItem={(item) => (
-                <List.Item>
+                <List.Item
+                  onClick={() => {
+                    navigate(`/wines/${item.wineId}`);
+                  }}
+                >
                   <Card
                     style={{
                       background: customedTheme.color.white,
@@ -52,9 +58,6 @@ const HomePageSection2: React.FC = () => {
                         }}
                       />
                     }
-                    onClick={() => {
-                      console.log(item.wineId);
-                    }}
                   >
                     <Flex
                       gap={'0.5rem'}

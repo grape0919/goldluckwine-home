@@ -8,6 +8,7 @@ import HomePage from '@/page/HomePage';
 import PageLayout from '@/components/layout/PageLayout';
 import TestPage from '@/page/TestPage';
 import ContactFooter from '@/page/ContactFooter';
+import FeaturedWines from '@/page/FeaturedWines';
 
 function App() {
   return (
@@ -49,8 +50,12 @@ function App() {
               />
               <Route
                 path='/wineries/:wineryId'
-                element={<WineIntroPage />}
+                element={<></>}
               />
+              <Route
+                path='/wines/:wineId'
+                element={<WineIntroPage />}
+              ></Route>
               <Route
                 path='/contect'
                 element={<ContactFooter />}

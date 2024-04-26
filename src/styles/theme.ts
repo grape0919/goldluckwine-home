@@ -7,7 +7,7 @@ export const customedTheme = {
     bg: {
       light: '#f8f8f8',
     },
-    primary: '#7e6ac9',
+    primary: '#9f67d7',
     primaryLight: '#f6edff',
     info: '#0d6efd',
     success: '#198754',
@@ -51,6 +51,8 @@ export const customedTheme = {
     lg: '1.4rem',
     xl: '1.8rem',
     xxl: '2rem',
+    xxxl: '3rem',
+    pagePadding: '5rem',
   },
   border: {
     default: 'solid 1px #dedede',

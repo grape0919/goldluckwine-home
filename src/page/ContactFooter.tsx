@@ -71,7 +71,7 @@ const Wrapper = styled.div`
     font-size: ${customedTheme.fontSize.s3};
     font-weight: ${customedTheme.fontWeight.semiBold};
   }
-  .ant-typography .css-dev-only-do-not-override-hon4ta {
+  .ant-typography {
     margin: 0;
   }
 `;
