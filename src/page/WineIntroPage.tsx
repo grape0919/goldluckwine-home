@@ -1,12 +1,12 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import React, { useMemo } from 'react';
 import styled from 'styled-components';
-import { Col, Flex, Row, Typography } from 'antd';
+import { Col, Flex, Image, Row, Typography } from 'antd';
 
 import { IoIosWine } from 'react-icons/io';
 import { wines } from '@/dummy/wines';
 import { wineriesData } from '@/dummy/wineries';
-import { customedTheme } from '@/styles/theme';
+import { customedTheme, failImage } from '@/styles/theme';
 const { Text, Title, Paragraph } = Typography;
 const WineIntroPage: React.FC = () => {
   const { wineId } = useParams<{ wineId: string }>();
@@ -39,13 +39,14 @@ const WineIntroPage: React.FC = () => {
             justify={'center'}
             style={{ padding: '3rem' }}
           >
-            <img
-              src={'/' + wine?.wineImagePath}
+            <Image
+              src={wine?.wineImagePath}
               alt={''}
               style={{
                 maxHeight: 500,
                 objectFit: 'contain',
               }}
+              fallback={failImage}
             />
           </Flex>
         </Col>
