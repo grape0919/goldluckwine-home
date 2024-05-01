@@ -4,8 +4,10 @@ import styled from 'styled-components';
 import { customedTheme } from '@/styles/theme';
 const { Meta } = Card;
 import { wineriesData } from '@/dummy/wineries';
+import { useNavigate } from 'react-router-dom';
 
 const WineriesPage: React.FC = () => {
+  const navigate = useNavigate();
   return (
     <Wrapper
       vertical
@@ -33,6 +35,7 @@ const WineriesPage: React.FC = () => {
                   src={item.imagePath}
                 />
               }
+              onClick={() => navigate('/wineries/' + item.id)}
             >
               <Meta
                 title={item.domaine}

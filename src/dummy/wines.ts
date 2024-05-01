@@ -16,7 +16,7 @@ export const wines: WineInfoType[] = [
       '니다. 포도는 그대로 압착되어 발효후 Cuve에서 9개월 동안 숙성 되었습니다. 활기 넘\n' +
       '치고 농축미 있는 핵과일 풍미에 자몽의 쌉사름한 산미가 매력적인 와인으로 지금 마셔\n' +
       '도 좋지만 충분한 숙성 잠재력이 있는 힘있는 화이트 와인입니다.',
-    wineImagePath: 'wines/Damien Bureau/Mille Sabords.png',
+    wineImagePath: '/wines/Damien Bureau/Mille Sabords.png',
   },
   {
     wineryId: 1,
@@ -38,7 +38,7 @@ export const wines: WineInfoType[] = [
       '인 하나만을 만들었습니다.\n' +
       '다미앙의 표현에 따르면 아주 쥬시하지만 심플하지는 않은, 깊이 있는 와인입니다.\n' +
       '블랙베리, 크랜베리의 신선한 과실미에 스파이시함이 매력적인 목넘김이 좋은 와인.\n',
-    wineImagePath: 'wines/Damien Bureau/Paloma.png',
+    wineImagePath: '/wines/Damien Bureau/Paloma.png',
   },
   {
     wineryId: 2,
@@ -52,7 +52,7 @@ export const wines: WineInfoType[] = [
       '연한 루아르 슈냉 블랑의 교과서와도 같은 와인입니다.\n' +
       '청사과와 은은한 레몬, 잘 익은 풍미와 피니쉬에 남는 감칠맛까지 그릴에 구운 흰살 생\n' +
       '선, 해산물, 경성치즈와 아주 잘 매칭됩니다.',
-    wineImagePath: 'wines/Domaine7/La guimardiere.png',
+    wineImagePath: '/wines/Domaine7/La guimardiere.png',
   },
   {
     wineryId: 2,
@@ -67,7 +67,7 @@ export const wines: WineInfoType[] = [
       '미네랄리티가 훌륭한 와인 입니다. 50% 와인은 Vat에서, 나머지는 Barrel에서 15개월\n' +
       '동안 숙성 후 병입하였습니다. 섬세한 밸런스와 산미를 가진 와인으로 정갈한 한식 또는\n' +
       '파인 다이닝과 페어링 하기 좋습니다.\n',
-    wineImagePath: 'wines/Domaine7/La Nouette.png',
+    wineImagePath: '/wines/Domaine7/La Nouette.png',
   },
   {
     wineryId: 2,
@@ -82,7 +82,7 @@ export const wines: WineInfoType[] = [
       '섬세하고 실키한 질감이 하늘하늘 부드러워 붙여진 이름입니다. 은은하게 느껴지는 피\n' +
       '망, 아스파라거스 힌트에 검붉은 자두와 레드체리가 신선하게 느껴지는 매력적인 와인\n' +
       '입니다',
-    wineImagePath: 'wines/Domaine7/Plume.png',
+    wineImagePath: '/wines/Domaine7/Plume.png',
   },
   {
     wineryId: 3,
@@ -97,7 +97,7 @@ export const wines: WineInfoType[] = [
       '숙성하였습니다. 첫향에 숙성 뉘앙스를 풍기며 숙성된 모과, 배, 허니의 과실향이 향긋\n' +
       '하게 느껴집니다. 마실수록 우아하고 바디감과 미네랄리티가 느껴지는 슈냉블랑 입니\n' +
       '다.',
-    wineImagePath: 'wines/Stephan Thibault/Repenti Blanc.png',
+    wineImagePath: '/wines/Stephan Thibault/Repenti Blanc.png',
   },
   {
     wineryId: 3,
@@ -110,7 +110,7 @@ export const wines: WineInfoType[] = [
       '뿔뿌는 띠보가 심혈을 기울여 만든 실험적인 와인 입니다.\n' +
       '포도는 부분적으로 줄기 제거를 했으며, 2달 동안 탱크에서 마세라시옹을 진행했습니\n' +
       '다. 그 후 압착하여 오크배럴에서 14개월 숙성하여 출시된 geek와인입니다.',
-    wineImagePath: 'wines/Stephan Thibault/Poulp.png',
+    wineImagePath: '/wines/Stephan Thibault/Poulp.png',
   },
   {
     wineryId: 3,
@@ -124,7 +124,7 @@ export const wines: WineInfoType[] = [
       '께 블랜딩하여 Vat에서 6개월간 숙성 시킵니다. 블루베리, 블랙베리의 과실미가 직관적\n' +
       '으로 느껴지며 라일락 꽃향과 민트의 화함이 기분좋게 느껴지는 순수하고 때묻지 않은\n' +
       '까베르네 프랑 입니다.\n',
-    wineImagePath: 'wines/Stephan Thibault/Faites Enter la Cuvee.png',
+    wineImagePath: '/wines/Stephan Thibault/Faites Enter la Cuvee.png',
   },
   {
     wineryId: 4,
@@ -137,7 +137,7 @@ export const wines: WineInfoType[] = [
       '전송이를 압착 후 5일간 침용을 거쳐 스테인레스 탱크에서 병입 전까지 숙성시켰습니\n' +
       '다. 라즈베리, 블랙체리, 블랙올리브의 향들이 느껴지며 부드러운 탄닌으로 목넘김이 좋\n' +
       '은 와인입니다. 스윗 스파이시하여 향신료가 돋보이는 음식들과 궁합이 아주 좋습니다.\n',
-    wineImagePath: 'wines/AOZINA/Grand Depart.png',
+    wineImagePath: '/wines/AOZINA/Grand Depart.png',
   },
   {
     wineryId: 4,
@@ -151,7 +151,7 @@ export const wines: WineInfoType[] = [
       '시라도 파쇄하여 5일간 스테인리스 통에서 침용 후 발효 시킵니다. 시라의 스파이시함\n' +
       '과 레드베리 과실미에 화사한 청포도 꽃향이 레이어드된 직관적으로 예쁜 와인입니다.\n' +
       '톡쏘는 치즈나 사퀴데리와 매칭하기 좋습니다.\n',
-    wineImagePath: 'wines/AOZINA/Boom.png',
+    wineImagePath: '/wines/AOZINA/Boom.png',
   },
   {
     wineryId: 4,
@@ -165,7 +165,7 @@ export const wines: WineInfoType[] = [
       '고대 화이트 품종인 뮈스카 달렉산드리와 뮈스카 쁘띠 그랑이 블렌딩되어 매혹적인 노\n' +
       '란꽃향이 화사하게 풍기며 입안 가득 잘익은 청포도 한송이를 머금은듯 싱그럽고\n' +
       '아삭하고, 탄닌이 느껴지며 뒷끝에 고소한 여운을 남기는 오렌지 와인입니다.\n',
-    wineImagePath: 'wines/AOZINA/Sun is Shining.png',
+    wineImagePath: '/wines/AOZINA/Sun is Shining.png',
   },
   {
     wineryId: 4,
@@ -178,7 +178,7 @@ export const wines: WineInfoType[] = [
       'fiber통에서 5일간 전송이 압착된 포도를 침용 후 발효 시킵니다. 내추럴 시라의 쿰쿰\n' +
       '함이 첫 향에 느껴지지만 자연스럽게 사라지며 건강하고 프레쉬한 블랙베리 스파이시\n' +
       '함이 기분좋은 산도와 밸런스를 이루는 와인입니다.',
-    wineImagePath: 'wines/AOZINA/Moon Walk.png',
+    wineImagePath: '/wines/AOZINA/Moon Walk.png',
   },
   {
     wineryId: 4,
@@ -192,6 +192,6 @@ export const wines: WineInfoType[] = [
       '않고 오직 중력에 의해 생성된 주스로만 숙성 시킵니다. 첫 빈티지 출시 후 일본에서 다\n' +
       '음 빈티지를 전량 예약 했을 정도로 완성미 있는 다미앙의 시그니처 화이트 와인입니다.\n' +
       '*한국 60병 알로케이션 수입\n',
-    wineImagePath: 'wines/AOZINA/White Label.png',
+    wineImagePath: '/wines/AOZINA/White Label.png',
   },
 ];

@@ -4,6 +4,7 @@ export const wineriesData: WineryInfoType[] = [
   {
     id: 1,
     domaine: 'Damien Bureau',
+    domaineKR: '다미앙 뷰호',
     location: 'Anjou, Loire',
     description:
       '"앙주 출신 루아르 내추럴 씬의 존경받는 아이콘 생산자 다미앙 뷰호”\n' +
@@ -18,6 +19,7 @@ export const wineriesData: WineryInfoType[] = [
   {
     id: 2,
     domaine: 'Domaine7',
+    domaineKR: '도멘 세븐',
     location: 'Anjou, Loire',
     description:
       '제약 엔지니어겸 유명한 와인 애호가였던 아벨은 2015년 와인메이커로 인생을 전향한 앙주의 유망주 입니다.\n' +
@@ -32,6 +34,7 @@ export const wineriesData: WineryInfoType[] = [
   {
     id: 3,
     domaine: 'Stephan Thibault',
+    domaineKR: '스테판 띠보',
     location: 'Saumur, Loire',
     description:
       '“루아르 내추럴씬의 힙하고 클래식한 젊은 와인메이커 띠보 스테판”\n' +
@@ -45,6 +48,7 @@ export const wineriesData: WineryInfoType[] = [
   {
     id: 4,
     domaine: 'AOZINA',
+    domaineKR: '아오지나',
     location: 'PLANEZES, Occitan',
     description:
       '“다미앙 쁘띠피스는 Roussillon의 떠오르는 젊은 생산자로 현재 파리에서 인기가 굉장히 높습니다.\n' +

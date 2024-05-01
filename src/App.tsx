@@ -9,6 +9,8 @@ import PageLayout from '@/components/layout/PageLayout';
 import TestPage from '@/page/TestPage';
 import ContactFooter from '@/page/ContactFooter';
 import FeaturedWines from '@/page/FeaturedWines';
+import WineListPage from '@/page/WineListPage';
+import WineryIntroPage from '@/page/WIneryIntroPage';
 
 function App() {
   return (
@@ -45,12 +47,16 @@ function App() {
                 element={<ImporterIntroPage />}
               />
               <Route
+                path='/winelist'
+                element={<WineListPage />}
+              />
+              <Route
                 path='/wineries'
                 element={<WineriesPage />}
               />
               <Route
                 path='/wineries/:wineryId'
-                element={<></>}
+                element={<WineryIntroPage />}
               />
               <Route
                 path='/wines/:wineId'

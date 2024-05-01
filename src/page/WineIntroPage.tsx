@@ -3,12 +3,11 @@ import React, { useMemo } from 'react';
 import styled from 'styled-components';
 import { Col, Flex, Row, Typography } from 'antd';
 
-import { Space } from 'antd/lib';
 import { IoIosWine } from 'react-icons/io';
 import { wines } from '@/dummy/wines';
 import { wineriesData } from '@/dummy/wineries';
 import { customedTheme } from '@/styles/theme';
-const { Text, Title } = Typography;
+const { Text, Title, Paragraph } = Typography;
 const WineIntroPage: React.FC = () => {
   const { wineId } = useParams<{ wineId: string }>();
   const navigate = useNavigate();
@@ -34,7 +33,7 @@ const WineIntroPage: React.FC = () => {
       >
         <Col
           span={24}
-          md={12}
+          md={8}
         >
           <Flex
             justify={'center'}
@@ -53,53 +52,74 @@ const WineIntroPage: React.FC = () => {
         <Col span={12}>
           <Flex
             vertical
-            style={{
-              fontWeight: customedTheme.fontWeight.bold,
-              fontSize: customedTheme.fontSize.s5,
-              color: customedTheme.color.primary,
-            }}
-          >
-            <div>{wine?.wineNameKR}</div>
-            <div>{wine?.wineNameEN}</div>
-          </Flex>
-          <Flex
-            align={'center'}
             gap={customedTheme.space.md}
-            style={{
-              color: customedTheme.color.primary,
-            }}
           >
-            <h4>WINE TYPE</h4>
-            <Text>
-              {wine?.wineType}
-              {wine ? (
-                <IoIosWine
-                  style={{
-                    fontSize: customedTheme.fontSize.s5,
-                    color: customedTheme.color.wine[wine.wineType],
-                  }}
-                />
-              ) : (
-                <></>
-              )}
-            </Text>
+            <Flex
+              vertical
+              style={{
+                fontWeight: customedTheme.fontWeight.bold,
+                fontSize: customedTheme.fontSize.s5,
+                color: customedTheme.color.primary,
+              }}
+            >
+              <div>{wine?.wineNameKR}</div>
+              <div>{wine?.wineNameEN}</div>
+            </Flex>
+            <Flex
+              vertical
+              gap={customedTheme.space.xs}
+            >
+              <Flex
+                align={'center'}
+                gap={customedTheme.space.md}
+                style={{
+                  color: customedTheme.color.primary,
+                  fontWeight: customedTheme.fontWeight.semiBold,
+                }}
+              >
+                <div>WINE MAKER</div>
+                <Text>{winery?.domaine}</Text>
+              </Flex>
+              <Flex
+                align={'center'}
+                gap={customedTheme.space.md}
+                style={{
+                  color: customedTheme.color.primary,
+                  fontWeight: customedTheme.fontWeight.semiBold,
+                }}
+              >
+                <div>WINE TYPE</div>
+                <Text>
+                  {wine ? (
+                    <IoIosWine
+                      style={{
+                        fontSize: customedTheme.fontSize.s4,
+                        color: customedTheme.color.wine[wine.wineType],
+                        verticalAlign: 'middle',
+                      }}
+                    />
+                  ) : (
+                    <></>
+                  )}
+                  {wine?.wineType}
+                </Text>
+              </Flex>
+              <Flex
+                align={'center'}
+                gap={customedTheme.space.md}
+                style={{
+                  color: customedTheme.color.primary,
+                  fontWeight: customedTheme.fontWeight.semiBold,
+                }}
+              >
+                <div>GRAPE</div>
+                <Text>{wine?.wineVariety}</Text>
+              </Flex>
+            </Flex>
+            <Paragraph strong={true}>{wine?.wineDescription}</Paragraph>
           </Flex>
-          <Space direction={'horizontal'}>
-            <h4>GRAPE</h4>
-            <div>{wine?.wineVariety}</div>
-          </Space>
-          <div>{wine?.wineDescription}</div>
         </Col>
       </Row>
-      {/*<h3>Wines</h3>*/}
-      {/*<ul>*/}
-      {/*  {winery.wines.map((wine) => (*/}
-      {/*    <li key={wine.id}>*/}
-      {/*      <h4>{wine.name}</h4>*/}
-      {/*      <p>{wine.description}</p>*/}
-      {/*    </li>*/}
-      {/*  ))}*/}
-      {/*</ul>*/}
     </Wrapper>
   );
 };

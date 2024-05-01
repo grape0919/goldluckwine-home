@@ -16,6 +16,10 @@ const PageLayout = () => {
       label: <Link to='/'>Gold Luck Wine</Link>,
     },
     {
+      key: '/winelist',
+      label: <Link to='/winelist'>Wine List</Link>,
+    },
+    {
       key: '/wineries',
       label: <Link to='/wineries'>Wineries</Link>,
     },
@@ -44,6 +48,7 @@ const PageLayout = () => {
           alignItems: 'center',
           justifyContent: 'center',
           background: customedTheme.color.white,
+          gap: '20px',
         }}
       >
         <Link

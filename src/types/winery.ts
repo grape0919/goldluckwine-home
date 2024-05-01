@@ -17,6 +17,7 @@ export interface Winery extends WineryBase {
 export interface WineryInfoType {
   id: number;
   domaine: string;
+  domaineKR: string;
   location: string;
   description: string;
   imagePath: string;
