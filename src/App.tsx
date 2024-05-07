@@ -63,7 +63,7 @@ function App() {
                 element={<WineIntroPage />}
               ></Route>
               <Route
-                path='/contect'
+                path='/contact'
                 element={<ContactFooter />}
               />
               <Route

@@ -24,8 +24,8 @@ const PageLayout = () => {
       label: <Link to='/wineries'>Wineries</Link>,
     },
     {
-      key: '/contect',
-      label: <Link to='/contect'>Contect</Link>,
+      key: '/contact',
+      label: <Link to='/contact'>Contact</Link>,
     },
   ];
 
