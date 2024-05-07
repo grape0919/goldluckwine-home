@@ -31,7 +31,7 @@ const WineriesPage: React.FC = () => {
               style={{ width: 240 }}
               cover={
                 <img
-                  alt={item.domaine}
+                  alt={'골드럭와인 Gold Luck Wine 와인수입사 : ' + item.domaine}
                   src={item.imagePath}
                 />
               }

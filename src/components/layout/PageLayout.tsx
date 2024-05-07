@@ -58,7 +58,7 @@ const PageLayout = () => {
           <img
             src={'/goldluckwine-logo.png'}
             height={'48px'}
-            alt=''
+            alt='골드럭와인 Gold Luck Wine 와인수입사'
           />
         </Link>
         <Menu
@@ -79,12 +79,12 @@ const PageLayout = () => {
         />
       </Header>
       <Content
-        style={{ background: customedTheme.color.white, minHeight: '85vh' }}
+        style={{ background: customedTheme.color.bg.light, minHeight: '85vh' }}
       >
         <div
           style={{
             minHeight: '100%',
-            background: colorBgContainer,
+            backgroundColor: customedTheme.color.bg.light,
             borderRadius: borderRadiusLG,
           }}
         >

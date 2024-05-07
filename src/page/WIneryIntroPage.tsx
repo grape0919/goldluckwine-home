@@ -41,7 +41,7 @@ const WineryIntroPage: React.FC = () => {
           >
             <Image
               src={winery?.imagePath}
-              alt={''}
+              alt={'골드럭와인 Gold Luck Wine 와인수입사 : ' + winery?.domaine}
               style={{
                 maxHeight: 500,
                 objectFit: 'contain',

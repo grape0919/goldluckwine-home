@@ -7,7 +7,7 @@ import { IoIosWine } from 'react-icons/io';
 import { wines } from '@/dummy/wines';
 import { wineriesData } from '@/dummy/wineries';
 import { customedTheme, failImage } from '@/styles/theme';
-const { Text, Title, Paragraph } = Typography;
+const { Text, Link, Title, Paragraph } = Typography;
 const WineIntroPage: React.FC = () => {
   const { wineId } = useParams<{ wineId: string }>();
   const navigate = useNavigate();
@@ -41,7 +41,12 @@ const WineIntroPage: React.FC = () => {
           >
             <Image
               src={wine?.wineImagePath}
-              alt={''}
+              alt={
+                '골드럭와인 Gold Luck Wine 와인수입사 : ' +
+                wine?.wineNameKR +
+                ', ' +
+                wine?.wineNameEN
+              }
               style={{
                 maxHeight: 500,
                 objectFit: 'contain',
@@ -79,7 +84,7 @@ const WineIntroPage: React.FC = () => {
                 }}
               >
                 <div>WINE MAKER</div>
-                <Text>{winery?.domaine}</Text>
+                <Link href={`/wineries/${winery?.id}`}>{winery?.domaine}</Link>
               </Flex>
               <Flex
                 align={'center'}

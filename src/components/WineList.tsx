@@ -46,7 +46,12 @@ const WineList = ({ wineList }: Props) => {
                   hoverable
                   cover={
                     <img
-                      alt={item.wineNameEN}
+                      alt={
+                        '골드럭와인 Gold Luck Wine 와인수입사 : ' +
+                        item.wineNameKR +
+                        ', ' +
+                        item.wineNameEN
+                      }
                       src={item.wineImagePath}
                       style={{
                         height: 350,

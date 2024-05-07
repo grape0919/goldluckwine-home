@@ -77,6 +77,16 @@ function App() {
             />
           </Routes>
         </BrowserRouter>
+        <h1
+          style={{
+            color: '#00000000',
+            position: 'absolute',
+            top: '0px',
+            zIndex: -1,
+          }}
+        >
+          골드럭와인 Gold Luck Wine 와인수입사
+        </h1>
       </AntdApp>
     </ConfigProvider>
   );
