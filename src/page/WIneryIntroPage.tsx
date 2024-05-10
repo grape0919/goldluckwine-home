@@ -51,7 +51,10 @@ const WineryIntroPage: React.FC = () => {
             />
           </Flex>
         </Col>
-        <Col span={12}>
+        <Col
+          span={20}
+          md={12}
+        >
           <Flex
             vertical
             gap={customedTheme.space.md}
