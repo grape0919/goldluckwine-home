@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Flex } from 'antd';
+import { Flex } from 'antd';
 import styled from 'styled-components';
 import { customedTheme } from '@/styles/theme';
 import { wines } from '@/dummy/wines';
@@ -13,7 +13,10 @@ const WineListPage: React.FC = () => {
       gap={customedTheme.space.xxl}
     >
       <div className={'page-title'}>Wine List</div>
-      <WineList wineList={wines} />
+      <WineList
+        wineList={wines}
+        useFilter={true}
+      />
     </Wrapper>
   );
 };

@@ -1,4 +1,5 @@
 import { WineInfoType } from '@/types/wine';
+import { WineTypes } from '@/enum/wine';
 
 export const wines: WineInfoType[] = [
   {
@@ -6,7 +7,7 @@ export const wines: WineInfoType[] = [
     wineId: 1,
     wineNameEN: 'Mille Sabords',
     wineNameKR: '밀사보흐',
-    wineType: 'White',
+    wineType: WineTypes.white,
     wineVariety: ['Chenin Blanc'],
     wineDescription:
       '밀 사보흐는 다미앙 뷰호의 시그니처 화이트 와인입니다. 일반적으로 밀사보흐와 아망\n' +
@@ -23,7 +24,7 @@ export const wines: WineInfoType[] = [
     wineId: 2,
     wineNameEN: 'Paloma',
     wineNameKR: '팔로마',
-    wineType: 'Red',
+    wineType: WineTypes.red,
     wineVariety: [
       'Cabernet Franc',
       'Gamay',
@@ -45,7 +46,7 @@ export const wines: WineInfoType[] = [
     wineId: 3,
     wineNameEN: 'La guimardiere',
     wineNameKR: '라 기마르디에',
-    wineType: 'White',
+    wineType: WineTypes.white,
     wineVariety: ['Chenin Blanc'],
     wineDescription:
       '1.5ha 석회암, 쉬스트 토양의 5개 구획의 블랜딩으로 만들어 집니다. 아주 깨끗하고 유\n' +
@@ -59,7 +60,7 @@ export const wines: WineInfoType[] = [
     wineId: 4,
     wineNameEN: 'La Nouette',
     wineNameKR: '라 누에뜨',
-    wineType: 'White',
+    wineType: WineTypes.white,
     wineVariety: ['Chenin Blanc'],
     wineDescription:
       '아벨의 밭중 가장 고지대에 위치한 1ha의 싱글 빈야드로. 쉬스트 토양의 올드바인 슈냉\n' +
@@ -74,7 +75,7 @@ export const wines: WineInfoType[] = [
     wineId: 5,
     wineNameEN: 'Plume',
     wineNameKR: '플룸',
-    wineType: 'Red',
+    wineType: WineTypes.red,
     wineVariety: ['Cabernet Franc'],
     wineDescription:
       "2개의 까베르네 프랑 뀌베를 블랜딩하여 1년간 Vat에서 숙성 했습니다. 풀룸은 '깃털'\n" +
@@ -89,7 +90,7 @@ export const wines: WineInfoType[] = [
     wineId: 6,
     wineNameEN: 'Repenti Blanc',
     wineNameKR: '흐빵띠',
-    wineType: 'White',
+    wineType: WineTypes.white,
     wineVariety: ['Chenin Blanc'],
     wineDescription:
       '20년까지 Saumur AOC로 생산되었으나, 서류 절차의 번거로움으로 VDF로 출시합니\n' +
@@ -104,7 +105,7 @@ export const wines: WineInfoType[] = [
     wineId: 7,
     wineNameEN: 'Poulp',
     wineNameKR: '뿔쁘',
-    wineType: 'White',
+    wineType: WineTypes.white,
     wineVariety: ['Chenin Blanc'],
     wineDescription:
       '뿔뿌는 띠보가 심혈을 기울여 만든 실험적인 와인 입니다.\n' +
@@ -117,7 +118,7 @@ export const wines: WineInfoType[] = [
     wineId: 8,
     wineNameEN: 'Faites Enter la Cuvee',
     wineNameKR: '페트 앙트레 라 뀌베',
-    wineType: 'Red',
+    wineType: WineTypes.red,
     wineVariety: ['Cabernet Franc'],
     wineDescription:
       '100% destemming 하여 15일간의 침용을 거치고 free-run 주스와 압착된 주스를 함\n' +
@@ -131,7 +132,7 @@ export const wines: WineInfoType[] = [
     wineId: 9,
     wineNameEN: 'Grand Depart',
     wineNameKR: '그랑 디빠트',
-    wineType: 'Red',
+    wineType: WineTypes.red,
     wineVariety: ['Grenache Noir'],
     wineDescription:
       '전송이를 압착 후 5일간 침용을 거쳐 스테인레스 탱크에서 병입 전까지 숙성시켰습니\n' +
@@ -144,7 +145,7 @@ export const wines: WineInfoType[] = [
     wineId: 10,
     wineNameEN: 'Boom',
     wineNameKR: '붐',
-    wineType: 'Red',
+    wineType: WineTypes.red,
     wineVariety: ['80% Syrah', "20% Muscat d'Alexandrie"],
     wineDescription:
       '먼저 전송이 그대로 으깬 뮈스카 달렉산드리를 압착하지 않은 시라 위에 얹고, 다음날\n' +
@@ -158,7 +159,7 @@ export const wines: WineInfoType[] = [
     wineId: 11,
     wineNameEN: 'Sun is Shining',
     wineNameKR: '선 이즈 샤이닝',
-    wineType: 'Orange',
+    wineType: WineTypes.orange,
     wineVariety: ['60% Muscat petit grain', "40% Muscat d'Alexandrie"],
     wineDescription:
       '10일간 전송이 침용을 거치고 프레스 후 스테인리스에서 알코올 발효를 했습니다.\n' +
@@ -172,7 +173,7 @@ export const wines: WineInfoType[] = [
     wineId: 12,
     wineNameEN: 'Moon Walk',
     wineNameKR: '문 워크',
-    wineType: 'Red',
+    wineType: WineTypes.red,
     wineVariety: ['Syrah'],
     wineDescription:
       'fiber통에서 5일간 전송이 압착된 포도를 침용 후 발효 시킵니다. 내추럴 시라의 쿰쿰\n' +
@@ -185,7 +186,7 @@ export const wines: WineInfoType[] = [
     wineId: 13,
     wineNameEN: 'White Label',
     wineNameKR: '화이트 라벨',
-    wineType: 'White',
+    wineType: WineTypes.white,
     wineVariety: ["Muscat d'Alexandrie"],
     wineDescription:
       '수확 후 디스팀 한 포도는 스테인레스에서 12월까지 5개월이상 침용시키며, 압착하지\n' +
