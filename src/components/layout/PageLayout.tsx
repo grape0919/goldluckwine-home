@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { Layout, Menu, MenuProps, theme } from 'antd';
+import { MenuOutlined } from '@ant-design/icons';
 import { Link, Outlet } from 'react-router-dom';
 import { customedTheme } from '@/styles/theme';
 
@@ -67,6 +68,7 @@ const PageLayout = () => {
           selectedKeys={[selectedMenu]}
           onSelect={handleSelectMenu}
           items={menuItems}
+          overflowedIndicator={<MenuOutlined />}
           style={{
             flex: 0.5,
             minWidth: 0,
