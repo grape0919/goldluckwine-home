@@ -15,6 +15,7 @@ const HomePageSection3: React.FC = () => {
         vertical
         align={'center'}
         justify={'center'}
+        gap={20}
       >
         <Paragraph
           style={{
