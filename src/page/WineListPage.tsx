@@ -22,7 +22,8 @@ const WineListPage: React.FC = () => {
 };
 
 const Wrapper = styled(Flex)`
-  padding: 50px;
+  padding: 50px 20%;
+  font-family: 'Lora', serif;
   .page-title {
     font-size: ${customedTheme.fontSize.s7};
     font-weight: ${customedTheme.fontWeight.bolder};

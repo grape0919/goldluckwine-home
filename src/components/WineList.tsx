@@ -1,9 +1,9 @@
 import { Card, Flex, List, Select } from 'antd';
 import { IoIosWine } from 'react-icons/io';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { customedTheme } from '@/styles/theme';
-import { WineInfoType, WineType } from '@/types/wine';
+import { WineInfoType } from '@/types/wine';
 import { WineTypes } from '@/enum/wine';
 import { wineriesData } from '@/dummy/wineries';
 
@@ -84,13 +84,13 @@ const WineList = ({ wineList, useFilter }: Props) => {
         <div className={'wine-list'}>
           <List
             grid={{
-              gutter: 40,
+              gutter: 15,
               xs: 1,
-              sm: 2,
-              md: 3,
-              lg: 3,
-              xl: 4,
-              xxl: 5,
+              sm: 1,
+              md: 2,
+              lg: 2,
+              xl: 3,
+              xxl: 4,
             }}
             dataSource={dataSource}
             renderItem={(item: WineInfoType) => (
@@ -102,7 +102,7 @@ const WineList = ({ wineList, useFilter }: Props) => {
                 <Card
                   style={{
                     background: customedTheme.color.white,
-                    padding: customedTheme.space.md,
+                    padding: 0,
                   }}
                   hoverable
                   cover={
@@ -117,6 +117,8 @@ const WineList = ({ wineList, useFilter }: Props) => {
                       style={{
                         height: 350,
                         objectFit: 'contain',
+                        background: customedTheme.color.primaryLight,
+                        padding: customedTheme.space.lg,
                       }}
                     />
                   }

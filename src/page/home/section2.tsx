@@ -19,9 +19,9 @@ const HomePageSection2: React.FC = () => {
 };
 
 const Wrapper = styled.div`
-  padding: 1rem 3rem;
+  padding: 1rem 20%;
   .section2-title {
-    margin-bottom: ${customedTheme.space.lg};
+    margin-bottom: 60px;
     font-family: 'Lora', serif;
     font-size: ${customedTheme.fontSize.s6};
     font-weight: ${customedTheme.fontWeight.semiBold};

@@ -18,7 +18,7 @@ const WineIntroPage: React.FC = () => {
     } else {
       return navigate(-1);
     }
-  }, [wineId]);
+  }, [navigate, wineId]);
 
   const winery = useMemo(() => {
     return wineriesData.find((winery) => winery.id === Number(wine?.wineryId));

@@ -59,7 +59,7 @@ const ContactFooter = () => {
 
 // eslint-disable-next-line no-undef
 const Wrapper = styled.div`
-  padding: 4rem 3rem;
+  padding: 4rem 20%;
   .contact-title {
     margin-bottom: ${customedTheme.space.lg};
     font-family: 'Lora', serif;

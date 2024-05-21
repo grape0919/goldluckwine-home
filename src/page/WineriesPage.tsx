@@ -21,7 +21,6 @@ const WineriesPage: React.FC = () => {
         gap={customedTheme.space.md}
         justify={'center'}
         wrap={'wrap'}
-        style={{ padding: customedTheme.space.md }}
       >
         {wineriesData.map((item) => {
           return (
@@ -50,7 +49,8 @@ const WineriesPage: React.FC = () => {
 };
 
 const Wrapper = styled(Flex)`
-  padding: 50px;
+  padding: 50px 20%;
+  font-family: 'Lora', serif;
   .page-title {
     font-size: ${customedTheme.fontSize.s7};
     font-weight: ${customedTheme.fontWeight.bolder};

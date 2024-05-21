@@ -28,17 +28,14 @@ const WineryIntroPage: React.FC = () => {
     <Wrapper>
       <Row
         align={'middle'}
-        justify={'center'}
-        gutter={[16, 32]}
+        gutter={[80, 60]}
+        style={{ marginTop: '80px', marginBottom: '80px' }}
       >
         <Col
           span={24}
-          md={8}
+          xl={10}
         >
-          <Flex
-            justify={'center'}
-            style={{ padding: '3rem' }}
-          >
+          <Flex justify={'center'}>
             <Image
               src={winery?.imagePath}
               alt={'골드럭와인 Gold Luck Wine 와인수입사 : ' + winery?.domaine}
@@ -52,8 +49,8 @@ const WineryIntroPage: React.FC = () => {
           </Flex>
         </Col>
         <Col
-          span={20}
-          md={12}
+          span={24}
+          xl={14}
         >
           <Flex
             vertical
@@ -109,7 +106,7 @@ const WineryIntroPage: React.FC = () => {
 };
 
 const Wrapper = styled.div`
-  padding: ${customedTheme.space.md};
+  padding: ${customedTheme.space.xxl} 20%;
 `;
 
 export default WineryIntroPage;

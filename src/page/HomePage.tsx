@@ -13,7 +13,7 @@ function HomePage() {
       <HomePageSection1 />
       <div
         style={{
-          padding: '1rem 10%',
+          padding: '1rem 20%',
           fontSize: customedTheme.fontSize.s3,
           fontWeight: customedTheme.fontWeight.semiBold,
         }}
