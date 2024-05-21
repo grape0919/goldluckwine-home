@@ -60,6 +60,14 @@ const ContactFooter = () => {
 // eslint-disable-next-line no-undef
 const Wrapper = styled.div`
   padding: 4rem 20%;
+
+  @media (max-width: 1535px) {
+    padding: 1rem 15%;
+  }
+
+  @media (max-width: 1023px) {
+    padding: 1rem 10%;
+  }
   .contact-title {
     margin-bottom: ${customedTheme.space.lg};
     font-family: 'Lora', serif;
