@@ -4,7 +4,7 @@ import { WineTypes } from '@/enum/wine';
 export const wines: WineInfoType[] = [
   {
     wineryId: 1,
-    wineId: 1,
+    wineId: 101,
     wineNameEN: 'Mille Sabords',
     wineNameKR: '밀사보흐',
     wineType: WineTypes.white,
@@ -21,7 +21,7 @@ export const wines: WineInfoType[] = [
   },
   {
     wineryId: 1,
-    wineId: 2,
+    wineId: 102,
     wineNameEN: 'Paloma',
     wineNameKR: '팔로마',
     wineType: WineTypes.red,
@@ -42,8 +42,22 @@ export const wines: WineInfoType[] = [
     wineImagePath: '/wines/Damien Bureau/Paloma.png',
   },
   {
+    wineryId: 1,
+    wineId: 103,
+    wineNameEN: 'La Jeannette',
+    wineNameKR: '라 쟈넷뜨',
+    wineType: WineTypes.sweet,
+    wineVariety: ['Chenin Blanc'],
+    wineDescription:
+      '* 357ml\n' +
+      '2015년 더운 기후로 인해 귀부균이 완벽하게 생겼던 해에 만들어진 한정판 스위트 와인입니다.\n' +
+      '오크통 단 한 개가 만들어진 소중한 와인입니다.\n' +
+      '스위트 슈냉 블랑의 완벽한 밸런스를 보여주는 와인으로 SWEET but NOT SUGARY! / 내추럴씬의 디켐',
+    wineImagePath: '/wines/Damien Bureau/La Jeannette.png',
+  },
+  {
     wineryId: 2,
-    wineId: 3,
+    wineId: 201,
     wineNameEN: 'La guimardiere',
     wineNameKR: '라 기마르디에',
     wineType: WineTypes.white,
@@ -57,7 +71,7 @@ export const wines: WineInfoType[] = [
   },
   {
     wineryId: 2,
-    wineId: 4,
+    wineId: 202,
     wineNameEN: 'La Nouette',
     wineNameKR: '라 누에뜨',
     wineType: WineTypes.white,
@@ -72,7 +86,7 @@ export const wines: WineInfoType[] = [
   },
   {
     wineryId: 2,
-    wineId: 5,
+    wineId: 203,
     wineNameEN: 'Plume',
     wineNameKR: '플룸',
     wineType: WineTypes.red,
@@ -87,7 +101,7 @@ export const wines: WineInfoType[] = [
   },
   {
     wineryId: 3,
-    wineId: 6,
+    wineId: 301,
     wineNameEN: 'Repenti Blanc',
     wineNameKR: '흐빵띠',
     wineType: WineTypes.white,
@@ -102,7 +116,7 @@ export const wines: WineInfoType[] = [
   },
   {
     wineryId: 3,
-    wineId: 7,
+    wineId: 302,
     wineNameEN: 'Poulp',
     wineNameKR: '뿔쁘',
     wineType: WineTypes.white,
@@ -115,7 +129,7 @@ export const wines: WineInfoType[] = [
   },
   {
     wineryId: 3,
-    wineId: 8,
+    wineId: 303,
     wineNameEN: 'Faites Enter la Cuvee',
     wineNameKR: '페트 앙트레 라 뀌베',
     wineType: WineTypes.red,
@@ -129,7 +143,7 @@ export const wines: WineInfoType[] = [
   },
   {
     wineryId: 4,
-    wineId: 9,
+    wineId: 401,
     wineNameEN: 'Grand Depart',
     wineNameKR: '그랑 디빠트',
     wineType: WineTypes.red,
@@ -142,7 +156,7 @@ export const wines: WineInfoType[] = [
   },
   {
     wineryId: 4,
-    wineId: 10,
+    wineId: 402,
     wineNameEN: 'Boom',
     wineNameKR: '붐',
     wineType: WineTypes.red,
@@ -156,7 +170,7 @@ export const wines: WineInfoType[] = [
   },
   {
     wineryId: 4,
-    wineId: 11,
+    wineId: 403,
     wineNameEN: 'Sun is Shining',
     wineNameKR: '선 이즈 샤이닝',
     wineType: WineTypes.orange,
@@ -170,7 +184,7 @@ export const wines: WineInfoType[] = [
   },
   {
     wineryId: 4,
-    wineId: 12,
+    wineId: 404,
     wineNameEN: 'Moon Walk',
     wineNameKR: '문 워크',
     wineType: WineTypes.red,
@@ -183,7 +197,23 @@ export const wines: WineInfoType[] = [
   },
   {
     wineryId: 4,
-    wineId: 13,
+    wineId: 405,
+    wineNameEN: 'CANOPY',
+    wineNameKR: '캐노피',
+    wineType: WineTypes.white,
+    wineVariety: ['Grenache gris', 'Macabeau'],
+    wineDescription:
+      '그린 레이블에서 느껴지듯 청명하고 시원한 화이트 와인입니다.\n' +
+      '첫향에 흰 야생꽃향과 살구의 향이 확실하게 표현됩니다.' +
+      '입안에서는 서양배와 미네랄리티가 매끈하고 부드럽게 느껴집니다. \n' +
+      '캐노피는 포도나무 성장을 위한 농법이기도 하고, 울창한 나무들이 빼곡한 숲의 상층의 뜻을 가졌는데\n' +
+      '다미앙은 두개의 의미 모드를 담아 이 와인의 이름을 지었다고 합니다.\n' +
+      '구운 아스파라거스,구운 생선이나 치킨, 새우, 랍스타, 또는 그라탕이나 구운 브리치즈나 염소치즈와 환상의 궁합을 보입니다.',
+    wineImagePath: '/wines/AOZINA/CANOPY.png',
+  },
+  {
+    wineryId: 4,
+    wineId: 406,
     wineNameEN: 'White Label',
     wineNameKR: '화이트 라벨',
     wineType: WineTypes.white,
@@ -194,5 +224,104 @@ export const wines: WineInfoType[] = [
       '음 빈티지를 전량 예약 했을 정도로 완성미 있는 다미앙의 시그니처 화이트 와인입니다.\n' +
       '*한국 60병 알로케이션 수입\n',
     wineImagePath: '/wines/AOZINA/White Label.png',
+  },
+  {
+    wineryId: 4,
+    wineId: 407,
+    wineNameEN: 'Pink Lover',
+    wineNameKR: ' 핑크 러버',
+    wineType: WineTypes.rose,
+    wineVariety: ['Carignan', 'Grenache noir', 'Mourvedre'],
+    wineDescription:
+      '루씨옹의 가볍게 마시기 좋은 로제 와인으로, 그르나슈 누아, 까리냥, 무르베드르 세품종의 조화를 잘 담아 내었습니다.\n' +
+      '프랑스에서 첫 선보였을 시에 로제와인에 회의적인 사람들도 놀라게 만든 와인입니다.\n' +
+      '손수확 후 바로 압착하여 2개월간 탱크에서 숙성을 거칩니다.\n' +
+      '첫향에 자스민, 오렌지 꽃향기와 딸기 라즈베리, 체리같은 신선한 과일 향을 뿜어냅니다.\n' +
+      '입안에서는 균형잡힌 산미와 미네랄감이 느껴집니다.\n' +
+      '여름 내내 아페리티프로 마시기 좋고, 샐러드, 구운 해산물, 지중해요리, 치즈와 매칭하여 마시면 행복한 로제 입니다.',
+    wineImagePath: '/wines/AOZINA/Pink Lover.png',
+  },
+  {
+    wineryId: 5,
+    wineId: 501,
+    wineNameEN: 'Le Blanc',
+    wineNameKR: '르 블랑',
+    wineType: WineTypes.white,
+    wineVariety: ['Pinot Blanc', 'Chardonnay', 'Pinot Gris'],
+    wineDescription:
+      '신선하고 우아한 블랜딩의 와인입니다. 청사과와 서양배, 시트러스의 향이 느껴지며\n' +
+      '깔끔한 산미와 부드러운 질감의 미네랄리티가 돋보이는 와인입니다.\n' +
+      '우드배럴과 스테인레스 스틸에서 각각 발효 되었으며, 정제와 여과없이 병입 후 18개월동안 숙성되었습니다.\n' +
+      '모든 생선요리, 그릴 해산물과 좋은 궁합을 이루는 와인입니다.',
+    wineImagePath: '/wines/SCHNEIDER/White Label.png',
+  },
+  {
+    wineryId: 5,
+    wineId: 502,
+    wineNameEN: 'Rose',
+    wineNameKR: '로제',
+    wineType: WineTypes.rose,
+    wineVariety: ['Pinot Noir'],
+    wineDescription:
+      '피노누아로 만든 로제는 깊고 풍부한 체리와 스트로베리의 향이 느껴지며,\n' +
+      '음습한 숲의 뉘앙스와 부드러운 탄닌과 균형잡힌 산미가 특징입니다.\n' +
+      '짧은 마세레이션을 거치고 우드배럴에서 18개월동안 숙성 시켰으며 정제와 여과없이 병입되었습니다',
+    wineImagePath: '/wines/SCHNEIDER/Rose.png',
+  },
+  {
+    wineryId: 5,
+    wineId: 503,
+    wineNameEN: 'La Boheme',
+    wineNameKR: '라 보헴',
+    wineType: WineTypes.white,
+    wineVariety: ['Gutedel (Chasselas)'],
+    wineDescription:
+      '보헤미안 스타일로 만들어진 독창적인 와인입니다. 압착 후 우드 배럴에서의 발효를 거쳤으며,\n' +
+      '18개월 후 정제나 여과 없이 병입되었습니다. 사과, 서양배, 허브의 향과 견과류의 고소함,\n' +
+      '약간의 스파이시함이 더해져 복합적인 풍미를 자랑합니다.구운 닭고기나 해산물과 잘 어울립니다.',
+    wineImagePath: '/wines/SCHNEIDER/La Boheme.png',
+  },
+  {
+    wineryId: 5,
+    wineId: 504,
+    wineNameEN: 'El Fayoum',
+    wineNameKR: '엘 파욤',
+    wineType: WineTypes.white,
+    wineVariety: ['Gutedel (Chasselas)'],
+    wineDescription:
+      '5일간의 스킨 컨택 후 스테인레스 스틸에서 발효 되었으며, 18개월 후 정제와 여과 없이병입 되었습니다.\n' +
+      '생생한 열대과일과 꽃향, 신선한 산미와 샤슬라만의 차가움이 느껴지는 꿀떡 와인입니다.\n' +
+      '알콜도수도 9도로 낮아 레이블처럼 여름, 바닷가에서 피크닉하며 마시기 딱 좋은 와인입니다.\n' +
+      '해산물 요리, 가벼운 샐러드와 여름과일, 향신료가 섞인 아시아 퓨전 요리가 잘 어울립니다.',
+    wineImagePath: '/wines/SCHNEIDER/El Fayoum.png',
+  },
+  {
+    wineryId: 5,
+    wineId: 505,
+    wineNameEN: 'Lörracher',
+    wineNameKR: '뢰라허',
+    wineType: WineTypes.red,
+    wineVariety: ['Spatburgunder'],
+    wineDescription:
+      '뢰라허 지역 AOC와인으로 Qualitaswein은 독일의 와인 등급 시스템에서 높은 품질의 와인을 의미합니다.\n' +
+      '특히나 슈나이더 형제가 집중하는 우아한 스패트부르군더로 이상적인 바덴 피노누아의 순수한 맛이 느껴집니다.\n' +
+      '체리, 딸기, 약간의 흙내음이 느껴집니다.\n' +
+      '14일간 스틸탱크 발효 후 바리크에서 12개월 숙성, 그리고 6개월 더 스테인레스 스틸에서 숙성 시킵니다.\n' +
+      '정제와 여과 없이 병입 됩니다. 구운 오리, 스테이크, 각종 치즈와도 페어링이 좋습니다.',
+    wineImagePath: '/wines/SCHNEIDER/Lörracher.png',
+  },
+  {
+    wineryId: 5,
+    wineId: 506,
+    wineNameEN: 'Blanc et Noir Brut Nature',
+    wineNameKR: '블랑 에 누아 브뤼 나뚜르',
+    wineType: WineTypes.sparkling,
+    wineVariety: ['Pinot Noir', 'Chardonnay, Pinot', 'Blanc'],
+    wineDescription:
+      '*Bottling: May, 2023\n' +
+      '소량 생산된 스파킆링은 익은 사과, 시트러스 향이 주를 이르며 촘촘한 기포와 신선한 산미가 매력적입니다.\n' +
+      '특히 블라인드를 하면 RM 샴페인을 연상 시키는 훌륭한 스파클링입니다.\n' +
+      '12개월동안 스테인레스 스틸에서 숙성 후 병입하여 18개월동안 두번째 발효를 진행합니다.\n',
+    wineImagePath: '/wines/SCHNEIDER/Blanc et Noir Brut Nature.png',
   },
 ];

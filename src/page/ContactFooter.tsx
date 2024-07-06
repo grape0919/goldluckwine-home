@@ -57,7 +57,6 @@ const ContactFooter = () => {
   );
 };
 
-// eslint-disable-next-line no-undef
 const Wrapper = styled.div`
   padding: 4rem 20%;
 

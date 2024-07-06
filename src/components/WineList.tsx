@@ -1,4 +1,4 @@
-import { Card, Flex, List, Select } from 'antd';
+import { Card, Flex, List, Select, Image } from 'antd';
 import { IoIosWine } from 'react-icons/io';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -106,13 +106,15 @@ const WineList = ({ wineList, useFilter }: Props) => {
                   }}
                   hoverable
                   cover={
-                    <img
+                    <Image
+                      preview={false}
                       alt={
                         '골드럭와인 Gold Luck Wine 와인수입사 : ' +
                         item.wineNameKR +
                         ', ' +
                         item.wineNameEN
                       }
+                      fallback={'/wines/default.png'}
                       src={item.wineImagePath}
                       style={{
                         height: 350,

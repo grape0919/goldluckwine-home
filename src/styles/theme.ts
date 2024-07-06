@@ -23,6 +23,7 @@ export const customedTheme = {
       Sweet: '#B47720',
       Orange: '#ea843b',
       Rose: '#ff7777',
+      Sparkling: '#fadd75',
     },
   },
   fontSize: {

@@ -5,4 +5,5 @@ export enum WineTypes {
   sweet = 'Sweet',
   orange = 'Orange',
   rose = 'Rose',
+  sparkling = 'Sparkling',
 }

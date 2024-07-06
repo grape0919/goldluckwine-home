@@ -48,10 +48,10 @@ const WineIntroPage: React.FC = () => {
                 wine?.wineNameEN
               }
               style={{
-                maxHeight: 500,
+                height: 300,
                 objectFit: 'contain',
               }}
-              fallback={failImage}
+              fallback={'/wines/default.png'}
             />
           </Flex>
         </Col>
