@@ -1,28 +1,38 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import React, { useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { Col, Flex, Image, Row, Typography } from 'antd';
 
 import { IoIosWine } from 'react-icons/io';
-import { wines } from '@/dummy/wines';
-import { wineriesData } from '@/dummy/wineries';
+import { fetchWineById, fetchWineryById } from '@/api/wines';
+import type { WineInfoType } from '@/types/wine';
+import type { WineryInfoType } from '@/types/winery';
 import { customedTheme, failImage } from '@/styles/theme';
 const { Text, Link, Title, Paragraph } = Typography;
 const WineIntroPage: React.FC = () => {
   const { wineId } = useParams<{ wineId: string }>();
   const navigate = useNavigate();
-  const wine = useMemo(() => {
-    const foundWine = wines.find((item) => item.wineId === Number(wineId));
-    if (foundWine) {
-      return foundWine;
-    } else {
-      return navigate(-1);
-    }
-  }, [navigate, wineId]);
+  const [wine, setWine] = useState<WineInfoType | null>(null);
+  const [winery, setWinery] = useState<WineryInfoType | null>(null);
 
-  const winery = useMemo(() => {
-    return wineriesData.find((winery) => winery.id === Number(wine?.wineryId));
-  }, [wine?.wineryId]);
+  useEffect(() => {
+    let cancelled = false;
+    fetchWineById(Number(wineId)).then((found) => {
+      if (cancelled) return;
+      if (!found) {
+        // 존재하지 않는 와인 id — 이전 페이지로 복귀
+        navigate(-1);
+        return;
+      }
+      setWine(found);
+      fetchWineryById(found.wineryId).then((w) => {
+        if (!cancelled) setWinery(w);
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate, wineId]);
 
   return (
     <Wrapper>

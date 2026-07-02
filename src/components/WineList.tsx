@@ -4,8 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { customedTheme } from '@/styles/theme';
 import { WineInfoType } from '@/types/wine';
+import type { WineryInfoType } from '@/types/winery';
 import { WineTypes } from '@/enum/wine';
-import { wineriesData } from '@/dummy/wineries';
+import { fetchWineries } from '@/api/wines';
 
 interface Props {
   wineList: WineInfoType[];
@@ -16,6 +17,18 @@ const WineList = ({ wineList, useFilter }: Props) => {
   const [dataSource, setDataSource] = useState<WineInfoType[]>(wineList);
   const [wineTypeFilterValue, setWineTypeFilterValue] = useState<string>('all');
   const [domaineFilterValue, setDomaineFilterValue] = useState<string>('all');
+  const [wineriesData, setWineriesData] = useState<WineryInfoType[]>([]);
+
+  useEffect(() => {
+    if (!useFilter) return;
+    let cancelled = false;
+    fetchWineries().then((list) => {
+      if (!cancelled) setWineriesData(list);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [useFilter]);
   useEffect(() => {
     if (wineTypeFilterValue === 'all' && domaineFilterValue === 'all') {
       setDataSource(wineList);

@@ -58,6 +58,26 @@ export const customedTheme = {
   border: {
     default: 'solid 1px #dedede',
   },
+  // 홈 리디자인(Figma 3525:2) 팔레트
+  home: {
+    cream: '#fefaef',
+    dark: '#101010',
+    ink: '#262322',
+    brown: '#44291f',
+    green: '#014c23',
+    greenSoft: '#6fa64c',
+    yellow: '#ffeca9',
+    gray: '#5f5f5f',
+    grayLight: '#969696',
+  },
+  font: {
+    // 대형 디스플레이 헤딩 (Loubag 대체) — GOLD LUCK WINE, OUR COLLECTION 등
+    display: `'Marcellus', 'Lora', serif`,
+    // 영문 본문·메뉴·버튼 (Aptos Narrow 대체)
+    en: `'Barlow Semi Condensed', -apple-system, sans-serif`,
+    // 한글 본문
+    kr: `'Pretendard Variable', Pretendard, -apple-system, sans-serif`,
+  },
 };
 
 export const failImage =

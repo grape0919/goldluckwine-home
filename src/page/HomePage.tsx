@@ -1,29 +1,50 @@
+import { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { Flex } from 'antd';
 import { customedTheme } from '@/styles/theme';
-import HomePageSection1 from '@/page/home/section1';
-import HomePageSection2 from '@/page/home/section2';
-import ContactFooter from '@/page/ContactFooter';
-import HomePageSection3 from '@/page/home/section3';
+import HeroSection from '@/page/home/HeroSection';
+import IntroSection from '@/page/home/IntroSection';
+import LoireSection from '@/page/home/LoireSection';
+import GallerySection from '@/page/home/GallerySection';
+import { fetchFeaturedWines, fetchWineries } from '@/api/wines';
+import type { WineInfoType } from '@/types/wine';
 
 function HomePage() {
-  return (
-    <Wrapper
-      vertical
-      gap={'10rem'}
-    >
-      <HomePageSection1 />
-      <HomePageSection3 />
-      <HomePageSection2 />
-      <ContactFooter />
+  const [featuredWines, setFeaturedWines] = useState<WineInfoType[]>([]);
+  const [wineryNameById, setWineryNameById] = useState<Record<number, string>>(
+    {},
+  );
 
-      {/*<FloatButton.BackTop />*/}
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([fetchFeaturedWines(), fetchWineries()]).then(
+      ([wines, wineries]) => {
+        if (cancelled) return;
+        setFeaturedWines(wines);
+        setWineryNameById(
+          Object.fromEntries(wineries.map((w) => [w.id, w.domaine])),
+        );
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <Wrapper>
+      <HeroSection />
+      <IntroSection
+        featuredWines={featuredWines}
+        wineryNameById={wineryNameById}
+      />
+      <LoireSection />
+      <GallerySection />
     </Wrapper>
   );
 }
 
-const Wrapper = styled(Flex)`
-  background: ${customedTheme.color.bg.light};
+const Wrapper = styled.div`
+  background: ${customedTheme.home.cream};
 `;
 
 export default HomePage;

@@ -1,13 +1,26 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, Flex, Image } from 'antd';
 import styled from 'styled-components';
 import { customedTheme } from '@/styles/theme';
 const { Meta } = Card;
-import { wineriesData } from '@/dummy/wineries';
+import { fetchWineries } from '@/api/wines';
+import type { WineryInfoType } from '@/types/winery';
 import { useNavigate } from 'react-router-dom';
 
 const WineriesPage: React.FC = () => {
   const navigate = useNavigate();
+  const [wineriesData, setWineriesData] = useState<WineryInfoType[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchWineries().then((list) => {
+      if (!cancelled) setWineriesData(list);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <Wrapper
       vertical

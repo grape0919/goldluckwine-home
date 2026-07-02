@@ -11,6 +11,7 @@ import ContactFooter from '@/page/ContactFooter';
 import FeaturedWines from '@/page/FeaturedWines';
 import WineListPage from '@/page/WineListPage';
 import WineryIntroPage from '@/page/WIneryIntroPage';
+import AdminPage from '@/page/admin/AdminPage';
 
 function App() {
   return (
@@ -71,6 +72,10 @@ function App() {
                 element={<TestPage />}
               />
             </Route>
+            <Route
+              path='/admin'
+              element={<AdminPage />}
+            />
             <Route
               path='*'
               element={<>Not Found Page</>}
