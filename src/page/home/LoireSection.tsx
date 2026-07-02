@@ -39,7 +39,6 @@ const LoireSection = () => {
 const Wrapper = styled.section`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  margin-top: 140px;
 
   .loire-copy {
     display: flex;
@@ -107,7 +106,6 @@ const Wrapper = styled.section`
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
-    margin-top: 80px;
 
     .loire-copy {
       padding: 72px 24px;
