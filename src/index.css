@@ -10,6 +10,14 @@ body{
    font-style: normal;
 }
 
-.font-nanum-gothic{
+/* 대형 디스플레이 헤딩 (Loubag 대체) */
+.font-display {
+   font-family: "Marcellus", "Lora", serif;
+   font-weight: 400;
+   font-style: normal;
+}
 
+/* 영문 본문·메뉴·버튼 (Aptos Narrow 대체) */
+.font-en {
+   font-family: "Barlow Semi Condensed", -apple-system, sans-serif;
 }
