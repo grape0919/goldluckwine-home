@@ -21,16 +21,16 @@ const IntroSection = ({ featuredWines, wineryNameById }: IntroSectionProps) => {
   return (
     <Wrapper>
       <div className='intro-clovers' aria-hidden>
-        <CloverIcon
-          color={home.greenSoft}
-          size={110}
-          style={{ opacity: 0.28, transform: 'rotate(-14deg)' }}
+        {/* 파일명 left/right가 실제 배치와 반대: right=작은 것(왼쪽), left=큰 것(오른쪽) */}
+        <img
+          className='clover-small'
+          src='/home/clover/background-clover-right.png'
+          alt=''
         />
-        <CloverIcon
-          color={home.greenSoft}
-          size={330}
-          stem
-          style={{ opacity: 0.28, transform: 'rotate(10deg)' }}
+        <img
+          className='clover-big'
+          src='/home/clover/background-clover-left.png'
+          alt=''
         />
       </div>
 
@@ -120,11 +120,21 @@ const Wrapper = styled.section`
   .intro-clovers {
     position: absolute;
     top: 40px;
-    right: -40px;
+    right: 40px;
     display: flex;
     align-items: flex-start;
     gap: 12px;
     pointer-events: none;
+
+    .clover-small {
+      width: 125px;
+      margin-top: 12px;
+    }
+
+    .clover-big {
+      width: 382px;
+      margin-top: 48px;
+    }
   }
 
   .intro-copy {

@@ -1,9 +1,8 @@
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { customedTheme } from '@/styles/theme';
-import CloverIcon from '@/components/CloverIcon';
 
-const { home, font } = customedTheme;
+const { home } = customedTheme;
 
 const GALLERY_IMAGES = [1, 2, 3, 4, 5].map(
   (n) => `/home/gallery/gallery-${n}.jpeg`,
@@ -26,14 +25,11 @@ const GallerySection = () => {
                 alt=''
                 loading='lazy'
               />
-              <span className='contact-badge'>
-                <CloverIcon
-                  color={home.greenSoft}
-                  size={96}
-                  stem
-                />
-                <span className='contact-label font-display'>CONTACT</span>
-              </span>
+              <img
+                className='contact-badge'
+                src='/home/clover/contact-clover.png'
+                alt='CONTACT'
+              />
             </Link>
           ) : (
             <div
@@ -83,21 +79,15 @@ const Wrapper = styled.section`
     border-radius: 50% / 42%;
   }
 
-  .contact-badge {
+  /* .gallery-item img 규칙(100%/500px/cover/라운드)을 배지에는 무효화 */
+  .gallery-contact img.contact-badge {
     position: absolute;
     right: -34px;
     bottom: 28px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .contact-label {
-    margin-top: -22px;
-    color: #ffffff;
-    font-size: 17px;
-    letter-spacing: 0.08em;
-    font-family: ${font.display};
+    width: 160px;
+    height: auto;
+    object-fit: contain;
+    border-radius: 0;
   }
 
   @media (max-width: 1024px) {
