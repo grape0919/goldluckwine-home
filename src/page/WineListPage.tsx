@@ -1,11 +1,24 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Flex } from 'antd';
 import styled from 'styled-components';
 import { customedTheme } from '@/styles/theme';
-import { wines } from '@/dummy/wines';
+import { fetchWines } from '@/api/wines';
+import type { WineInfoType } from '@/types/wine';
 import WineList from '@/components/WineList';
 
 const WineListPage: React.FC = () => {
+  const [wines, setWines] = useState<WineInfoType[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchWines().then((list) => {
+      if (!cancelled) setWines(list);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <Wrapper
       vertical

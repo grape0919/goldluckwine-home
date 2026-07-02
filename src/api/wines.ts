@@ -63,6 +63,42 @@ export async function fetchFeaturedWines(): Promise<WineInfoType[]> {
   return (data as WineRow[]).map(toWineInfo);
 }
 
+export async function fetchWineById(
+  id: number,
+): Promise<WineInfoType | null> {
+  if (!isSupabaseConfigured) {
+    return dummyWines.find((w) => w.wineId === id) ?? null;
+  }
+  const { data, error } = await supabase
+    .from('wines')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) {
+    console.error('[fetchWineById]', error.message);
+    return dummyWines.find((w) => w.wineId === id) ?? null;
+  }
+  return data ? toWineInfo(data as WineRow) : null;
+}
+
+export async function fetchWineryById(
+  id: number,
+): Promise<WineryInfoType | null> {
+  if (!isSupabaseConfigured) {
+    return dummyWineries.find((w) => w.id === id) ?? null;
+  }
+  const { data, error } = await supabase
+    .from('wineries')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) {
+    console.error('[fetchWineryById]', error.message);
+    return dummyWineries.find((w) => w.id === id) ?? null;
+  }
+  return data ? toWineryInfo(data as WineryRow) : null;
+}
+
 export async function fetchWineries(): Promise<WineryInfoType[]> {
   if (!isSupabaseConfigured) return dummyWineries;
   const { data, error } = await supabase
