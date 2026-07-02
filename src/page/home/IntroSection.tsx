@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
-import { customedTheme } from '@/styles/theme';
+import { customedTheme, failImage } from '@/styles/theme';
 import CloverIcon from '@/components/CloverIcon';
 import type { WineInfoType } from '@/types/wine';
 
@@ -74,9 +74,15 @@ const IntroSection = ({ featuredWines, wineryNameById }: IntroSectionProps) => {
           >
             <div className='card-image'>
               <img
-                src={wine.wineImagePath}
+                src={wine.wineImagePath || failImage}
                 alt={`${wine.wineNameEN} ${wine.wineNameKR}`}
                 loading='lazy'
+                onError={(e) => {
+                  // 무한 onError 루프 방지: 디폴트 이미지로는 한 번만 교체
+                  if (e.currentTarget.src !== failImage) {
+                    e.currentTarget.src = failImage;
+                  }
+                }}
               />
             </div>
             <div className='card-caption'>
