@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 import { customedTheme } from '@/styles/theme';
 
-const { font } = customedTheme;
+const { font, home } = customedTheme;
 
 /** 풀블리드 히어로: 와인병 사진 + 로고 워터마크 + 영문 태그라인 */
 const HeroSection = () => {
@@ -41,12 +41,12 @@ const Wrapper = styled.section`
     top: 0;
     bottom: 0;
     width: 1px;
-    background: rgba(255, 255, 255, 0.75);
+    background: ${home.dark};
   }
 
   .hero-symbol {
     justify-self: center;
-    width: 230px;
+    width: 236px;
     max-width: 40%;
   }
 
@@ -55,9 +55,9 @@ const Wrapper = styled.section`
     margin: 0;
     color: #ffffff;
     font-family: ${font.display};
-    font-size: 21px;
+    font-size: 20px;
     line-height: 34px;
-    letter-spacing: 0.02em;
+    letter-spacing: 0;
     text-align: center;
     text-transform: uppercase;
   }
