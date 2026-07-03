@@ -150,9 +150,11 @@ const Wrapper = styled.div`
   overflow: hidden;
   padding-bottom: 200px;
 
-  /* 배경 포도 도트 데코 — 정보 패널(흰 90%) 아래로 은은히 비친다 */
+  /* 배경 포도 도트 데코 — 정보 패널(흰 90%) 아래로 은은히 비친다.
+   * 우상단 도트는 헤더의 20% 솔리드 포도 데코와 의도적으로 겹치는 레이어링(Figma background). */
   .dots {
     position: absolute;
+    opacity: 0.8;
     background-size: contain;
     background-repeat: no-repeat;
     pointer-events: none;
