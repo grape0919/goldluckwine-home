@@ -1,10 +1,13 @@
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
-import { customedTheme, failImage } from '@/styles/theme';
+import { customedTheme } from '@/styles/theme';
 import CloverIcon from '@/components/CloverIcon';
 import type { WineInfoType } from '@/types/wine';
 
 const { home, font, color } = customedTheme;
+
+/** 이미지 로딩 실패 시 대체 이미지 (와인 상세 페이지와 동일) */
+const DEFAULT_WINE_IMAGE = '/wines/default.png';
 
 interface WineCardProps {
   wine: WineInfoType;
@@ -17,13 +20,13 @@ const WineCard = ({ wine, wineryName }: WineCardProps) => (
   <CardLink to={`/wines/${wine.wineId}`}>
     <div className='card-image'>
       <img
-        src={wine.wineImagePath || failImage}
+        src={wine.wineImagePath || DEFAULT_WINE_IMAGE}
         alt={`${wine.wineNameEN} ${wine.wineNameKR}`}
         loading='lazy'
         onError={(e) => {
           // 무한 onError 루프 방지: 디폴트 이미지로는 한 번만 교체
-          if (e.currentTarget.src !== failImage) {
-            e.currentTarget.src = failImage;
+          if (!e.currentTarget.src.endsWith(DEFAULT_WINE_IMAGE)) {
+            e.currentTarget.src = DEFAULT_WINE_IMAGE;
           }
         }}
       />
