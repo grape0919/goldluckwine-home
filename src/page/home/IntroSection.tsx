@@ -1,10 +1,9 @@
 import styled from 'styled-components';
-import { Link } from 'react-router-dom';
-import { customedTheme, failImage } from '@/styles/theme';
-import CloverIcon from '@/components/CloverIcon';
+import { customedTheme } from '@/styles/theme';
+import WineCard from '@/components/WineCard';
 import type { WineInfoType } from '@/types/wine';
 
-const { home, font, color } = customedTheme;
+const { home, font } = customedTheme;
 
 const STRIP_IMAGES = [1, 2, 3, 4, 5, 6].map(
   (n) => `/home/strip/strip-0${n}.png`,
@@ -67,44 +66,11 @@ const IntroSection = ({ featuredWines, wineryNameById }: IntroSectionProps) => {
 
       <div className='collection-grid'>
         {featuredWines.slice(0, 3).map((wine) => (
-          <Link
+          <WineCard
             key={wine.wineId}
-            to={`/wines/${wine.wineId}`}
-            className='collection-card'
-          >
-            <div className='card-image'>
-              <img
-                src={wine.wineImagePath || failImage}
-                alt={`${wine.wineNameEN} ${wine.wineNameKR}`}
-                loading='lazy'
-                onError={(e) => {
-                  // 무한 onError 루프 방지: 디폴트 이미지로는 한 번만 교체
-                  if (e.currentTarget.src !== failImage) {
-                    e.currentTarget.src = failImage;
-                  }
-                }}
-              />
-            </div>
-            <div className='card-caption'>
-              <div className='card-names'>
-                <span>{wine.wineNameEN}</span>
-                <span>{wine.wineNameKR}</span>
-              </div>
-              <div className='card-meta'>
-                <span>{wineryNameById[wine.wineryId] ?? ''}</span>
-                <span className='card-type'>
-                  <CloverIcon
-                    color={
-                      color.wine[wine.wineType as keyof typeof color.wine] ??
-                      home.greenSoft
-                    }
-                    size={15}
-                  />
-                  {wine.wineType}
-                </span>
-              </div>
-            </div>
-          </Link>
+            wine={wine}
+            wineryName={wineryNameById[wine.wineryId]}
+          />
         ))}
       </div>
     </Wrapper>
@@ -189,73 +155,10 @@ const Wrapper = styled.section`
     margin-top: 56px;
     border-top: 1px solid ${home.dark};
     border-bottom: 1px solid ${home.dark};
-  }
 
-  .collection-card {
-    display: flex;
-    flex-direction: column;
-    text-decoration: none;
-
-    & + .collection-card {
+    > * + * {
       border-left: 1px solid ${home.dark};
     }
-  }
-
-  .card-image {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 520px;
-    padding: 44px 0;
-    box-sizing: border-box;
-
-    img {
-      max-height: 100%;
-      max-width: 60%;
-      object-fit: contain;
-      transition: transform 0.3s;
-    }
-  }
-
-  .collection-card:hover .card-image img {
-    transform: scale(1.03);
-  }
-
-  .card-caption {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    padding: 18px 24px 22px;
-    background: #ffffff;
-    border-top: 1px solid ${home.dark};
-    font-family: ${font.en};
-    font-size: 16px;
-  }
-
-  .card-names {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    color: ${home.brown};
-
-    span:last-child {
-      font-family: ${font.kr};
-      font-size: 15px;
-    }
-  }
-
-  .card-meta {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 6px;
-    color: ${home.gray};
-  }
-
-  .card-type {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
   }
 
   @media (max-width: 1024px) {
@@ -274,9 +177,6 @@ const Wrapper = styled.section`
       }
     }
 
-    .card-image {
-      height: 380px;
-    }
   }
 
   @media (max-width: 768px) {
@@ -313,11 +213,11 @@ const Wrapper = styled.section`
 
     .collection-grid {
       grid-template-columns: 1fr;
-    }
 
-    .collection-card + .collection-card {
-      border-left: none;
-      border-top: 1px solid ${home.dark};
+      > * + * {
+        border-left: none;
+        border-top: 1px solid ${home.dark};
+      }
     }
   }
 `;
