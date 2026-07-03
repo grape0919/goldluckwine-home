@@ -42,15 +42,6 @@ const WineIntroPage: React.FC = () => {
 
   return (
     <Wrapper>
-      <div
-        className='dots dots-right'
-        aria-hidden
-      />
-      <div
-        className='dots dots-left'
-        aria-hidden
-      />
-
       <header className='detail-header'>
         <img
           className='grape-deco'
@@ -149,32 +140,6 @@ const Wrapper = styled.div`
   background: ${home.cream};
   overflow: hidden;
   padding-bottom: 200px;
-
-  /* 배경 포도 도트 데코 — 정보 패널(흰 90%) 아래로 은은히 비친다.
-   * 우상단 도트는 헤더의 20% 솔리드 포도 데코와 의도적으로 겹치는 레이어링(Figma background). */
-  .dots {
-    position: absolute;
-    opacity: 0.8;
-    background-size: contain;
-    background-repeat: no-repeat;
-    pointer-events: none;
-  }
-
-  .dots-right {
-    top: 28px;
-    right: -26px;
-    width: 593px;
-    height: 478px;
-    background-image: url('/home/winedetail/grape-dots-right.svg');
-  }
-
-  .dots-left {
-    top: 215px;
-    left: -71px;
-    width: 673px;
-    height: 605px;
-    background-image: url('/home/winedetail/grape-dots-left.svg');
-  }
 
   .detail-header {
     position: relative;
@@ -383,12 +348,6 @@ const Wrapper = styled.div`
       top: 24px;
       right: 0;
       width: min(360px, 40vw);
-    }
-
-    .dots-left,
-    .dots-right {
-      width: min(480px, 55vw);
-      background-position: top right;
     }
 
     .info-body {
