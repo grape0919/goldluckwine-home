@@ -6,6 +6,7 @@ import { fetchWineries, fetchWines } from '@/api/wines';
 import type { WineInfoType } from '@/types/wine';
 import type { WineryInfoType } from '@/types/winery';
 import { WineTypes } from '@/enum/wine';
+import { distinctVarieties, normalizeVariety } from '@/utils/variety';
 import WineCard from '@/components/WineCard';
 
 const { home, font } = customedTheme;
@@ -49,21 +50,18 @@ const WineListPage: React.FC = () => {
     return map;
   }, [wineries]);
 
-  const grapeOptions = useMemo(() => {
-    const set = new Set<string>();
-    wines.forEach((wine) =>
-      wine.wineVariety.forEach((v) => {
-        const name = v.trim();
-        if (name) set.add(name);
-      }),
-    );
-    return [...set].sort((a, b) => a.localeCompare(b));
-  }, [wines]);
+  // 대소문자·공백 표기 차이('Chenin Blanc' vs 'chenin blanc')는 같은 품종으로 취급
+  const grapeOptions = useMemo(
+    () => distinctVarieties(wines.map((wine) => wine.wineVariety)),
+    [wines],
+  );
 
+  const grapeKey = normalizeVariety(grapeFilter);
   const filtered = wines.filter(
     (wine) =>
       (!typeFilter || wine.wineType === typeFilter) &&
-      (!grapeFilter || wine.wineVariety.some((v) => v.trim() === grapeFilter)) &&
+      (!grapeFilter ||
+        wine.wineVariety.some((v) => normalizeVariety(v) === grapeKey)) &&
       (!makerFilter || wine.wineryId === Number(makerFilter)),
   );
 

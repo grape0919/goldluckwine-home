@@ -15,6 +15,7 @@ import {
 } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { WineTypes } from '@/enum/wine';
+import { distinctVarieties } from '@/utils/variety';
 import type { WineRow, WineryRow } from '@/lib/supabase';
 import {
   createWine,
@@ -75,6 +76,9 @@ const WineAdmin = ({ refreshKey }: { refreshKey?: number }) => {
 
   const wineryName = (id: number) =>
     wineries.find((w) => w.id === id)?.domaine ?? `#${id}`;
+
+  // 기존 와인들의 품종을 제안해 표기('Chenin Blanc' vs 'chenin blanc')가 갈라지지 않게 한다
+  const varietyOptions = distinctVarieties(rows.map((r) => r.variety ?? []));
 
   const openCreate = () => {
     setEditing(null);
@@ -287,12 +291,13 @@ const WineAdmin = ({ refreshKey }: { refreshKey?: number }) => {
           </Form.Item>
           <Form.Item
             name='variety'
-            label='품종 (입력 후 Enter)'
+            label='품종 (기존 품종 선택 또는 새로 입력 후 Enter)'
           >
             <Select
               mode='tags'
               placeholder='Chenin Blanc'
-              open={false}
+              options={varietyOptions.map((v) => ({ value: v, label: v }))}
+              tokenSeparators={[',']}
             />
           </Form.Item>
           <Form.Item
