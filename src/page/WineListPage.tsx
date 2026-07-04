@@ -240,7 +240,8 @@ const Wrapper = styled.div`
     position: absolute;
     top: 39px;
     right: 27px;
-    width: 378px;
+    /* Figma Union 446.6px — 와인 상세 페이지와 동일 크기·위치 */
+    width: 447px;
     pointer-events: none;
   }
 
@@ -368,7 +369,7 @@ const Wrapper = styled.div`
     .grape-deco {
       top: 24px;
       right: 0;
-      width: min(320px, 36vw);
+      width: min(360px, 40vw);
     }
 
     .list-filters {

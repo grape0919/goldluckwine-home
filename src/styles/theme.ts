@@ -72,6 +72,9 @@ export const customedTheme = {
     // 와인 리스트(Figma 3557:345) 타이틀·호버 퍼플
     purple: '#966ab2',
     purpleTint: 'rgba(152, 109, 181, 0.3)',
+    // 와이너리(Figma 3525:13763) 타이틀·호버 블루
+    blue: '#4ea5cf',
+    blueTint: '#e1ebeb',
   },
   font: {
     // 대형 디스플레이 헤딩 (Loubag 대체) — GOLD LUCK WINE, OUR COLLECTION 등
