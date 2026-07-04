@@ -84,6 +84,17 @@ const Wrapper = styled.div`
   min-height: 100vh;
   background: ${home.cream};
 
+  /* 공개 페이지 텍스트 무단 복사 방지 — 관리자(/admin)는 별도 라우트라 영향 없음 */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+
+  input,
+  textarea {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
   .gnb {
     position: sticky;
     top: 0;
