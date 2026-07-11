@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import WineAdmin from '@/page/admin/WineAdmin';
 import WineryAdmin from '@/page/admin/WineryAdmin';
+import Seo from '@/components/Seo';
 
 const { Title } = Typography;
 
@@ -42,6 +43,10 @@ const AdminPage = () => {
   if (!isSupabaseConfigured) {
     return (
       <Wrapper>
+        <Seo
+          title='관리자'
+          noindex
+        />
         <Alert
           type='warning'
           showIcon
@@ -66,6 +71,10 @@ const AdminPage = () => {
   if (!session) {
     return (
       <Wrapper>
+        <Seo
+          title='관리자'
+          noindex
+        />
         <Card className='login-card'>
           <Title
             level={4}
@@ -107,6 +116,10 @@ const AdminPage = () => {
 
   return (
     <Wrapper>
+      <Seo
+        title='관리자'
+        noindex
+      />
       <div className='admin-header'>
         <Title
           level={3}

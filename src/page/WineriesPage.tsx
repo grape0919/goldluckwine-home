@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { customedTheme } from '@/styles/theme';
 import { fetchWineries } from '@/api/wines';
 import type { WineryInfoType } from '@/types/winery';
+import Seo from '@/components/Seo';
 
 const { home, font } = customedTheme;
 
@@ -27,6 +28,11 @@ const WineriesPage: React.FC = () => {
 
   return (
     <Wrapper>
+      <Seo
+        title='OUR WINERIES 와이너리'
+        description='골드럭와인이 함께하는 와이너리와 도멘, 와인메이커들을 소개합니다.'
+        path='/wineries'
+      />
       <header className='list-header'>
         <img
           className='glasses-deco'

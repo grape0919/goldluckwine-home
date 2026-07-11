@@ -7,6 +7,7 @@ import LoireSection from '@/page/home/LoireSection';
 import GallerySection from '@/page/home/GallerySection';
 import { fetchFeaturedWines, fetchWineries } from '@/api/wines';
 import type { WineInfoType } from '@/types/wine';
+import Seo from '@/components/Seo';
 
 function HomePage() {
   const [featuredWines, setFeaturedWines] = useState<WineInfoType[]>([]);
@@ -32,6 +33,7 @@ function HomePage() {
 
   return (
     <Wrapper>
+      <Seo path='/' />
       <HeroSection />
       <IntroSection
         featuredWines={featuredWines}

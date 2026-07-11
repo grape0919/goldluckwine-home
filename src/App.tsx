@@ -8,10 +8,10 @@ import HomePage from '@/page/HomePage';
 import PageLayout from '@/components/layout/PageLayout';
 import TestPage from '@/page/TestPage';
 import ContactFooter from '@/page/ContactFooter';
-import FeaturedWines from '@/page/FeaturedWines';
 import WineListPage from '@/page/WineListPage';
 import WineryIntroPage from '@/page/WIneryIntroPage';
 import AdminPage from '@/page/admin/AdminPage';
+import NotFoundPage from '@/page/NotFoundPage';
 
 function App() {
   return (
@@ -78,20 +78,10 @@ function App() {
             />
             <Route
               path='*'
-              element={<>Not Found Page</>}
+              element={<NotFoundPage />}
             />
           </Routes>
         </BrowserRouter>
-        <h1
-          style={{
-            color: '#00000000',
-            position: 'absolute',
-            top: '0px',
-            zIndex: -1,
-          }}
-        >
-          골드럭와인 Gold Luck Wine 와인수입사
-        </h1>
       </AntdApp>
     </ConfigProvider>
   );

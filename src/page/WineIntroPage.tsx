@@ -7,6 +7,7 @@ import type { WineInfoType } from '@/types/wine';
 import type { WineryInfoType } from '@/types/winery';
 import { customedTheme } from '@/styles/theme';
 import CloverIcon from '@/components/CloverIcon';
+import Seo from '@/components/Seo';
 
 const { home, font, color } = customedTheme;
 
@@ -42,6 +43,14 @@ const WineIntroPage: React.FC = () => {
 
   return (
     <Wrapper>
+      <Seo
+        title={
+          wine ? `${wine.wineNameEN} ${wine.wineNameKR}`.trim() : undefined
+        }
+        description={wine?.wineDescription?.slice(0, 160)}
+        path={`/wines/${wineId}`}
+        image={wine?.wineImagePath || undefined}
+      />
       <header className='detail-header'>
         <img
           className='grape-deco'
@@ -60,12 +69,7 @@ const WineIntroPage: React.FC = () => {
           {wine && (
             <img
               src={wine.wineImagePath || DEFAULT_WINE_IMAGE}
-              alt={
-                '골드럭와인 Gold Luck Wine 와인수입사 : ' +
-                wine.wineNameKR +
-                ', ' +
-                wine.wineNameEN
-              }
+              alt={`${wine.wineNameEN} ${wine.wineNameKR} 와인 보틀`}
               onError={(e) => {
                 // 무한 onError 루프 방지: 디폴트 이미지로는 한 번만 교체
                 if (!e.currentTarget.src.endsWith(DEFAULT_WINE_IMAGE)) {

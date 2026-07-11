@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { FaInstagram, FaRegEnvelope } from 'react-icons/fa6';
 import { customedTheme } from '@/styles/theme';
+import Seo from '@/components/Seo';
 
 const { home, font } = customedTheme;
 
@@ -9,6 +10,11 @@ const { home, font } = customedTheme;
  *  이메일·브랜드·인스타그램 한 줄, 하단 파스텔 일러스트가 푸터에 밀착 */
 const ContactFooter: React.FC = () => (
   <Wrapper>
+    <Seo
+      title='CONTACT US 문의'
+      description='골드럭와인 문의 — 이메일 goldluckwine@gmail.com, 인스타그램 @goldluckwine'
+      path='/contact'
+    />
     <header className='contact-header'>
       <h1 aria-label='CONTACT US'>
         <span
