@@ -14,13 +14,13 @@ const HeroSection = () => {
         alt=''
         aria-hidden
       />
-      <p className='hero-tagline'>
+      <h1 className='hero-tagline'>
         Goldluck Wine is a natural wine
         <br />
-        importer that introduces the wines
+        importer introducing wines from
         <br />
-        of small farmers, such as the jewels of France.
-      </p>
+        small growers — the hidden jewels of France.
+      </h1>
     </Wrapper>
   );
 };
@@ -33,7 +33,7 @@ const Wrapper = styled.section`
   min-height: 640px;
   height: calc(100vh - 80px);
   max-height: 900px;
-  background: url('/home/hero/hero-bg-1.jpeg') center / cover no-repeat;
+  background: url('/home/hero/hero-bg-1.webp') center / cover no-repeat;
 
   .hero-divider {
     position: absolute;
@@ -55,6 +55,7 @@ const Wrapper = styled.section`
     margin: 0;
     color: #ffffff;
     font-family: ${font.display};
+    font-weight: 400;
     font-size: 20px;
     line-height: 34px;
     letter-spacing: 0;

@@ -6,6 +6,7 @@ import type { WineInfoType } from '@/types/wine';
 import type { WineryInfoType } from '@/types/winery';
 import { customedTheme } from '@/styles/theme';
 import WineCard from '@/components/WineCard';
+import Seo from '@/components/Seo';
 
 const { home, font } = customedTheme;
 
@@ -23,8 +24,8 @@ const WineryIntroPage: React.FC = () => {
     fetchWineryById(Number(wineryId)).then((found) => {
       if (cancelled) return;
       if (!found) {
-        // 존재하지 않는 도멘 id — 이전 페이지로 복귀
-        navigate(-1);
+        // 존재하지 않는 도멘 id — 404 페이지로 (외부 유입 링크도 자연스럽게 처리)
+        navigate('/not-found', { replace: true });
         return;
       }
       setWinery(found);
@@ -41,6 +42,14 @@ const WineryIntroPage: React.FC = () => {
 
   return (
     <Wrapper>
+      <Seo
+        title={
+          winery ? `${winery.domaine} ${winery.domaineKR}`.trim() : undefined
+        }
+        description={winery?.description?.slice(0, 160)}
+        path={`/wineries/${wineryId}`}
+        image={winery?.imagePath || undefined}
+      />
       <header className='list-header'>
         <img
           className='glasses-deco'
@@ -67,9 +76,7 @@ const WineryIntroPage: React.FC = () => {
               <img
                 className='band-photo'
                 src={winery.imagePath}
-                alt={
-                  '골드럭와인 Gold Luck Wine 와인수입사 : ' + winery.domaine
-                }
+                alt={`${winery.domaine} ${winery.domaineKR} 와이너리`}
                 onError={(e) => {
                   // 사진이 없으면 밴드는 텍스트만으로 유지
                   e.currentTarget.style.display = 'none';

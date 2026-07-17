@@ -8,6 +8,7 @@ import type { WineryInfoType } from '@/types/winery';
 import { WineTypes } from '@/enum/wine';
 import { distinctVarieties, normalizeVariety } from '@/utils/variety';
 import WineCard from '@/components/WineCard';
+import Seo from '@/components/Seo';
 
 const { home, font } = customedTheme;
 
@@ -80,6 +81,11 @@ const WineListPage: React.FC = () => {
 
   return (
     <Wrapper>
+      <Seo
+        title='WINE LIST 와인 리스트'
+        description='골드럭와인이 수입하는 내추럴 와인 리스트 — 와인 타입, 포도 품종, 와인메이커별로 살펴보세요.'
+        path='/winelist'
+      />
       <header className='list-header'>
         <img
           className='grape-deco'

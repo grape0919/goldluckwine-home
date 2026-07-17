@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { App as AntdApp, ConfigProvider } from 'antd';
 import { customedTheme } from '@/styles/theme';
@@ -6,12 +7,14 @@ import ImporterIntroPage from '@/page/ImporterIntroPage';
 import WineIntroPage from '@/page/WineIntroPage';
 import HomePage from '@/page/HomePage';
 import PageLayout from '@/components/layout/PageLayout';
-import TestPage from '@/page/TestPage';
 import ContactFooter from '@/page/ContactFooter';
-import FeaturedWines from '@/page/FeaturedWines';
 import WineListPage from '@/page/WineListPage';
 import WineryIntroPage from '@/page/WIneryIntroPage';
-import AdminPage from '@/page/admin/AdminPage';
+import NotFoundPage from '@/page/NotFoundPage';
+import ErrorBoundary from '@/components/ErrorBoundary';
+
+// 관리자 화면은 방문자 번들에서 분리 (antd Form/Table 등 큰 의존성 포함)
+const AdminPage = lazy(() => import('@/page/admin/AdminPage'));
 
 function App() {
   return (
@@ -36,62 +39,54 @@ function App() {
       }}
     >
       <AntdApp message={{ maxCount: 1 }}>
-        <BrowserRouter>
-          <Routes>
-            <Route element={<PageLayout />}>
+        <ErrorBoundary>
+          <BrowserRouter>
+            <Routes>
+              <Route element={<PageLayout />}>
+                <Route
+                  path='/'
+                  element={<HomePage />}
+                />
+                <Route
+                  path='/importer'
+                  element={<ImporterIntroPage />}
+                />
+                <Route
+                  path='/winelist'
+                  element={<WineListPage />}
+                />
+                <Route
+                  path='/wineries'
+                  element={<WineriesPage />}
+                />
+                <Route
+                  path='/wineries/:wineryId'
+                  element={<WineryIntroPage />}
+                />
+                <Route
+                  path='/wines/:wineId'
+                  element={<WineIntroPage />}
+                ></Route>
+                <Route
+                  path='/contact'
+                  element={<ContactFooter />}
+                />
+              </Route>
               <Route
-                path='/'
-                element={<HomePage />}
+                path='/admin'
+                element={
+                  <Suspense fallback={null}>
+                    <AdminPage />
+                  </Suspense>
+                }
               />
               <Route
-                path='/importer'
-                element={<ImporterIntroPage />}
+                path='*'
+                element={<NotFoundPage />}
               />
-              <Route
-                path='/winelist'
-                element={<WineListPage />}
-              />
-              <Route
-                path='/wineries'
-                element={<WineriesPage />}
-              />
-              <Route
-                path='/wineries/:wineryId'
-                element={<WineryIntroPage />}
-              />
-              <Route
-                path='/wines/:wineId'
-                element={<WineIntroPage />}
-              ></Route>
-              <Route
-                path='/contact'
-                element={<ContactFooter />}
-              />
-              <Route
-                path='/test'
-                element={<TestPage />}
-              />
-            </Route>
-            <Route
-              path='/admin'
-              element={<AdminPage />}
-            />
-            <Route
-              path='*'
-              element={<>Not Found Page</>}
-            />
-          </Routes>
-        </BrowserRouter>
-        <h1
-          style={{
-            color: '#00000000',
-            position: 'absolute',
-            top: '0px',
-            zIndex: -1,
-          }}
-        >
-          골드럭와인 Gold Luck Wine 와인수입사
-        </h1>
+            </Routes>
+          </BrowserRouter>
+        </ErrorBoundary>
       </AntdApp>
     </ConfigProvider>
   );

@@ -24,7 +24,6 @@ const SiteFooter = () => {
       <nav className='footer-columns'>
         <div className='footer-column'>
           <span className='footer-heading'>EXPLORE</span>
-          <Link to='/importer'>about</Link>
           <Link to='/wineries'>wineries</Link>
           <Link to='/winelist'>wine list</Link>
         </div>
