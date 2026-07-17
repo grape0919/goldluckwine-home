@@ -24,8 +24,8 @@ const WineryIntroPage: React.FC = () => {
     fetchWineryById(Number(wineryId)).then((found) => {
       if (cancelled) return;
       if (!found) {
-        // 존재하지 않는 도멘 id — 이전 페이지로 복귀
-        navigate(-1);
+        // 존재하지 않는 도멘 id — 404 페이지로 (외부 유입 링크도 자연스럽게 처리)
+        navigate('/not-found', { replace: true });
         return;
       }
       setWinery(found);

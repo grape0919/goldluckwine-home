@@ -92,7 +92,7 @@ const Wrapper = styled.section`
 
   .loire-photo {
     min-height: 820px;
-    background: url('/home/loire/loire-bottle.jpeg') center / cover no-repeat;
+    background: url('/home/loire/loire-bottle.webp') center / cover no-repeat;
   }
 
   @media (max-width: 1024px) {

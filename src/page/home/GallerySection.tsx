@@ -5,7 +5,7 @@ import { customedTheme } from '@/styles/theme';
 const { home } = customedTheme;
 
 const GALLERY_IMAGES = [1, 2, 3, 4, 5].map(
-  (n) => `/home/gallery/gallery-${n}.jpeg`,
+  (n) => `/home/gallery/gallery-${n}.webp`,
 );
 
 /** 다크 갤러리 스트립 + 타원 마스크 CONTACT 링크 */

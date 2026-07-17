@@ -6,7 +6,7 @@ import type { WineInfoType } from '@/types/wine';
 const { home, font } = customedTheme;
 
 const STRIP_IMAGES = [1, 2, 3, 4, 5, 6].map(
-  (n) => `/home/strip/strip-0${n}.png`,
+  (n) => `/home/strip/strip-0${n}.webp`,
 );
 
 interface IntroSectionProps {
