@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import React from 'react';
+import { Head } from 'vite-react-ssg';
 
 const BASE_URL = 'https://goldluckwine.com';
 const SITE_NAME = '골드럭와인 Gold Luck Wine';
@@ -6,22 +7,6 @@ const DEFAULT_TITLE = `${SITE_NAME} | 와인수입사`;
 const DEFAULT_DESCRIPTION =
   '골드럭 와인은 슈냉 블랑 중심의 깨끗하고 우아한 내추럴 와인을 양조하는 와인메이커들과 함께 소개합니다.';
 const DEFAULT_IMAGE = `${BASE_URL}/og-image.jpg`;
-
-const upsertMeta = (
-  attr: 'name' | 'property',
-  key: string,
-  content: string,
-) => {
-  let el = document.head.querySelector<HTMLMetaElement>(
-    `meta[${attr}="${key}"]`,
-  );
-  if (!el) {
-    el = document.createElement('meta');
-    el.setAttribute(attr, key);
-    document.head.appendChild(el);
-  }
-  el.setAttribute('content', content);
-};
 
 interface SeoProps {
   /** 페이지 제목 — "{title} | 골드럭와인 Gold Luck Wine"로 조합. 생략 시 기본 타이틀 */
@@ -34,7 +19,8 @@ interface SeoProps {
   noindex?: boolean;
 }
 
-/** 라우트별 title/description/canonical/OG 메타 갱신 (SPA용 경량 헬멧) */
+/** 라우트별 title/description/canonical/OG 메타.
+ *  vite-react-ssg의 Head를 사용해 SSR(프리렌더) 시점에 HTML <head>에 박힌다. */
 const Seo: React.FC<SeoProps> = ({
   title,
   description,
@@ -42,46 +28,67 @@ const Seo: React.FC<SeoProps> = ({
   image,
   noindex,
 }) => {
-  useEffect(() => {
-    const fullTitle = title ? `${title} | ${SITE_NAME}` : DEFAULT_TITLE;
-    const desc = description || DEFAULT_DESCRIPTION;
-    const url = `${BASE_URL}${path ?? window.location.pathname}`;
-    const img = !image
-      ? DEFAULT_IMAGE
-      : image.startsWith('http')
-        ? image
-        : `${BASE_URL}${image}`;
+  const fullTitle = title ? `${title} | ${SITE_NAME}` : DEFAULT_TITLE;
+  const desc = description || DEFAULT_DESCRIPTION;
+  const pathname =
+    path ??
+    (typeof window !== 'undefined' ? window.location.pathname : '/');
+  const url = `${BASE_URL}${pathname}`;
+  const rawImg = !image
+    ? DEFAULT_IMAGE
+    : image.startsWith('http')
+      ? image
+      : `${BASE_URL}${image}`;
+  // 이미지 경로에 공백/한글이 있어도 크롤러가 읽도록 URL 인코딩 (구조문자는 보존)
+  const img = encodeURI(rawImg);
 
-    document.title = fullTitle;
-    upsertMeta('name', 'description', desc);
-    upsertMeta('property', 'og:title', fullTitle);
-    upsertMeta('property', 'og:description', desc);
-    upsertMeta('property', 'og:url', url);
-    upsertMeta('property', 'og:image', img);
-    upsertMeta('name', 'twitter:title', fullTitle);
-    upsertMeta('name', 'twitter:description', desc);
-    upsertMeta('name', 'twitter:image', img);
-
-    let canonical = document.head.querySelector<HTMLLinkElement>(
-      'link[rel="canonical"]',
-    );
-    if (!canonical) {
-      canonical = document.createElement('link');
-      canonical.rel = 'canonical';
-      document.head.appendChild(canonical);
-    }
-    canonical.href = url;
-
-    const robots =
-      document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
-    if (noindex) {
-      upsertMeta('name', 'robots', 'noindex, nofollow');
-    } else if (robots) {
-      robots.remove();
-    }
-  }, [title, description, path, image, noindex]);
-
-  return null;
+  return (
+    <Head>
+      <title>{fullTitle}</title>
+      <meta
+        name='description'
+        content={desc}
+      />
+      <link
+        rel='canonical'
+        href={url}
+      />
+      <meta
+        property='og:title'
+        content={fullTitle}
+      />
+      <meta
+        property='og:description'
+        content={desc}
+      />
+      <meta
+        property='og:url'
+        content={url}
+      />
+      <meta
+        property='og:image'
+        content={img}
+      />
+      <meta
+        name='twitter:title'
+        content={fullTitle}
+      />
+      <meta
+        name='twitter:description'
+        content={desc}
+      />
+      <meta
+        name='twitter:image'
+        content={img}
+      />
+      {noindex && (
+        <meta
+          name='robots'
+          content='noindex, nofollow'
+        />
+      )}
+    </Head>
+  );
 };
 
 export default Seo;

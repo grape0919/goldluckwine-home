@@ -1,5 +1,6 @@
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import React, { useEffect, useState } from 'react';
+import { Link, redirect, useLoaderData, useParams } from 'react-router-dom';
+import type { LoaderFunctionArgs } from 'react-router-dom';
+import React from 'react';
 import styled from 'styled-components';
 
 import { fetchWineById, fetchWineryById } from '@/api/wines';
@@ -14,42 +15,34 @@ const { home, font, color } = customedTheme;
 /** 이미지 로딩 실패 시 대체 이미지 (와인 카드와 동일) */
 const DEFAULT_WINE_IMAGE = '/wines/default.png';
 
+interface WineLoaderData {
+  wine: WineInfoType;
+  winery: WineryInfoType | null;
+}
+
+/** 빌드(SSG)·클라이언트 네비게이션 시점에 와인 데이터를 미리 로드 →
+ *  프리렌더 HTML에 본문·메타가 박힌다. */
+export async function wineLoader({ params }: LoaderFunctionArgs) {
+  const wine = await fetchWineById(Number(params.wineId));
+  // 존재하지 않는 id (클라이언트에서 직접 접근) — 404 로 (SSG 빌드 중엔 발생 안 함)
+  if (!wine) throw redirect('/not-found');
+  const winery = await fetchWineryById(wine.wineryId);
+  return { wine, winery };
+}
+
 /** 와인 상세 (Figma 3557:5871) — 리스트와 같은 스플릿 타이틀 헤더 +
  *  풀블리드 프로덕트 로우(좌 보틀 / 우 반투명 정보 패널 + 스펙 테이블) */
 const WineIntroPage: React.FC = () => {
   const { wineId } = useParams<{ wineId: string }>();
-  const navigate = useNavigate();
-  const [wine, setWine] = useState<WineInfoType | null>(null);
-  const [winery, setWinery] = useState<WineryInfoType | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchWineById(Number(wineId)).then((found) => {
-      if (cancelled) return;
-      if (!found) {
-        // 존재하지 않는 와인 id — 404 페이지로 (외부 유입 링크도 자연스럽게 처리)
-        navigate('/not-found', { replace: true });
-        return;
-      }
-      setWine(found);
-      fetchWineryById(found.wineryId).then((w) => {
-        if (!cancelled) setWinery(w);
-      });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [navigate, wineId]);
+  const { wine, winery } = useLoaderData() as WineLoaderData;
 
   return (
     <Wrapper>
       <Seo
-        title={
-          wine ? `${wine.wineNameEN} ${wine.wineNameKR}`.trim() : undefined
-        }
-        description={wine?.wineDescription?.slice(0, 160)}
+        title={`${wine.wineNameEN} ${wine.wineNameKR}`.trim()}
+        description={wine.wineDescription?.slice(0, 160)}
         path={`/wines/${wineId}`}
-        image={wine?.wineImagePath || undefined}
+        image={wine.wineImagePath || undefined}
       />
       <header className='detail-header'>
         <img

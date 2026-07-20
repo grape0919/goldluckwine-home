@@ -1,95 +1,41 @@
-import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { App as AntdApp, ConfigProvider } from 'antd';
-import { customedTheme } from '@/styles/theme';
-import WineriesPage from '@/page/WineriesPage';
-import ImporterIntroPage from '@/page/ImporterIntroPage';
-import WineIntroPage from '@/page/WineIntroPage';
-import HomePage from '@/page/HomePage';
+import type { RouteRecord } from 'vite-react-ssg';
 import PageLayout from '@/components/layout/PageLayout';
-import ContactFooter from '@/page/ContactFooter';
+import HomePage from '@/page/HomePage';
 import WineListPage from '@/page/WineListPage';
-import WineryIntroPage from '@/page/WIneryIntroPage';
+import WineriesPage from '@/page/WineriesPage';
+import WineryIntroPage, { wineryLoader } from '@/page/WIneryIntroPage';
+import WineIntroPage, { wineLoader } from '@/page/WineIntroPage';
+import ContactFooter from '@/page/ContactFooter';
 import NotFoundPage from '@/page/NotFoundPage';
-import ErrorBoundary from '@/components/ErrorBoundary';
+import AdminRoot from '@/page/admin/AdminRoot';
+import { fetchWineIds, fetchWineryIds } from '@/api/wines';
 
-// 관리자 화면은 방문자 번들에서 분리 (antd Form/Table 등 큰 의존성 포함)
-const AdminPage = lazy(() => import('@/page/admin/AdminPage'));
-
-function App() {
-  return (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: customedTheme.color.primary,
-          colorInfo: customedTheme.color.info,
-          colorSuccess: customedTheme.color.success,
-          colorWarning: customedTheme.color.warning,
-          colorError: customedTheme.color.error,
-          fontFamily:
-            '"Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif',
-        },
-        components: {
-          Layout: {
-            footerPadding: '12px 50px',
-            headerPadding: '0px 130px',
-            headerBg: customedTheme.color.white,
-          },
-        },
-      }}
-    >
-      <AntdApp message={{ maxCount: 1 }}>
-        <ErrorBoundary>
-          <BrowserRouter>
-            <Routes>
-              <Route element={<PageLayout />}>
-                <Route
-                  path='/'
-                  element={<HomePage />}
-                />
-                <Route
-                  path='/importer'
-                  element={<ImporterIntroPage />}
-                />
-                <Route
-                  path='/winelist'
-                  element={<WineListPage />}
-                />
-                <Route
-                  path='/wineries'
-                  element={<WineriesPage />}
-                />
-                <Route
-                  path='/wineries/:wineryId'
-                  element={<WineryIntroPage />}
-                />
-                <Route
-                  path='/wines/:wineId'
-                  element={<WineIntroPage />}
-                ></Route>
-                <Route
-                  path='/contact'
-                  element={<ContactFooter />}
-                />
-              </Route>
-              <Route
-                path='/admin'
-                element={
-                  <Suspense fallback={null}>
-                    <AdminPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path='*'
-                element={<NotFoundPage />}
-              />
-            </Routes>
-          </BrowserRouter>
-        </ErrorBoundary>
-      </AntdApp>
-    </ConfigProvider>
-  );
-}
-
-export default App;
+export const routes: RouteRecord[] = [
+  {
+    path: '/',
+    element: <PageLayout />,
+    children: [
+      { index: true, element: <HomePage /> },
+      // '/importer'(About)는 콘텐츠가 준비되면 다시 추가 — 현재 스텁이라 라우트 미노출
+      { path: 'winelist', element: <WineListPage /> },
+      { path: 'wineries', element: <WineriesPage /> },
+      {
+        path: 'wineries/:wineryId',
+        element: <WineryIntroPage />,
+        loader: wineryLoader,
+        getStaticPaths: async () =>
+          (await fetchWineryIds()).map((id) => `/wineries/${id}`),
+      },
+      {
+        path: 'wines/:wineId',
+        element: <WineIntroPage />,
+        loader: wineLoader,
+        getStaticPaths: async () =>
+          (await fetchWineIds()).map((id) => `/wines/${id}`),
+      },
+      { path: 'contact', element: <ContactFooter /> },
+      { path: '*', element: <NotFoundPage /> },
+    ],
+  },
+  { path: '/admin', element: <AdminRoot /> },
+];
