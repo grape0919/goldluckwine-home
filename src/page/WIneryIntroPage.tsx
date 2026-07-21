@@ -1,5 +1,6 @@
-import { useNavigate, useParams } from 'react-router-dom';
-import React, { useEffect, useState } from 'react';
+import { redirect, useLoaderData } from 'react-router-dom';
+import type { LoaderFunctionArgs } from 'react-router-dom';
+import React from 'react';
 import styled from 'styled-components';
 import { fetchWines, fetchWineryById } from '@/api/wines';
 import type { WineInfoType } from '@/types/wine';
@@ -10,45 +11,32 @@ import Seo from '@/components/Seo';
 
 const { home, font } = customedTheme;
 
+interface WineryLoaderData {
+  winery: WineryInfoType;
+  wineList: WineInfoType[];
+}
+
+/** 빌드(SSG)·클라이언트 네비게이션 시점에 도멘·소속 와인을 미리 로드 */
+export async function wineryLoader({ params }: LoaderFunctionArgs) {
+  const winery = await fetchWineryById(Number(params.wineryId));
+  if (!winery) throw redirect('/not-found');
+  const all = await fetchWines();
+  const wineList = all.filter((wine) => wine.wineryId === winery.id);
+  return { winery, wineList };
+}
+
 /** 와이너리 상세 (Figma 3525 wineries_depth) — 목록과 같은 스플릿 타이틀 헤더 +
  *  블루 밴드(좌 도멘 소개 / 우 420px 사진) + 와인 카드 그리드 */
 const WineryIntroPage: React.FC = () => {
-  const { wineryId } = useParams<{ wineryId: string }>();
-  const navigate = useNavigate();
-  const [winery, setWinery] = useState<WineryInfoType | null>(null);
-  const [wineList, setWineList] = useState<WineInfoType[]>([]);
-  const [winesLoading, setWinesLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchWineryById(Number(wineryId)).then((found) => {
-      if (cancelled) return;
-      if (!found) {
-        // 존재하지 않는 도멘 id — 404 페이지로 (외부 유입 링크도 자연스럽게 처리)
-        navigate('/not-found', { replace: true });
-        return;
-      }
-      setWinery(found);
-      fetchWines().then((all) => {
-        if (cancelled) return;
-        setWineList(all.filter((wine) => wine.wineryId === found.id));
-        setWinesLoading(false);
-      });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [navigate, wineryId]);
+  const { winery, wineList } = useLoaderData() as WineryLoaderData;
 
   return (
     <Wrapper>
       <Seo
-        title={
-          winery ? `${winery.domaine} ${winery.domaineKR}`.trim() : undefined
-        }
-        description={winery?.description?.slice(0, 160)}
-        path={`/wineries/${wineryId}`}
-        image={winery?.imagePath || undefined}
+        title={`${winery.domaine} ${winery.domaineKR}`.trim()}
+        description={winery.description?.slice(0, 160)}
+        path={`/wineries/${winery.id}`}
+        image={winery.imagePath || undefined}
       />
       <header className='list-header'>
         <img
@@ -64,62 +52,35 @@ const WineryIntroPage: React.FC = () => {
       </header>
 
       <section className='winery-band'>
-        {winery ? (
-          <>
-            <div className='band-text'>
-              <h1 className='name-en'>{winery.domaine}</h1>
-              <span className='name-kr'>{winery.domaineKR}</span>
-              <span className='location'>{winery.location}</span>
-              <p className='description'>{winery.description}</p>
-            </div>
-            {winery.imagePath && (
-              <img
-                className='band-photo'
-                src={winery.imagePath}
-                alt={`${winery.domaine} ${winery.domaineKR} 와이너리`}
-                onError={(e) => {
-                  // 사진이 없으면 밴드는 텍스트만으로 유지
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            )}
-          </>
-        ) : (
-          <div
-            className='band-text'
-            aria-hidden
-          >
-            <span className='skeleton skeleton-title' />
-            <span className='skeleton skeleton-sub' />
-            <span className='skeleton skeleton-text' />
-          </div>
+        <div className='band-text'>
+          <h1 className='name-en'>{winery.domaine}</h1>
+          <span className='name-kr'>{winery.domaineKR}</span>
+          <span className='location'>{winery.location}</span>
+          <p className='description'>{winery.description}</p>
+        </div>
+        {winery.imagePath && (
+          <img
+            className='band-photo'
+            src={winery.imagePath}
+            alt={`${winery.domaine} ${winery.domaineKR} 와이너리`}
+            onError={(e) => {
+              // 사진이 없으면 밴드는 텍스트만으로 유지
+              e.currentTarget.style.display = 'none';
+            }}
+          />
         )}
       </section>
 
-      {winesLoading ? (
-        <div
-          className='wine-grid'
-          aria-hidden
-        >
-          {Array.from({ length: 3 }, (_, i) => (
-            <div
-              key={i}
-              className='skeleton-cell'
+      {wineList.length > 0 && (
+        <div className='wine-grid'>
+          {wineList.map((wine) => (
+            <WineCard
+              key={wine.wineId}
+              wine={wine}
+              wineryName={winery.domaine}
             />
           ))}
         </div>
-      ) : (
-        wineList.length > 0 && (
-          <div className='wine-grid'>
-            {wineList.map((wine) => (
-              <WineCard
-                key={wine.wineId}
-                wine={wine}
-                wineryName={winery?.domaine}
-              />
-            ))}
-          </div>
-        )
       )}
     </Wrapper>
   );

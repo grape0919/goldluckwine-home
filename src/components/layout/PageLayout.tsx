@@ -1,9 +1,10 @@
-import { Dropdown } from 'antd';
-import { MenuOutlined } from '@ant-design/icons';
+import { useEffect, useRef, useState } from 'react';
+import { HiMenu } from 'react-icons/hi';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { customedTheme } from '@/styles/theme';
 import SiteFooter from '@/components/layout/SiteFooter';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 const { home, font } = customedTheme;
 
@@ -19,6 +20,23 @@ const isActive = (pathname: string, to: string) =>
 
 const PageLayout = () => {
   const { pathname } = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // 라우트 이동 시 모바일 메뉴 닫기
+  useEffect(() => setMenuOpen(false), [pathname]);
+
+  // 바깥 클릭 시 닫기
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [menuOpen]);
 
   return (
     <Wrapper>
@@ -46,31 +64,38 @@ const PageLayout = () => {
           ))}
         </nav>
 
-        <div className='gnb-mobile'>
-          <Dropdown
-            menu={{
-              items: NAV_ITEMS.map(({ to, label }) => ({
-                key: to,
-                label: <Link to={to}>{label}</Link>,
-              })),
-              selectedKeys: NAV_ITEMS.filter(({ to }) =>
-                isActive(pathname, to),
-              ).map(({ to }) => to),
-            }}
-            trigger={['click']}
+        <div
+          className='gnb-mobile'
+          ref={menuRef}
+        >
+          <button
+            className='gnb-mobile-button'
+            aria-label='메뉴 열기'
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((v) => !v)}
           >
-            <button
-              className='gnb-mobile-button'
-              aria-label='메뉴 열기'
-            >
-              <MenuOutlined />
-            </button>
-          </Dropdown>
+            <HiMenu />
+          </button>
+          {menuOpen && (
+            <div className='gnb-mobile-menu'>
+              {NAV_ITEMS.map(({ to, label }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className={isActive(pathname, to) ? 'active' : ''}
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </header>
 
       <main className='content'>
-        <Outlet />
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </main>
 
       <SiteFooter />
@@ -126,15 +151,51 @@ const Wrapper = styled.div`
 
   .gnb-mobile {
     display: none;
+    position: relative;
   }
 
   .gnb-mobile-button {
+    display: flex;
+    align-items: center;
     border: none;
     background: none;
-    font-size: 20px;
+    font-size: 22px;
     color: ${home.ink};
     cursor: pointer;
     padding: 8px;
+  }
+
+  .gnb-mobile-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    min-width: 160px;
+    padding: 8px 0;
+    background: #ffffff;
+    border: 1px solid ${home.dark};
+    box-shadow: 0 8px 24px rgba(38, 35, 34, 0.12);
+
+    a {
+      padding: 10px 20px;
+      color: ${home.gray};
+      text-decoration: none;
+      font-family: ${font.en};
+      font-size: 15px;
+      letter-spacing: 0.02em;
+
+      &:hover {
+        background: ${home.cream};
+        color: ${home.ink};
+      }
+
+      &.active {
+        color: ${home.ink};
+        font-weight: 700;
+      }
+    }
   }
 
   .content {

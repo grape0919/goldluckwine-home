@@ -38,6 +38,34 @@ export async function fetchWines(): Promise<WineInfoType[]> {
   return (data as WineRow[]).map(toWineInfo);
 }
 
+/** SSG getStaticPaths용 — 프리렌더할 와인 id 목록 (빌드 시 Supabase 조회) */
+export async function fetchWineIds(): Promise<number[]> {
+  if (!isSupabaseConfigured) return [];
+  const { data, error } = await supabase
+    .from('wines')
+    .select('id')
+    .order('id', { ascending: true });
+  if (error) {
+    console.error('[fetchWineIds]', error.message);
+    return [];
+  }
+  return (data as { id: number }[]).map((r) => r.id);
+}
+
+/** SSG getStaticPaths용 — 프리렌더할 와이너리 id 목록 */
+export async function fetchWineryIds(): Promise<number[]> {
+  if (!isSupabaseConfigured) return [];
+  const { data, error } = await supabase
+    .from('wineries')
+    .select('id')
+    .order('id', { ascending: true });
+  if (error) {
+    console.error('[fetchWineryIds]', error.message);
+    return [];
+  }
+  return (data as { id: number }[]).map((r) => r.id);
+}
+
 /** 홈 'OUR COLLECTION' 등에 노출할 추천 와인 */
 export async function fetchFeaturedWines(): Promise<WineInfoType[]> {
   if (!isSupabaseConfigured) return [];

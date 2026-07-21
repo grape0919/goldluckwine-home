@@ -14,7 +14,11 @@ if (!url || !anonKey) {
 
 export const isSupabaseConfigured = Boolean(url && anonKey);
 
-export const supabase = createClient(url ?? '', anonKey ?? '');
+// env 미설정(로컬/CI 빌드 등) 시 supabase-js 2.110+ 는 빈 URL에 throw 하므로
+// placeholder 로 생성한다. isSupabaseConfigured 가 false 라 실제 호출은 일어나지 않는다.
+export const supabase = isSupabaseConfigured
+  ? createClient(url as string, anonKey as string)
+  : createClient('https://placeholder.supabase.co', 'placeholder-anon-key');
 
 /** DB 테이블 행 타입 (supabase/schema.sql 과 일치) */
 export interface WineryRow {
