@@ -7,7 +7,7 @@ import type { WineInfoType } from '@/types/wine';
 import type { WineryInfoType } from '@/types/winery';
 import { customedTheme } from '@/styles/theme';
 import WineCard from '@/components/WineCard';
-import Seo from '@/components/Seo';
+import Seo, { BASE_URL } from '@/components/Seo';
 
 const { home, font } = customedTheme;
 
@@ -30,6 +30,27 @@ export async function wineryLoader({ params }: LoaderFunctionArgs) {
 const WineryIntroPage: React.FC = () => {
   const { winery, wineList } = useLoaderData() as WineryLoaderData;
 
+  // schema.org Organization — 와이너리(생산자)를 조직으로 인식.
+  // 소속 와인은 hasOfferCatalog(ItemList)로 연결해 크롤러가 라인업을 파악.
+  const orgJsonLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: winery.domaine,
+    ...(winery.domaineKR && { alternateName: winery.domaineKR }),
+    ...(winery.description && { description: winery.description }),
+    ...(winery.imagePath && {
+      image: encodeURI(`${BASE_URL}${winery.imagePath}`),
+    }),
+    url: `${BASE_URL}/wineries/${winery.id}`,
+    ...(wineList.length > 0 && {
+      subjectOf: wineList.map((wine) => ({
+        '@type': 'Product',
+        name: `${wine.wineNameEN} ${wine.wineNameKR}`.trim(),
+        url: `${BASE_URL}/wines/${wine.wineId}`,
+      })),
+    }),
+  };
+
   return (
     <Wrapper>
       <Seo
@@ -37,6 +58,7 @@ const WineryIntroPage: React.FC = () => {
         description={winery.description?.slice(0, 160)}
         path={`/wineries/${winery.id}`}
         image={winery.imagePath || undefined}
+        jsonLd={orgJsonLd}
       />
       <header className='list-header'>
         <img

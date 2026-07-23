@@ -8,7 +8,7 @@ import type { WineInfoType } from '@/types/wine';
 import type { WineryInfoType } from '@/types/winery';
 import { customedTheme } from '@/styles/theme';
 import CloverIcon from '@/components/CloverIcon';
-import Seo from '@/components/Seo';
+import Seo, { BASE_URL } from '@/components/Seo';
 
 const { home, font, color } = customedTheme;
 
@@ -36,6 +36,27 @@ const WineIntroPage: React.FC = () => {
   const { wineId } = useParams<{ wineId: string }>();
   const { wine, winery } = useLoaderData() as WineLoaderData;
 
+  // schema.org Product — 검색엔진이 와인을 '제품'으로 구조적으로 인식
+  const productJsonLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: `${wine.wineNameEN} ${wine.wineNameKR}`.trim(),
+    ...(wine.wineDescription && { description: wine.wineDescription }),
+    ...(wine.wineImagePath && {
+      image: encodeURI(`${BASE_URL}${wine.wineImagePath}`),
+    }),
+    ...(winery && { brand: { '@type': 'Brand', name: winery.domaine } }),
+    ...(wine.wineType && { category: `내추럴 와인 · ${wine.wineType}` }),
+    ...(wine.wineVariety.length > 0 && {
+      additionalProperty: wine.wineVariety.map((v) => ({
+        '@type': 'PropertyValue',
+        name: '품종',
+        value: v,
+      })),
+    }),
+    url: `${BASE_URL}/wines/${wine.wineId}`,
+  };
+
   return (
     <Wrapper>
       <Seo
@@ -43,6 +64,7 @@ const WineIntroPage: React.FC = () => {
         description={wine.wineDescription?.slice(0, 160)}
         path={`/wines/${wineId}`}
         image={wine.wineImagePath || undefined}
+        jsonLd={productJsonLd}
       />
       <header className='detail-header'>
         <img

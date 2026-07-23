@@ -1,7 +1,7 @@
 import React from 'react';
 import { Head } from 'vite-react-ssg';
 
-const BASE_URL = 'https://goldluckwine.com';
+export const BASE_URL = 'https://goldluckwine.com';
 const SITE_NAME = '골드럭와인 Gold Luck Wine';
 const DEFAULT_TITLE = `${SITE_NAME} | 와인수입사`;
 const DEFAULT_DESCRIPTION =
@@ -17,6 +17,8 @@ interface SeoProps {
   /** OG 이미지 — 절대 URL 또는 사이트 루트 기준 경로 */
   image?: string;
   noindex?: boolean;
+  /** schema.org 구조화 데이터 (JSON-LD) — 프리렌더 HTML에 <script>로 박힌다 */
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
 
 /** 라우트별 title/description/canonical/OG 메타.
@@ -27,6 +29,7 @@ const Seo: React.FC<SeoProps> = ({
   path,
   image,
   noindex,
+  jsonLd,
 }) => {
   const fullTitle = title ? `${title} | ${SITE_NAME}` : DEFAULT_TITLE;
   const desc = description || DEFAULT_DESCRIPTION;
@@ -86,6 +89,12 @@ const Seo: React.FC<SeoProps> = ({
           name='robots'
           content='noindex, nofollow'
         />
+      )}
+      {jsonLd && (
+        <script type='application/ld+json'>
+          {/* '<' 이스케이프로 스크립트 조기 종료·XSS 방지 */}
+          {JSON.stringify(jsonLd).replace(/</g, '\\u003c')}
+        </script>
       )}
     </Head>
   );
