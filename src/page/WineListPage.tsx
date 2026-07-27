@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useMemo } from 'react';
+import { useLoaderData, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { customedTheme } from '@/styles/theme';
 import { fetchWineries, fetchWines } from '@/api/wines';
@@ -16,32 +16,28 @@ const { home, font } = customedTheme;
 const CHEVRON =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%23101010'/%3E%3C/svg%3E\")";
 
+interface WineListLoaderData {
+  wines: WineInfoType[];
+  wineries: WineryInfoType[];
+}
+
+/** 빌드(SSG) 시점에 전체 와인·도멘을 로드 → 프리렌더 HTML에 카드와
+ *  상세 페이지 링크가 박힌다 (크롤러가 /wines/:id 를 발견하는 경로).
+ *  필터는 하이드레이션 후 클라이언트에서 URL 쿼리로 동작한다. */
+export async function wineListLoader() {
+  const [wines, wineries] = await Promise.all([fetchWines(), fetchWineries()]);
+  return { wines, wineries };
+}
+
 /** 와인 리스트 (Figma 3557:345) — 스플릿 타이틀 + 밑줄 드롭다운 필터 + 풀블리드 카드 그리드 */
 const WineListPage: React.FC = () => {
-  const [wines, setWines] = useState<WineInfoType[]>([]);
-  const [wineries, setWineries] = useState<WineryInfoType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { wines, wineries } = useLoaderData() as WineListLoaderData;
   const [searchParams, setSearchParams] = useSearchParams();
 
   // 필터 상태는 URL 쿼리에 보관 — 뒤로가기·링크 공유 시 유지
   const typeFilter = searchParams.get('type') ?? '';
   const grapeFilter = searchParams.get('grape') ?? '';
   const makerFilter = searchParams.get('maker') ?? '';
-
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([fetchWines(), fetchWineries()]).then(
-      ([wineList, wineryList]) => {
-        if (cancelled) return;
-        setWines(wineList);
-        setWineries(wineryList);
-        setLoading(false);
-      },
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const wineryNameById = useMemo(() => {
     const map: Record<number, string> = {};
@@ -164,26 +160,12 @@ const WineListPage: React.FC = () => {
             RESET
           </button>
         )}
-        {!loading && (
-          <span className='filter-count'>
-            {filtered.length} WINE{filtered.length === 1 ? '' : 'S'}
-          </span>
-        )}
+        <span className='filter-count'>
+          {filtered.length} WINE{filtered.length === 1 ? '' : 'S'}
+        </span>
       </div>
 
-      {loading ? (
-        <div
-          className='wine-grid'
-          aria-hidden
-        >
-          {Array.from({ length: 6 }, (_, i) => (
-            <div
-              key={i}
-              className='skeleton-cell'
-            />
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className='empty-state'>
           <p>조건에 맞는 와인이 없습니다.</p>
           <button
