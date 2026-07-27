@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useLoaderData } from 'react-router-dom';
 import styled from 'styled-components';
 import { customedTheme } from '@/styles/theme';
 import HeroSection from '@/page/home/HeroSection';
@@ -9,27 +9,26 @@ import { fetchFeaturedWines, fetchWineries } from '@/api/wines';
 import type { WineInfoType } from '@/types/wine';
 import Seo from '@/components/Seo';
 
-function HomePage() {
-  const [featuredWines, setFeaturedWines] = useState<WineInfoType[]>([]);
-  const [wineryNameById, setWineryNameById] = useState<Record<number, string>>(
-    {},
-  );
+interface HomeLoaderData {
+  featuredWines: WineInfoType[];
+  wineryNameById: Record<number, string>;
+}
 
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([fetchFeaturedWines(), fetchWineries()]).then(
-      ([wines, wineries]) => {
-        if (cancelled) return;
-        setFeaturedWines(wines);
-        setWineryNameById(
-          Object.fromEntries(wineries.map((w) => [w.id, w.domaine])),
-        );
-      },
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+/** 빌드(SSG) 시점에 추천 와인을 로드 → 홈 HTML의 OUR COLLECTION 카드와
+ *  상세 페이지 링크가 프리렌더된다 (크롤러의 첫 진입 경로가 홈이므로 중요) */
+export async function homeLoader() {
+  const [featuredWines, wineries] = await Promise.all([
+    fetchFeaturedWines(),
+    fetchWineries(),
+  ]);
+  return {
+    featuredWines,
+    wineryNameById: Object.fromEntries(wineries.map((w) => [w.id, w.domaine])),
+  };
+}
+
+function HomePage() {
+  const { featuredWines, wineryNameById } = useLoaderData() as HomeLoaderData;
 
   return (
     <Wrapper>

@@ -1,8 +1,8 @@
 import type { RouteRecord } from 'vite-react-ssg';
 import PageLayout from '@/components/layout/PageLayout';
-import HomePage from '@/page/HomePage';
-import WineListPage from '@/page/WineListPage';
-import WineriesPage from '@/page/WineriesPage';
+import HomePage, { homeLoader } from '@/page/HomePage';
+import WineListPage, { wineListLoader } from '@/page/WineListPage';
+import WineriesPage, { wineriesLoader } from '@/page/WineriesPage';
 import WineryIntroPage, { wineryLoader } from '@/page/WIneryIntroPage';
 import WineIntroPage, { wineLoader } from '@/page/WineIntroPage';
 import ContactFooter from '@/page/ContactFooter';
@@ -15,10 +15,10 @@ export const routes: RouteRecord[] = [
     path: '/',
     element: <PageLayout />,
     children: [
-      { index: true, element: <HomePage /> },
+      { index: true, element: <HomePage />, loader: homeLoader },
       // '/importer'(About)는 콘텐츠가 준비되면 다시 추가 — 현재 스텁이라 라우트 미노출
-      { path: 'winelist', element: <WineListPage /> },
-      { path: 'wineries', element: <WineriesPage /> },
+      { path: 'winelist', element: <WineListPage />, loader: wineListLoader },
+      { path: 'wineries', element: <WineriesPage />, loader: wineriesLoader },
       {
         path: 'wineries/:wineryId',
         element: <WineryIntroPage />,

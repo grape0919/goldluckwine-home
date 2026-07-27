@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { Link, useLoaderData } from 'react-router-dom';
 import styled from 'styled-components';
 import { customedTheme } from '@/styles/theme';
 import { fetchWineries } from '@/api/wines';
@@ -8,23 +8,16 @@ import Seo from '@/components/Seo';
 
 const { home, font } = customedTheme;
 
+/** 빌드(SSG) 시점에 도멘 목록을 로드 → 프리렌더 HTML에 상세 페이지 링크가 박힌다
+ *  (크롤러가 /wineries/:id 를 발견하는 경로) */
+export async function wineriesLoader() {
+  return { wineries: await fetchWineries() };
+}
+
 /** 와이너리 목록 (Figma 3525:13763) — 스플릿 타이틀(OUR/WINERIES) +
  *  풀블리드 도멘 행 리스트. 악센트는 이 페이지 전용 라이트 블루. */
 const WineriesPage: React.FC = () => {
-  const [wineries, setWineries] = useState<WineryInfoType[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchWineries().then((list) => {
-      if (cancelled) return;
-      setWineries(list);
-      setLoading(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { wineries } = useLoaderData() as { wineries: WineryInfoType[] };
 
   return (
     <Wrapper>
@@ -56,36 +49,22 @@ const WineriesPage: React.FC = () => {
         </h1>
       </header>
 
-      {loading ? (
-        <div
-          className='winery-list'
-          aria-hidden
-        >
-          {Array.from({ length: 3 }, (_, i) => (
-            <div
-              key={i}
-              className='skeleton-row'
-            />
-          ))}
-        </div>
-      ) : (
-        <div className='winery-list'>
-          {wineries.map((winery) => (
-            <Link
-              key={winery.id}
-              className='winery-row'
-              to={`/wineries/${winery.id}`}
-            >
-              <div className='winery-names'>
-                <span className='name-en'>{winery.domaine}</span>
-                <span className='name-kr'>{winery.domaineKR}</span>
-                <span className='location'>{winery.location}</span>
-              </div>
-              <span className='view-more'>VIEW MORE</span>
-            </Link>
-          ))}
-        </div>
-      )}
+      <div className='winery-list'>
+        {wineries.map((winery) => (
+          <Link
+            key={winery.id}
+            className='winery-row'
+            to={`/wineries/${winery.id}`}
+          >
+            <div className='winery-names'>
+              <span className='name-en'>{winery.domaine}</span>
+              <span className='name-kr'>{winery.domaineKR}</span>
+              <span className='location'>{winery.location}</span>
+            </div>
+            <span className='view-more'>VIEW MORE</span>
+          </Link>
+        ))}
+      </div>
     </Wrapper>
   );
 };
