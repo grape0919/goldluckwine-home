@@ -43,6 +43,7 @@ interface WineFormValues {
   variety: string[];
   description: string;
   is_featured: boolean;
+  is_visible: boolean;
   sort_order: number;
   image: string | File | undefined;
 }
@@ -100,6 +101,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
   const varietyOptions = distinctVarieties(rows.map((r) => r.variety ?? []));
 
   const featuredCount = rows.filter((r) => r.is_featured).length;
+  const hiddenCount = rows.filter((r) => r.is_visible === false).length;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -120,6 +122,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
     form.resetFields();
     form.setFieldsValue({
       is_featured: false,
+      is_visible: true,
       sort_order: rows.length + 1,
       variety: [],
     });
@@ -128,7 +131,12 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
 
   const openEdit = (row: WineRow) => {
     setEditing(row);
-    form.setFieldsValue({ ...row, image: row.image_path });
+    form.setFieldsValue({
+      ...row,
+      // 마이그레이션 전(undefined)은 노출 상태로 취급
+      is_visible: row.is_visible !== false,
+      image: row.image_path,
+    });
     setModalOpen(true);
   };
 
@@ -144,6 +152,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
       variety: row.variety ?? [],
       description: row.description,
       is_featured: false,
+      is_visible: true,
       sort_order: rows.length + 1,
       image: row.image_path,
     });
@@ -166,6 +175,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
         variety: values.variety ?? [],
         description: values.description ?? '',
         is_featured: values.is_featured ?? false,
+        is_visible: values.is_visible ?? true,
         sort_order: values.sort_order ?? 0,
         image_path,
       };
@@ -201,6 +211,18 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
       await updateWine(row.id, { is_featured: next });
       setRows((prev) =>
         prev.map((r) => (r.id === row.id ? { ...r, is_featured: next } : r)),
+      );
+      onChanged?.();
+    } catch (e) {
+      message.error(`변경 실패: ${(e as Error).message}`);
+    }
+  };
+
+  const toggleVisible = async (row: WineRow, next: boolean) => {
+    try {
+      await updateWine(row.id, { is_visible: next });
+      setRows((prev) =>
+        prev.map((r) => (r.id === row.id ? { ...r, is_visible: next } : r)),
       );
       onChanged?.();
     } catch (e) {
@@ -265,6 +287,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
           {hasFilter ? `${filtered.length} / ` : ''}
           {rows.length}종 · 홈 노출 {featuredCount}개
           {featuredCount > 3 ? ' (홈에는 앞 3개만 표시)' : ''}
+          {hiddenCount > 0 ? ` · 숨김 ${hiddenCount}개` : ''}
         </Typography.Text>
         <div style={{ flex: 1 }} />
         <Button
@@ -332,6 +355,20 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
             dataIndex: 'wine_type',
             width: 100,
             render: (t: string) => <Tag>{t}</Tag>,
+          },
+          {
+            title: '노출',
+            dataIndex: 'is_visible',
+            width: 80,
+            render: (v: boolean | undefined, row) => (
+              <Tooltip title='끄면 공개 사이트(리스트·상세·검색)에서 숨겨집니다'>
+                <Switch
+                  size='small'
+                  checked={v !== false}
+                  onChange={(next) => toggleVisible(row, next)}
+                />
+              </Tooltip>
+            ),
           },
           {
             title: '홈 노출',
@@ -456,6 +493,13 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
             label='설명'
           >
             <Input.TextArea rows={4} />
+          </Form.Item>
+          <Form.Item
+            name='is_visible'
+            label='공개 사이트 노출 (끄면 리스트·상세에서 숨김)'
+            valuePropName='checked'
+          >
+            <Switch />
           </Form.Item>
           <Form.Item
             name='is_featured'
