@@ -41,5 +41,7 @@ export interface WineRow {
   description: string;
   image_path: string;
   is_featured: boolean;
+  /** 공개 사이트 노출 여부 — 마이그레이션 전 행에는 없을 수 있어 optional */
+  is_visible?: boolean;
   sort_order: number;
 }

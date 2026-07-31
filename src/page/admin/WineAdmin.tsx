@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   App,
   Button,
@@ -12,8 +12,16 @@ import {
   Switch,
   Table,
   Tag,
+  Tooltip,
+  Typography,
 } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import {
+  ArrowDownOutlined,
+  ArrowUpOutlined,
+  CopyOutlined,
+  ExportOutlined,
+  PlusOutlined,
+} from '@ant-design/icons';
 import { WineTypes } from '@/enum/wine';
 import { distinctVarieties } from '@/utils/variety';
 import type { WineRow, WineryRow } from '@/lib/supabase';
@@ -35,6 +43,7 @@ interface WineFormValues {
   variety: string[];
   description: string;
   is_featured: boolean;
+  is_visible: boolean;
   sort_order: number;
   image: string | File | undefined;
 }
@@ -44,7 +53,13 @@ const WINE_TYPE_OPTIONS = Object.values(WineTypes).map((t) => ({
   label: t,
 }));
 
-const WineAdmin = ({ refreshKey }: { refreshKey?: number }) => {
+interface WineAdminProps {
+  refreshKey?: number;
+  /** 저장·삭제·순서변경 등 데이터가 바뀔 때 호출 (미반영 변경 추적용) */
+  onChanged?: () => void;
+}
+
+const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
   const { message } = App.useApp();
   const [rows, setRows] = useState<WineRow[]>([]);
   const [wineries, setWineries] = useState<WineryRow[]>([]);
@@ -53,6 +68,11 @@ const WineAdmin = ({ refreshKey }: { refreshKey?: number }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form] = Form.useForm<WineFormValues>();
+
+  // 테이블 필터 — 이름 검색 · 도멘 · 타입
+  const [search, setSearch] = useState('');
+  const [wineryFilter, setWineryFilter] = useState<number | undefined>();
+  const [typeFilter, setTypeFilter] = useState<string | undefined>();
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -80,11 +100,29 @@ const WineAdmin = ({ refreshKey }: { refreshKey?: number }) => {
   // 기존 와인들의 품종을 제안해 표기('Chenin Blanc' vs 'chenin blanc')가 갈라지지 않게 한다
   const varietyOptions = distinctVarieties(rows.map((r) => r.variety ?? []));
 
+  const featuredCount = rows.filter((r) => r.is_featured).length;
+  const hiddenCount = rows.filter((r) => r.is_visible === false).length;
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return rows.filter(
+      (r) =>
+        (!q ||
+          r.name_en.toLowerCase().includes(q) ||
+          r.name_kr.toLowerCase().includes(q)) &&
+        (wineryFilter === undefined || r.winery_id === wineryFilter) &&
+        (typeFilter === undefined || r.wine_type === typeFilter),
+    );
+  }, [rows, search, wineryFilter, typeFilter]);
+  const hasFilter = Boolean(search.trim()) || wineryFilter !== undefined
+    || typeFilter !== undefined;
+
   const openCreate = () => {
     setEditing(null);
     form.resetFields();
     form.setFieldsValue({
       is_featured: false,
+      is_visible: true,
       sort_order: rows.length + 1,
       variety: [],
     });
@@ -93,7 +131,31 @@ const WineAdmin = ({ refreshKey }: { refreshKey?: number }) => {
 
   const openEdit = (row: WineRow) => {
     setEditing(row);
-    form.setFieldsValue({ ...row, image: row.image_path });
+    form.setFieldsValue({
+      ...row,
+      // 마이그레이션 전(undefined)은 노출 상태로 취급
+      is_visible: row.is_visible !== false,
+      image: row.image_path,
+    });
+    setModalOpen(true);
+  };
+
+  /** 기존 와인 정보를 복사해 '추가' 모달을 연다 — 같은 도멘의 비슷한 와인 빠른 등록용 */
+  const openDuplicate = (row: WineRow) => {
+    setEditing(null);
+    form.resetFields();
+    form.setFieldsValue({
+      winery_id: row.winery_id,
+      name_en: `${row.name_en} (copy)`,
+      name_kr: row.name_kr,
+      wine_type: row.wine_type,
+      variety: row.variety ?? [],
+      description: row.description,
+      is_featured: false,
+      is_visible: true,
+      sort_order: rows.length + 1,
+      image: row.image_path,
+    });
     setModalOpen(true);
   };
 
@@ -113,6 +175,7 @@ const WineAdmin = ({ refreshKey }: { refreshKey?: number }) => {
         variety: values.variety ?? [],
         description: values.description ?? '',
         is_featured: values.is_featured ?? false,
+        is_visible: values.is_visible ?? true,
         sort_order: values.sort_order ?? 0,
         image_path,
       };
@@ -124,6 +187,7 @@ const WineAdmin = ({ refreshKey }: { refreshKey?: number }) => {
       message.success('저장되었습니다.');
       setModalOpen(false);
       await reload();
+      onChanged?.();
     } catch (e) {
       message.error(`저장 실패: ${(e as Error).message}`);
     } finally {
@@ -136,6 +200,7 @@ const WineAdmin = ({ refreshKey }: { refreshKey?: number }) => {
       await deleteWine(row.id);
       message.success('삭제되었습니다.');
       await reload();
+      onChanged?.();
     } catch (e) {
       message.error(`삭제 실패: ${(e as Error).message}`);
     }
@@ -147,16 +212,84 @@ const WineAdmin = ({ refreshKey }: { refreshKey?: number }) => {
       setRows((prev) =>
         prev.map((r) => (r.id === row.id ? { ...r, is_featured: next } : r)),
       );
+      onChanged?.();
     } catch (e) {
       message.error(`변경 실패: ${(e as Error).message}`);
+    }
+  };
+
+  const toggleVisible = async (row: WineRow, next: boolean) => {
+    try {
+      await updateWine(row.id, { is_visible: next });
+      setRows((prev) =>
+        prev.map((r) => (r.id === row.id ? { ...r, is_visible: next } : r)),
+      );
+      onChanged?.();
+    } catch (e) {
+      message.error(`변경 실패: ${(e as Error).message}`);
+    }
+  };
+
+  /** 표시 순서 한 칸 이동 — 전체 목록을 1부터 재번호 매겨 변경된 행만 저장 */
+  const moveRow = async (row: WineRow, dir: -1 | 1) => {
+    const idx = rows.findIndex((r) => r.id === row.id);
+    const target = idx + dir;
+    if (idx < 0 || target < 0 || target >= rows.length) return;
+    const next = [...rows];
+    [next[idx], next[target]] = [next[target], next[idx]];
+    const renumbered = next.map((r, i) => ({ ...r, sort_order: i + 1 }));
+    setRows(renumbered);
+    try {
+      await Promise.all(
+        renumbered
+          .filter((r, i) => next[i].sort_order !== r.sort_order)
+          .map((r) => updateWine(r.id, { sort_order: r.sort_order })),
+      );
+      onChanged?.();
+    } catch (e) {
+      message.error(`순서 변경 실패: ${(e as Error).message}`);
+      await reload();
     }
   };
 
   return (
     <>
       <Space
-        style={{ marginBottom: 16, justifyContent: 'flex-end', width: '100%' }}
+        wrap
+        style={{ marginBottom: 16, width: '100%' }}
       >
+        <Input.Search
+          allowClear
+          placeholder='이름 검색 (영문/한글)'
+          style={{ width: 220 }}
+          onSearch={setSearch}
+          onChange={(e) => {
+            if (!e.target.value) setSearch('');
+          }}
+        />
+        <Select
+          allowClear
+          placeholder='도멘 전체'
+          style={{ width: 180 }}
+          value={wineryFilter}
+          onChange={setWineryFilter}
+          options={wineries.map((w) => ({ value: w.id, label: w.domaine }))}
+        />
+        <Select
+          allowClear
+          placeholder='타입 전체'
+          style={{ width: 130 }}
+          value={typeFilter}
+          onChange={setTypeFilter}
+          options={WINE_TYPE_OPTIONS}
+        />
+        <Typography.Text type='secondary'>
+          {hasFilter ? `${filtered.length} / ` : ''}
+          {rows.length}종 · 홈 노출 {featuredCount}개
+          {featuredCount > 3 ? ' (홈에는 앞 3개만 표시)' : ''}
+          {hiddenCount > 0 ? ` · 숨김 ${hiddenCount}개` : ''}
+        </Typography.Text>
+        <div style={{ flex: 1 }} />
         <Button
           type='primary'
           icon={<PlusOutlined />}
@@ -169,9 +302,34 @@ const WineAdmin = ({ refreshKey }: { refreshKey?: number }) => {
       <Table<WineRow>
         rowKey='id'
         loading={loading}
-        dataSource={rows}
+        dataSource={filtered}
         pagination={{ pageSize: 20 }}
         columns={[
+          {
+            title: '순서',
+            width: 80,
+            render: (_, row) => {
+              const idx = rows.findIndex((r) => r.id === row.id);
+              return (
+                <Space size={2}>
+                  <Button
+                    size='small'
+                    type='text'
+                    icon={<ArrowUpOutlined />}
+                    disabled={hasFilter || idx <= 0}
+                    onClick={() => moveRow(row, -1)}
+                  />
+                  <Button
+                    size='small'
+                    type='text'
+                    icon={<ArrowDownOutlined />}
+                    disabled={hasFilter || idx >= rows.length - 1}
+                    onClick={() => moveRow(row, 1)}
+                  />
+                </Space>
+              );
+            },
+          },
           {
             title: '이미지',
             dataIndex: 'image_path',
@@ -199,6 +357,20 @@ const WineAdmin = ({ refreshKey }: { refreshKey?: number }) => {
             render: (t: string) => <Tag>{t}</Tag>,
           },
           {
+            title: '노출',
+            dataIndex: 'is_visible',
+            width: 80,
+            render: (v: boolean | undefined, row) => (
+              <Tooltip title='끄면 공개 사이트(리스트·상세·검색)에서 숨겨집니다'>
+                <Switch
+                  size='small'
+                  checked={v !== false}
+                  onChange={(next) => toggleVisible(row, next)}
+                />
+              </Tooltip>
+            ),
+          },
+          {
             title: '홈 노출',
             dataIndex: 'is_featured',
             width: 90,
@@ -210,12 +382,28 @@ const WineAdmin = ({ refreshKey }: { refreshKey?: number }) => {
               />
             ),
           },
-          { title: '정렬', dataIndex: 'sort_order', width: 70 },
           {
             title: '',
-            width: 140,
+            width: 190,
             render: (_, row) => (
-              <Space>
+              <Space size={4}>
+                <Tooltip title='공개 페이지 보기'>
+                  <Button
+                    size='small'
+                    type='text'
+                    icon={<ExportOutlined />}
+                    href={`/wines/${row.id}`}
+                    target='_blank'
+                  />
+                </Tooltip>
+                <Tooltip title='복제해서 추가'>
+                  <Button
+                    size='small'
+                    type='text'
+                    icon={<CopyOutlined />}
+                    onClick={() => openDuplicate(row)}
+                  />
+                </Tooltip>
                 <Button
                   size='small'
                   onClick={() => openEdit(row)}
@@ -307,6 +495,13 @@ const WineAdmin = ({ refreshKey }: { refreshKey?: number }) => {
             <Input.TextArea rows={4} />
           </Form.Item>
           <Form.Item
+            name='is_visible'
+            label='공개 사이트 노출 (끄면 리스트·상세에서 숨김)'
+            valuePropName='checked'
+          >
+            <Switch />
+          </Form.Item>
+          <Form.Item
             name='is_featured'
             label='홈 OUR COLLECTION 노출'
             valuePropName='checked'
@@ -315,13 +510,13 @@ const WineAdmin = ({ refreshKey }: { refreshKey?: number }) => {
           </Form.Item>
           <Form.Item
             name='sort_order'
-            label='정렬 순서'
+            label='정렬 순서 (표에서 화살표로도 조정 가능)'
           >
             <InputNumber min={0} />
           </Form.Item>
           <Form.Item
             name='image'
-            label='병 사진'
+            label='병 사진 (업로드 시 자동으로 리사이즈·WebP 변환)'
           >
             <ImageUploadItem />
           </Form.Item>

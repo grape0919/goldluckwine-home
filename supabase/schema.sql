@@ -40,6 +40,7 @@ create table if not exists public.wines (
   description text not null default '',     -- wineDescription
   image_path  text not null default '',   -- wineImagePath
   is_featured boolean not null default false, -- 홈 'ALL THAT LOIRE' / OUR COLLECTION 노출용
+  is_visible  boolean not null default true,  -- 공개 사이트 노출 여부 (false = 숨김, 관리자에만 표시)
   sort_order  int  not null default 0,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
