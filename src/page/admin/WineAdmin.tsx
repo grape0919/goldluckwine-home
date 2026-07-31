@@ -15,13 +15,21 @@ import {
   Tooltip,
   Typography,
 } from 'antd';
+import { CopyOutlined, ExportOutlined, PlusOutlined } from '@ant-design/icons';
 import {
-  ArrowDownOutlined,
-  ArrowUpOutlined,
-  CopyOutlined,
-  ExportOutlined,
-  PlusOutlined,
-} from '@ant-design/icons';
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import { DragHandle, SortableRow } from '@/page/admin/SortableTableRow';
 import { WineTypes } from '@/enum/wine';
 import { distinctVarieties } from '@/utils/variety';
 import type { WineRow, WineryRow } from '@/lib/supabase';
@@ -114,8 +122,10 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
         (typeFilter === undefined || r.wine_type === typeFilter),
     );
   }, [rows, search, wineryFilter, typeFilter]);
-  const hasFilter = Boolean(search.trim()) || wineryFilter !== undefined
-    || typeFilter !== undefined;
+  const hasFilter =
+    Boolean(search.trim()) ||
+    wineryFilter !== undefined ||
+    typeFilter !== undefined;
 
   const openCreate = () => {
     setEditing(null);
@@ -166,7 +176,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
       const image_path =
         values.image instanceof File
           ? await uploadImage(values.image, 'wines')
-          : (values.image ?? '');
+          : values.image ?? '';
       const input = {
         winery_id: values.winery_id,
         name_en: values.name_en,
@@ -230,19 +240,24 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
     }
   };
 
-  /** 표시 순서 한 칸 이동 — 전체 목록을 1부터 재번호 매겨 변경된 행만 저장 */
-  const moveRow = async (row: WineRow, dir: -1 | 1) => {
-    const idx = rows.findIndex((r) => r.id === row.id);
-    const target = idx + dir;
-    if (idx < 0 || target < 0 || target >= rows.length) return;
-    const next = [...rows];
-    [next[idx], next[target]] = [next[target], next[idx]];
-    const renumbered = next.map((r, i) => ({ ...r, sort_order: i + 1 }));
+  const sensors = useSensors(useSensor(PointerSensor));
+
+  /** 드래그 종료 — 전체 목록을 1부터 재번호 매겨 변경된 행만 저장 */
+  const onDragEnd = async ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    const from = rows.findIndex((r) => r.id === active.id);
+    const to = rows.findIndex((r) => r.id === over.id);
+    if (from < 0 || to < 0) return;
+    const prevById = new Map(rows.map((r) => [r.id, r.sort_order]));
+    const renumbered = arrayMove(rows, from, to).map((r, i) => ({
+      ...r,
+      sort_order: i + 1,
+    }));
     setRows(renumbered);
     try {
       await Promise.all(
         renumbered
-          .filter((r, i) => next[i].sort_order !== r.sort_order)
+          .filter((r) => prevById.get(r.id) !== r.sort_order)
           .map((r) => updateWine(r.id, { sort_order: r.sort_order })),
       );
       onChanged?.();
@@ -299,133 +314,133 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
         </Button>
       </Space>
 
-      <Table<WineRow>
-        rowKey='id'
-        loading={loading}
-        dataSource={filtered}
-        pagination={{ pageSize: 20 }}
-        columns={[
-          {
-            title: '순서',
-            width: 80,
-            render: (_, row) => {
-              const idx = rows.findIndex((r) => r.id === row.id);
-              return (
-                <Space size={2}>
-                  <Button
-                    size='small'
-                    type='text'
-                    icon={<ArrowUpOutlined />}
-                    disabled={hasFilter || idx <= 0}
-                    onClick={() => moveRow(row, -1)}
-                  />
-                  <Button
-                    size='small'
-                    type='text'
-                    icon={<ArrowDownOutlined />}
-                    disabled={hasFilter || idx >= rows.length - 1}
-                    onClick={() => moveRow(row, 1)}
-                  />
-                </Space>
-              );
-            },
-          },
-          {
-            title: '이미지',
-            dataIndex: 'image_path',
-            width: 80,
-            render: (v: string) =>
-              v ? (
-                <img
-                  src={v}
-                  alt=''
-                  style={{ width: 40, height: 64, objectFit: 'contain' }}
-                />
-              ) : null,
-          },
-          { title: '이름 (영문)', dataIndex: 'name_en' },
-          { title: '이름 (한글)', dataIndex: 'name_kr' },
-          {
-            title: '도멘',
-            dataIndex: 'winery_id',
-            render: (id: number) => wineryName(id),
-          },
-          {
-            title: '타입',
-            dataIndex: 'wine_type',
-            width: 100,
-            render: (t: string) => <Tag>{t}</Tag>,
-          },
-          {
-            title: '노출',
-            dataIndex: 'is_visible',
-            width: 80,
-            render: (v: boolean | undefined, row) => (
-              <Tooltip title='끄면 공개 사이트(리스트·상세·검색)에서 숨겨집니다'>
-                <Switch
-                  size='small'
-                  checked={v !== false}
-                  onChange={(next) => toggleVisible(row, next)}
-                />
-              </Tooltip>
-            ),
-          },
-          {
-            title: '홈 노출',
-            dataIndex: 'is_featured',
-            width: 90,
-            render: (v: boolean, row) => (
-              <Switch
-                size='small'
-                checked={v}
-                onChange={(next) => toggleFeatured(row, next)}
-              />
-            ),
-          },
-          {
-            title: '',
-            width: 190,
-            render: (_, row) => (
-              <Space size={4}>
-                <Tooltip title='공개 페이지 보기'>
-                  <Button
-                    size='small'
-                    type='text'
-                    icon={<ExportOutlined />}
-                    href={`/wines/${row.id}`}
-                    target='_blank'
-                  />
-                </Tooltip>
-                <Tooltip title='복제해서 추가'>
-                  <Button
-                    size='small'
-                    type='text'
-                    icon={<CopyOutlined />}
-                    onClick={() => openDuplicate(row)}
-                  />
-                </Tooltip>
-                <Button
-                  size='small'
-                  onClick={() => openEdit(row)}
-                >
-                  수정
-                </Button>
-                <Popconfirm
-                  title='이 와인을 삭제할까요?'
-                  onConfirm={() => handleDelete(row)}
-                >
-                  <Button
-                    size='small'
-                    danger
+      <DndContext
+        sensors={sensors}
+        modifiers={[restrictToVerticalAxis]}
+        onDragEnd={hasFilter ? undefined : onDragEnd}
+      >
+        <SortableContext
+          items={filtered.map((r) => r.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <Table<WineRow>
+            rowKey='id'
+            loading={loading}
+            dataSource={filtered}
+            pagination={{ pageSize: 20 }}
+            components={{ body: { row: SortableRow } }}
+            columns={[
+              {
+                title: '순서',
+                width: 48,
+                render: () => (
+                  <Tooltip
+                    title={hasFilter ? '필터 중에는 이동할 수 없습니다' : ''}
                   >
-                    삭제
-                  </Button>
-                </Popconfirm>
-              </Space>
-            ),
-          },
-        ]}
-      />
+                    <span>
+                      <DragHandle disabled={hasFilter} />
+                    </span>
+                  </Tooltip>
+                ),
+              },
+              {
+                title: '이미지',
+                dataIndex: 'image_path',
+                width: 80,
+                render: (v: string) =>
+                  v ? (
+                    <img
+                      src={v}
+                      alt=''
+                      style={{ width: 40, height: 64, objectFit: 'contain' }}
+                    />
+                  ) : null,
+              },
+              { title: '이름 (영문)', dataIndex: 'name_en' },
+              { title: '이름 (한글)', dataIndex: 'name_kr' },
+              {
+                title: '도멘',
+                dataIndex: 'winery_id',
+                render: (id: number) => wineryName(id),
+              },
+              {
+                title: '타입',
+                dataIndex: 'wine_type',
+                width: 100,
+                render: (t: string) => <Tag>{t}</Tag>,
+              },
+              {
+                title: '노출',
+                dataIndex: 'is_visible',
+                width: 80,
+                render: (v: boolean | undefined, row) => (
+                  <Tooltip title='끄면 공개 사이트(리스트·상세·검색)에서 숨겨집니다'>
+                    <Switch
+                      size='small'
+                      checked={v !== false}
+                      onChange={(next) => toggleVisible(row, next)}
+                    />
+                  </Tooltip>
+                ),
+              },
+              {
+                title: '홈 노출',
+                dataIndex: 'is_featured',
+                width: 90,
+                render: (v: boolean, row) => (
+                  <Switch
+                    size='small'
+                    checked={v}
+                    onChange={(next) => toggleFeatured(row, next)}
+                  />
+                ),
+              },
+              {
+                title: '',
+                width: 190,
+                render: (_, row) => (
+                  <Space size={4}>
+                    <Tooltip title='공개 페이지 보기'>
+                      <Button
+                        size='small'
+                        type='text'
+                        icon={<ExportOutlined />}
+                        href={`/wines/${row.id}`}
+                        target='_blank'
+                      />
+                    </Tooltip>
+                    <Tooltip title='복제해서 추가'>
+                      <Button
+                        size='small'
+                        type='text'
+                        icon={<CopyOutlined />}
+                        onClick={() => openDuplicate(row)}
+                      />
+                    </Tooltip>
+                    <Button
+                      size='small'
+                      onClick={() => openEdit(row)}
+                    >
+                      수정
+                    </Button>
+                    <Popconfirm
+                      title='이 와인을 삭제할까요?'
+                      onConfirm={() => handleDelete(row)}
+                    >
+                      <Button
+                        size='small'
+                        danger
+                      >
+                        삭제
+                      </Button>
+                    </Popconfirm>
+                  </Space>
+                ),
+              },
+            ]}
+          />
+        </SortableContext>
+      </DndContext>
 
       <Modal
         title={editing ? '와인 수정' : '와인 추가'}
