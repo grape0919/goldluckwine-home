@@ -1,8 +1,23 @@
 import { useEffect, useState } from 'react';
-import { Alert, App, Button, Card, Form, Input, Tabs, Typography } from 'antd';
+import {
+  Alert,
+  App,
+  Badge,
+  Button,
+  Card,
+  Form,
+  Input,
+  Popconfirm,
+  Space,
+  Tabs,
+  Tooltip,
+  Typography,
+} from 'antd';
+import { CloudUploadOutlined } from '@ant-design/icons';
 import type { Session } from '@supabase/supabase-js';
 import styled from 'styled-components';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { deployHookUrl, triggerDeploy } from '@/api/admin';
 import WineAdmin from '@/page/admin/WineAdmin';
 import WineryAdmin from '@/page/admin/WineryAdmin';
 import Seo from '@/components/Seo';
@@ -15,6 +30,25 @@ const AdminPage = () => {
   const [checking, setChecking] = useState(true);
   const [loggingIn, setLoggingIn] = useState(false);
   const [wineRefreshKey, setWineRefreshKey] = useState(0);
+  // 사이트는 SSG(빌드 시점 프리렌더)라 저장 내용이 재배포 전까지 공개
+  // 페이지에 반영되지 않는다 — 저장·삭제 시 true, 재배포 트리거 시 false
+  const [pendingChanges, setPendingChanges] = useState(false);
+  const [deploying, setDeploying] = useState(false);
+
+  const handleDeploy = async () => {
+    setDeploying(true);
+    try {
+      await triggerDeploy();
+      setPendingChanges(false);
+      message.success(
+        '사이트 재배포를 시작했습니다. 2~3분 뒤 공개 사이트에 반영됩니다.',
+      );
+    } catch (e) {
+      message.error(`재배포 요청 실패: ${(e as Error).message}`);
+    } finally {
+      setDeploying(false);
+    }
+  };
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -127,8 +161,48 @@ const AdminPage = () => {
         >
           골드럭와인 관리자
         </Title>
-        <Button onClick={() => supabase.auth.signOut()}>로그아웃</Button>
+        <Space>
+          {deployHookUrl ? (
+            <Popconfirm
+              title='공개 사이트에 반영할까요?'
+              description='재배포가 시작되며 2~3분 뒤 반영됩니다.'
+              onConfirm={handleDeploy}
+              okText='반영'
+              cancelText='취소'
+            >
+              <Badge dot={pendingChanges}>
+                <Button
+                  type='primary'
+                  icon={<CloudUploadOutlined />}
+                  loading={deploying}
+                >
+                  사이트 반영
+                </Button>
+              </Badge>
+            </Popconfirm>
+          ) : (
+            <Tooltip title='Vercel Deploy Hook URL을 VITE_DEPLOY_HOOK_URL 환경변수로 설정하면 여기서 바로 재배포할 수 있습니다. (Vercel → Settings → Git → Deploy Hooks)'>
+              <Button
+                icon={<CloudUploadOutlined />}
+                disabled
+              >
+                사이트 반영
+              </Button>
+            </Tooltip>
+          )}
+          <Button onClick={() => supabase.auth.signOut()}>로그아웃</Button>
+        </Space>
       </div>
+
+      {pendingChanges && (
+        <Alert
+          type='info'
+          showIcon
+          style={{ marginBottom: 16 }}
+          message='저장된 변경사항이 아직 공개 사이트에 반영되지 않았습니다.'
+          description='이 사이트는 빌드 시점에 페이지를 미리 생성(SSG)합니다. 편집을 마친 뒤 우측 상단 "사이트 반영" 버튼을 눌러주세요.'
+        />
+      )}
 
       <Tabs
         defaultActiveKey='wines'
@@ -136,14 +210,22 @@ const AdminPage = () => {
           {
             key: 'wines',
             label: '와인 관리',
-            children: <WineAdmin refreshKey={wineRefreshKey} />,
+            children: (
+              <WineAdmin
+                refreshKey={wineRefreshKey}
+                onChanged={() => setPendingChanges(true)}
+              />
+            ),
           },
           {
             key: 'wineries',
             label: '도멘(와이너리) 관리',
             children: (
               <WineryAdmin
-                onChanged={() => setWineRefreshKey((k) => k + 1)}
+                onChanged={() => {
+                  setWineRefreshKey((k) => k + 1);
+                  setPendingChanges(true);
+                }}
               />
             ),
           },

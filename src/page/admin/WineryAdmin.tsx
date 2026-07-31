@@ -9,8 +9,14 @@ import {
   Popconfirm,
   Space,
   Table,
+  Tooltip,
 } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import {
+  ArrowDownOutlined,
+  ArrowUpOutlined,
+  ExportOutlined,
+  PlusOutlined,
+} from '@ant-design/icons';
 import type { WineryRow } from '@/lib/supabase';
 import {
   createWinery,
@@ -110,6 +116,28 @@ const WineryAdmin = ({ onChanged }: { onChanged?: () => void }) => {
     }
   };
 
+  /** 표시 순서 한 칸 이동 — 전체 목록을 1부터 재번호 매겨 변경된 행만 저장 */
+  const moveRow = async (row: WineryRow, dir: -1 | 1) => {
+    const idx = rows.findIndex((r) => r.id === row.id);
+    const target = idx + dir;
+    if (idx < 0 || target < 0 || target >= rows.length) return;
+    const next = [...rows];
+    [next[idx], next[target]] = [next[target], next[idx]];
+    const renumbered = next.map((r, i) => ({ ...r, sort_order: i + 1 }));
+    setRows(renumbered);
+    try {
+      await Promise.all(
+        renumbered
+          .filter((r, i) => next[i].sort_order !== r.sort_order)
+          .map((r) => updateWinery(r.id, { sort_order: r.sort_order })),
+      );
+      onChanged?.();
+    } catch (e) {
+      message.error(`순서 변경 실패: ${(e as Error).message}`);
+      await reload();
+    }
+  };
+
   return (
     <>
       <Space
@@ -131,6 +159,31 @@ const WineryAdmin = ({ onChanged }: { onChanged?: () => void }) => {
         pagination={false}
         columns={[
           {
+            title: '순서',
+            width: 80,
+            render: (_, row) => {
+              const idx = rows.findIndex((r) => r.id === row.id);
+              return (
+                <Space size={2}>
+                  <Button
+                    size='small'
+                    type='text'
+                    icon={<ArrowUpOutlined />}
+                    disabled={idx <= 0}
+                    onClick={() => moveRow(row, -1)}
+                  />
+                  <Button
+                    size='small'
+                    type='text'
+                    icon={<ArrowDownOutlined />}
+                    disabled={idx >= rows.length - 1}
+                    onClick={() => moveRow(row, 1)}
+                  />
+                </Space>
+              );
+            },
+          },
+          {
             title: '이미지',
             dataIndex: 'image_path',
             width: 90,
@@ -146,12 +199,20 @@ const WineryAdmin = ({ onChanged }: { onChanged?: () => void }) => {
           { title: 'Domaine', dataIndex: 'domaine' },
           { title: '도멘(한글)', dataIndex: 'domaine_kr' },
           { title: '지역', dataIndex: 'location' },
-          { title: '정렬', dataIndex: 'sort_order', width: 70 },
           {
             title: '',
-            width: 140,
+            width: 170,
             render: (_, row) => (
-              <Space>
+              <Space size={4}>
+                <Tooltip title='공개 페이지 보기'>
+                  <Button
+                    size='small'
+                    type='text'
+                    icon={<ExportOutlined />}
+                    href={`/wineries/${row.id}`}
+                    target='_blank'
+                  />
+                </Tooltip>
                 <Button
                   size='small'
                   onClick={() => openEdit(row)}
@@ -217,13 +278,13 @@ const WineryAdmin = ({ onChanged }: { onChanged?: () => void }) => {
           </Form.Item>
           <Form.Item
             name='sort_order'
-            label='정렬 순서'
+            label='정렬 순서 (표에서 화살표로도 조정 가능)'
           >
             <InputNumber min={0} />
           </Form.Item>
           <Form.Item
             name='image'
-            label='대표 이미지'
+            label='대표 이미지 (업로드 시 자동으로 리사이즈·WebP 변환)'
           >
             <ImageUploadItem />
           </Form.Item>
