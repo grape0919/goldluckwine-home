@@ -47,7 +47,7 @@ const PageLayout = () => {
         >
           <img
             src='/home/brand/logo-wordmark.svg'
-            alt='골드럭와인 Gold Luck Wine 와인수입사'
+            alt='골드럭와인 GOLDLUCKWINE 와인수입사'
             height={26}
           />
         </Link>

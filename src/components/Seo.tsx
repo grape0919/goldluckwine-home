@@ -2,14 +2,14 @@ import React from 'react';
 import { Head } from 'vite-react-ssg';
 
 export const BASE_URL = 'https://goldluckwine.com';
-const SITE_NAME = '골드럭와인 Gold Luck Wine';
+const SITE_NAME = '골드럭와인 GOLDLUCKWINE';
 const DEFAULT_TITLE = `${SITE_NAME} | 와인수입사`;
 const DEFAULT_DESCRIPTION =
-  '골드럭 와인은 슈냉 블랑 중심의 깨끗하고 우아한 내추럴 와인을 양조하는 와인메이커들과 함께 소개합니다.';
+  '골드럭와인은 슈냉 블랑 중심의 깨끗하고 우아한 내추럴 와인을 소개하는 와인 수입사입니다.';
 const DEFAULT_IMAGE = `${BASE_URL}/og-image.jpg`;
 
 interface SeoProps {
-  /** 페이지 제목 — "{title} | 골드럭와인 Gold Luck Wine"로 조합. 생략 시 기본 타이틀 */
+  /** 페이지 제목 — "{title} | 골드럭와인 GOLDLUCKWINE"로 조합. 생략 시 기본 타이틀 */
   title?: string;
   description?: string;
   /** canonical 경로 (예: '/winelist'). 생략 시 현재 pathname */
