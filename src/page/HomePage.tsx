@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { customedTheme } from '@/styles/theme';
 import HeroSection from '@/page/home/HeroSection';
 import IntroSection from '@/page/home/IntroSection';
-import LoireSection from '@/page/home/LoireSection';
+import GermanySection from '@/page/home/GermanySection';
 import GallerySection from '@/page/home/GallerySection';
 import { fetchFeaturedWines, fetchWineries } from '@/api/wines';
 import type { WineInfoType } from '@/types/wine';
@@ -38,7 +38,7 @@ function HomePage() {
         featuredWines={featuredWines}
         wineryNameById={wineryNameById}
       />
-      <LoireSection />
+      <GermanySection />
       <GallerySection />
     </Wrapper>
   );

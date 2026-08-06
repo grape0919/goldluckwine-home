@@ -4,34 +4,32 @@ import { customedTheme } from '@/styles/theme';
 
 const { home, font } = customedTheme;
 
-/** 추천 와인 피처 섹션 — ALL THAT LOIRE HAD THAT YEAR */
-const LoireSection = () => {
+/** 주력 와인 피처 섹션 — GERMAN WINE, NATURALLY (슈나이더) */
+const GermanySection = () => {
   return (
     <Wrapper>
-      <div className='loire-copy'>
+      <div className='germany-copy'>
         <h2 className='font-display'>
-          All That Loire
+          German
           <br />
-          Had
+          Wine,
           <br />
-          That Year
+          Naturally
         </h2>
         <p>
-          2021년, 기후 재난이 루아르를 덮친 그해 —
+          독일 최남서단, 스위스 국경과 맞닿은 언덕의 포도밭.
           <br />
-          다미앙은 단 하나의 화이트 와인을 양조했습니다. 30년, 그리고 65년
-          수령의 슈냉 블랑이 함께 압착되어 9개월간 퀴브 안에서 천천히 완성된,
-          농익은 핵과일과 자몽의 쌉싸름한 산미 — 지금도, 오랜 시간이 흘러도
-          빛을 잃지 않을 와인.
+          여섯 세대를 이어온 슈나이더 가문이 건강한 밭과 적은 수확량으로
+          빚어내는 정직한 와인을 만나보세요.
         </p>
         <Link
           to='/winelist'
-          className='loire-button'
+          className='germany-button'
         >
           VIEW MORE
         </Link>
       </div>
-      <div className='loire-photo' />
+      <div className='germany-photo' />
     </Wrapper>
   );
 };
@@ -40,7 +38,7 @@ const Wrapper = styled.section`
   display: grid;
   grid-template-columns: 1fr 1fr;
 
-  .loire-copy {
+  .germany-copy {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -51,7 +49,7 @@ const Wrapper = styled.section`
     text-align: center;
   }
 
-  .loire-copy h2 {
+  .germany-copy h2 {
     margin: 0;
     color: ${home.brown};
     font-size: 58px;
@@ -61,7 +59,7 @@ const Wrapper = styled.section`
     text-transform: uppercase;
   }
 
-  .loire-copy p {
+  .germany-copy p {
     margin: 40px 0 0;
     max-width: 460px;
     color: ${home.ink};
@@ -70,7 +68,7 @@ const Wrapper = styled.section`
     line-height: 26px;
   }
 
-  .loire-button {
+  .germany-button {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -90,16 +88,16 @@ const Wrapper = styled.section`
     }
   }
 
-  .loire-photo {
+  .germany-photo {
     min-height: 820px;
-    background: url('/home/loire/loire-bottle.webp') center / cover no-repeat;
+    background: url('/home/germany/germany-wine.webp') center / cover no-repeat;
   }
 
   @media (max-width: 1024px) {
-    .loire-copy h2 {
+    .germany-copy h2 {
       font-size: 44px;
     }
-    .loire-photo {
+    .germany-photo {
       min-height: 640px;
     }
   }
@@ -107,18 +105,18 @@ const Wrapper = styled.section`
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
 
-    .loire-copy {
+    .germany-copy {
       padding: 72px 24px;
     }
 
-    .loire-copy h2 {
+    .germany-copy h2 {
       font-size: 36px;
     }
 
-    .loire-photo {
+    .germany-photo {
       min-height: 420px;
     }
   }
 `;
 
-export default LoireSection;
+export default GermanySection;
