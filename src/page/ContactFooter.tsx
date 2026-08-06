@@ -40,7 +40,7 @@ const ContactFooter: React.FC = () => (
         <FaRegEnvelope aria-hidden />
         goldluckwine@gmail.com
       </a>
-      <span className='info-item info-brand'>Gold Luck Wine</span>
+      <span className='info-item info-brand'>GOLDLUCKWINE</span>
       <a
         className='info-item'
         href='https://www.instagram.com/goldluckwine'
