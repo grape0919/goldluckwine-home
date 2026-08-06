@@ -15,7 +15,7 @@ const HeroSection = () => {
         aria-hidden
       />
       <h1 className='hero-tagline'>
-        Goldluck Wine is a natural wine
+        GOLDLUCKWINE is a natural wine
         <br />
         importer introducing wines from
         <br />

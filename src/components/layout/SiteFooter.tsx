@@ -11,13 +11,13 @@ const SiteFooter = () => {
       <div className='footer-brand'>
         <img
           src='/home/brand/logo-symbol-footer.svg'
-          alt='Gold Luck Wine'
+          alt='GOLDLUCKWINE'
           height={88}
         />
         <p>
           May wine and peace be with you.
           <br />
-          ©2026 goldluckwine. All rights reserved.
+          ©2026 GOLDLUCKWINE. All rights reserved.
         </p>
       </div>
 
