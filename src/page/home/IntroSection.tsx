@@ -2,21 +2,32 @@ import styled from 'styled-components';
 import { customedTheme } from '@/styles/theme';
 import WineCard from '@/components/WineCard';
 import type { WineInfoType } from '@/types/wine';
+import { renderLines } from '@/utils/lines';
+import type { HomeContent } from '@/api/homeContent';
 
 const { home, font } = customedTheme;
-
-const STRIP_IMAGES = [1, 2, 3, 4, 5, 6].map(
-  (n) => `/home/strip/strip-0${n}.webp`,
-);
 
 interface IntroSectionProps {
   featuredWines: WineInfoType[];
   /** wineryId → 도멘 이름 */
   wineryNameById: Record<number, string>;
+  content: HomeContent;
 }
 
 /** 크림 배경 소개 + 포토 스트립 + OUR COLLECTION 카드 */
-const IntroSection = ({ featuredWines, wineryNameById }: IntroSectionProps) => {
+const IntroSection = ({
+  featuredWines,
+  wineryNameById,
+  content,
+}: IntroSectionProps) => {
+  const stripImages = [
+    content.strip_1,
+    content.strip_2,
+    content.strip_3,
+    content.strip_4,
+    content.strip_5,
+    content.strip_6,
+  ];
   return (
     <Wrapper>
       <div className='intro-clovers' aria-hidden>
@@ -34,27 +45,14 @@ const IntroSection = ({ featuredWines, wineryNameById }: IntroSectionProps) => {
       </div>
 
       <div className='intro-copy'>
-        <h2>
-          골드럭와인은 프랑스의 보석 같은 소규모 농부들의 와인을 소개하는
-          <br />
-          내추럴 와인 전문 수입사입니다.
-        </h2>
-        <p>
-          루아르 지역의 대표 화이트 품종인 슈냉 블랑의 다채로운 퍼포먼스를
-          보여주는 와인들을 위주로,
-          <br />
-          특히 ‘깨끗함’과 ‘우아함’의 강점을 가진 와인들을 선보입니다.
-          골드럭와인은 포도 본연의 순수함과
-          <br />
-          떼루아를 존중하며 최소한의 개입으로 양조하는, 진솔한 와인메이커들과
-          함께합니다.
-        </p>
+        <h2>{renderLines(content.intro_heading)}</h2>
+        <p>{renderLines(content.intro_body)}</p>
       </div>
 
       <div className='intro-strip'>
-        {STRIP_IMAGES.map((src) => (
+        {stripImages.map((src, i) => (
           <img
-            key={src}
+            key={`${i}-${src}`}
             src={src}
             alt=''
             loading='lazy'

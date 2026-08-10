@@ -12,7 +12,7 @@ const BUCKET = 'wine-assets';
 /** Storage 업로드 후 공개 URL 반환 (업로드 전 1600px·WebP로 자동 최적화) */
 export async function uploadImage(
   file: File,
-  folder: 'wines' | 'wineries',
+  folder: 'wines' | 'wineries' | 'home',
 ): Promise<string> {
   const optimized = await optimizeImageFile(file);
   const ext = optimized.name.split('.').pop() ?? 'png';

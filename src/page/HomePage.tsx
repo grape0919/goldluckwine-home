@@ -6,40 +6,47 @@ import IntroSection from '@/page/home/IntroSection';
 import GermanySection from '@/page/home/GermanySection';
 import GallerySection from '@/page/home/GallerySection';
 import { fetchFeaturedWines, fetchWineries } from '@/api/wines';
+import { fetchHomeContent } from '@/api/homeContent';
+import type { HomeContent } from '@/api/homeContent';
 import type { WineInfoType } from '@/types/wine';
 import Seo from '@/components/Seo';
 
 interface HomeLoaderData {
   featuredWines: WineInfoType[];
   wineryNameById: Record<number, string>;
+  content: HomeContent;
 }
 
-/** 빌드(SSG) 시점에 추천 와인을 로드 → 홈 HTML의 OUR COLLECTION 카드와
- *  상세 페이지 링크가 프리렌더된다 (크롤러의 첫 진입 경로가 홈이므로 중요) */
+/** 빌드(SSG) 시점에 추천 와인·홈 콘텐츠를 로드 → 홈 HTML의 문구·이미지와
+ *  OUR COLLECTION 카드가 프리렌더된다 (크롤러의 첫 진입 경로가 홈이므로 중요) */
 export async function homeLoader() {
-  const [featuredWines, wineries] = await Promise.all([
+  const [featuredWines, wineries, content] = await Promise.all([
     fetchFeaturedWines(),
     fetchWineries(),
+    fetchHomeContent(),
   ]);
   return {
     featuredWines,
     wineryNameById: Object.fromEntries(wineries.map((w) => [w.id, w.domaine])),
+    content,
   };
 }
 
 function HomePage() {
-  const { featuredWines, wineryNameById } = useLoaderData() as HomeLoaderData;
+  const { featuredWines, wineryNameById, content } =
+    useLoaderData() as HomeLoaderData;
 
   return (
     <Wrapper>
       <Seo path='/' />
-      <HeroSection />
+      <HeroSection content={content} />
       <IntroSection
         featuredWines={featuredWines}
         wineryNameById={wineryNameById}
+        content={content}
       />
-      <GermanySection />
-      <GallerySection />
+      <GermanySection content={content} />
+      <GallerySection content={content} />
     </Wrapper>
   );
 }
