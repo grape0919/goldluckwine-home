@@ -1,22 +1,26 @@
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { customedTheme } from '@/styles/theme';
+import type { HomeContent } from '@/api/homeContent';
 
 const { home } = customedTheme;
 
-const GALLERY_IMAGES = [1, 2, 3, 4, 5].map(
-  (n) => `/home/gallery/gallery-${n}.webp`,
-);
-
 /** 다크 갤러리 스트립 + 타원 마스크 CONTACT 링크 */
-const GallerySection = () => {
+const GallerySection = ({ content }: { content: HomeContent }) => {
+  const galleryImages = [
+    content.gallery_1,
+    content.gallery_2,
+    content.gallery_3,
+    content.gallery_4,
+    content.gallery_5,
+  ];
   return (
     <Wrapper>
       <div className='gallery-strip'>
-        {GALLERY_IMAGES.map((src, i) =>
+        {galleryImages.map((src, i) =>
           i === 2 ? (
             <Link
-              key={src}
+              key={`${i}-${src}`}
               to='/contact'
               className='gallery-item gallery-contact'
             >
@@ -33,7 +37,7 @@ const GallerySection = () => {
             </Link>
           ) : (
             <div
-              key={src}
+              key={`${i}-${src}`}
               className='gallery-item'
             >
               <img

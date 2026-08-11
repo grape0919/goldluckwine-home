@@ -1,12 +1,14 @@
 import styled from 'styled-components';
 import { customedTheme } from '@/styles/theme';
+import { renderLines } from '@/utils/lines';
+import type { HomeContent } from '@/api/homeContent';
 
 const { font, home } = customedTheme;
 
 /** 풀블리드 히어로: 와인병 사진 + 로고 워터마크 + 영문 태그라인 */
-const HeroSection = () => {
+const HeroSection = ({ content }: { content: HomeContent }) => {
   return (
-    <Wrapper>
+    <Wrapper style={{ backgroundImage: `url('${content.hero_bg}')` }}>
       <div className='hero-divider' />
       <img
         className='hero-symbol'
@@ -14,13 +16,7 @@ const HeroSection = () => {
         alt=''
         aria-hidden
       />
-      <h1 className='hero-tagline'>
-        GOLDLUCKWINE is a natural wine
-        <br />
-        importer introducing wines from
-        <br />
-        small growers — the hidden jewels of France.
-      </h1>
+      <h1 className='hero-tagline'>{renderLines(content.hero_tagline)}</h1>
     </Wrapper>
   );
 };
@@ -33,7 +29,9 @@ const Wrapper = styled.section`
   min-height: 640px;
   height: calc(100vh - 80px);
   max-height: 900px;
-  background: url('/home/hero/hero-bg-1.webp') center / cover no-repeat;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
 
   .hero-divider {
     position: absolute;
