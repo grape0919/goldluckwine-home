@@ -82,9 +82,15 @@ const CardLink = styled(Link)<{ $soldOut?: boolean }>`
       max-height: 100%;
       max-width: 60%;
       object-fit: contain;
+      transition: transform 0.5s ease;
       opacity: ${({ $soldOut }) => ($soldOut ? 0.45 : 1)};
       filter: ${({ $soldOut }) => ($soldOut ? 'grayscale(60%)' : 'none')};
     }
+  }
+
+  &:hover .card-image img,
+  &:focus-visible .card-image img {
+    transform: scale(1.04);
   }
 
   .sold-out-badge {
