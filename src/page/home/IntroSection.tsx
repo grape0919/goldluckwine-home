@@ -1,6 +1,15 @@
+import { useRef } from 'react';
 import styled from 'styled-components';
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from 'motion/react';
+import type { MotionValue } from 'motion/react';
 import { customedTheme } from '@/styles/theme';
 import WineCard from '@/components/WineCard';
+import { Reveal } from '@/components/motion/reveal';
 import type { WineInfoType } from '@/types/wine';
 import { renderLines } from '@/utils/lines';
 import type { HomeContent } from '@/api/homeContent';
@@ -14,12 +23,46 @@ interface IntroSectionProps {
   content: HomeContent;
 }
 
+/** 스트립 사진별 scrub 진폭(px) — 이웃끼리 반대 방향으로 미세하게 어긋난다 */
+const STRIP_AMPS = [16, -12, 20, -18, 14, -20];
+
+/** 포토 스트립 한 컷: 스크롤 진행에 따라 프레임 안에서 세로로 미세하게 흐른다.
+ *  이미지를 프레임보다 크게(scale) 잡아 이동해도 여백이 드러나지 않는다. */
+const StripImage = ({
+  src,
+  index,
+  progress,
+}: {
+  src: string;
+  index: number;
+  progress: MotionValue<number>;
+}) => {
+  const reduce = useReducedMotion();
+  const amp = STRIP_AMPS[index % STRIP_AMPS.length];
+  const y = useTransform(progress, [0, 1], [amp, -amp]);
+  return (
+    <div className='strip-frame'>
+      <motion.img
+        src={src}
+        alt=''
+        loading='lazy'
+        style={reduce ? undefined : { y, scale: 1.12 }}
+      />
+    </div>
+  );
+};
+
 /** 크림 배경 소개 + 포토 스트립 + OUR COLLECTION 카드 */
 const IntroSection = ({
   featuredWines,
   wineryNameById,
   content,
 }: IntroSectionProps) => {
+  const stripRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: stripRef,
+    offset: ['start end', 'end start'],
+  });
   const stripImages = [
     content.strip_1,
     content.strip_2,
@@ -45,30 +88,44 @@ const IntroSection = ({
       </div>
 
       <div className='intro-copy'>
-        <h2>{renderLines(content.intro_heading)}</h2>
-        <p>{renderLines(content.intro_body)}</p>
+        <Reveal>
+          <h2>{renderLines(content.intro_heading)}</h2>
+        </Reveal>
+        <Reveal delay={0.15}>
+          <p>{renderLines(content.intro_body)}</p>
+        </Reveal>
       </div>
 
-      <div className='intro-strip'>
+      <div
+        className='intro-strip'
+        ref={stripRef}
+      >
         {stripImages.map((src, i) => (
-          <img
+          <StripImage
             key={`${i}-${src}`}
             src={src}
-            alt=''
-            loading='lazy'
+            index={i}
+            progress={scrollYProgress}
           />
         ))}
       </div>
 
-      <h3 className='collection-title font-display'>OUR COLLECTION</h3>
+      <Reveal>
+        <h3 className='collection-title font-display'>OUR COLLECTION</h3>
+      </Reveal>
 
       <div className='collection-grid'>
-        {featuredWines.slice(0, 3).map((wine) => (
-          <WineCard
+        {featuredWines.slice(0, 3).map((wine, i) => (
+          <Reveal
             key={wine.wineId}
-            wine={wine}
-            wineryName={wineryNameById[wine.wineryId]}
-          />
+            delay={i * 0.12}
+            className='collection-cell'
+          >
+            <WineCard
+              wine={wine}
+              wineryName={wineryNameById[wine.wineryId]}
+            />
+          </Reveal>
         ))}
       </div>
     </Wrapper>
@@ -130,10 +187,17 @@ const Wrapper = styled.section`
     width: 112%;
     margin: 110px 0 0 -6%;
 
-    img {
+    .strip-frame {
       flex: 1;
       min-width: 0;
       height: 420px;
+      overflow: hidden;
+    }
+
+    img {
+      display: block;
+      width: 100%;
+      height: 100%;
       object-fit: cover;
     }
   }
@@ -159,6 +223,15 @@ const Wrapper = styled.section`
     }
   }
 
+  .collection-cell {
+    display: flex;
+    flex-direction: column;
+
+    > a {
+      flex: 1;
+    }
+  }
+
   @media (max-width: 1024px) {
     .intro-copy {
       padding: 0 24px;
@@ -169,7 +242,7 @@ const Wrapper = styled.section`
       width: 100%;
       margin-left: 0;
 
-      img {
+      .strip-frame {
         flex: 0 0 260px;
         height: 320px;
       }

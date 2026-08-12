@@ -1,11 +1,13 @@
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { customedTheme } from '@/styles/theme';
+import { Reveal } from '@/components/motion/reveal';
 import type { HomeContent } from '@/api/homeContent';
 
 const { home } = customedTheme;
 
-/** 다크 갤러리 스트립 + 타원 마스크 CONTACT 링크 */
+/** 다크 갤러리 스트립 + 타원 마스크 CONTACT 링크.
+ *  사진 5장이 왼쪽부터 순차 등장, CONTACT 컷은 hover 시 미세 확대 */
 const GallerySection = ({ content }: { content: HomeContent }) => {
   const galleryImages = [
     content.gallery_1,
@@ -19,25 +21,31 @@ const GallerySection = ({ content }: { content: HomeContent }) => {
       <div className='gallery-strip'>
         {galleryImages.map((src, i) =>
           i === 2 ? (
-            <Link
+            <Reveal
               key={`${i}-${src}`}
-              to='/contact'
+              delay={i * 0.08}
               className='gallery-item gallery-contact'
             >
-              <img
-                src={src}
-                alt=''
-                loading='lazy'
-              />
-              <img
-                className='contact-badge'
-                src='/home/clover/contact-clover.png'
-                alt='CONTACT'
-              />
-            </Link>
+              <Link
+                to='/contact'
+                className='gallery-link'
+              >
+                <img
+                  src={src}
+                  alt=''
+                  loading='lazy'
+                />
+                <img
+                  className='contact-badge'
+                  src='/home/clover/contact-clover.png'
+                  alt='CONTACT'
+                />
+              </Link>
+            </Reveal>
           ) : (
-            <div
+            <Reveal
               key={`${i}-${src}`}
+              delay={i * 0.08}
               className='gallery-item'
             >
               <img
@@ -45,7 +53,7 @@ const GallerySection = ({ content }: { content: HomeContent }) => {
                 alt=''
                 loading='lazy'
               />
-            </div>
+            </Reveal>
           ),
         )}
       </div>
@@ -79,8 +87,17 @@ const Wrapper = styled.section`
     }
   }
 
+  .gallery-link {
+    display: block;
+  }
+
   .gallery-contact img {
     border-radius: 50% / 42%;
+    transition: transform 0.5s ease;
+  }
+
+  .gallery-contact:hover img {
+    transform: scale(1.03);
   }
 
   /* .gallery-item img 규칙(100%/500px/cover/라운드)을 배지에는 무효화 */
@@ -92,6 +109,11 @@ const Wrapper = styled.section`
     height: auto;
     object-fit: contain;
     border-radius: 0;
+    transition: none;
+  }
+
+  .gallery-contact:hover img.contact-badge {
+    transform: none;
   }
 
   @media (max-width: 1024px) {

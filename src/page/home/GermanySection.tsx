@@ -1,29 +1,63 @@
+import { useRef } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from 'motion/react';
 import { customedTheme } from '@/styles/theme';
+import { MaskedLines, Reveal } from '@/components/motion/reveal';
 import { renderLines } from '@/utils/lines';
 import type { HomeContent } from '@/api/homeContent';
 
 const { home, font } = customedTheme;
 
-/** 주력 와인 피처 섹션 — GERMAN WINE, NATURALLY (슈나이더) */
+/** 주력 와인 피처 섹션 — GERMAN WINE, NATURALLY (슈나이더).
+ *  타이틀 마스크 리빌 + 사진은 스크롤 진행에 맞춰 아주 천천히 줌아웃 */
 const GermanySection = ({ content }: { content: HomeContent }) => {
+  const reduce = useReducedMotion();
+  const photoRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: photoRef,
+    offset: ['start end', 'end start'],
+  });
+  const photoScale = useTransform(scrollYProgress, [0, 1], [1.1, 1]);
+
   return (
     <Wrapper>
       <div className='germany-copy'>
-        <h2 className='font-display'>{renderLines(content.feature_title)}</h2>
-        <p>{renderLines(content.feature_body)}</p>
-        <Link
-          to='/winelist'
-          className='germany-button'
+        <h2 className='font-display'>
+          <MaskedLines text={content.feature_title} />
+        </h2>
+        <Reveal delay={0.2}>
+          <p>{renderLines(content.feature_body)}</p>
+        </Reveal>
+        <Reveal
+          delay={0.3}
+          className='germany-button-cell'
         >
-          VIEW MORE
-        </Link>
+          <Link
+            to='/winelist'
+            className='germany-button'
+          >
+            VIEW MORE
+          </Link>
+        </Reveal>
       </div>
       <div
         className='germany-photo'
-        style={{ backgroundImage: `url('${content.feature_photo}')` }}
-      />
+        ref={photoRef}
+      >
+        <motion.div
+          className='germany-photo-bg'
+          style={{
+            backgroundImage: `url('${content.feature_photo}')`,
+            scale: reduce ? undefined : photoScale,
+          }}
+        />
+      </div>
     </Wrapper>
   );
 };
@@ -62,6 +96,12 @@ const Wrapper = styled.section`
     line-height: 26px;
   }
 
+  .germany-button-cell {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+
   .germany-button {
     display: flex;
     align-items: center;
@@ -83,7 +123,14 @@ const Wrapper = styled.section`
   }
 
   .germany-photo {
+    position: relative;
     min-height: 820px;
+    overflow: hidden;
+  }
+
+  .germany-photo-bg {
+    position: absolute;
+    inset: 0;
     background-position: center;
     background-size: cover;
     background-repeat: no-repeat;
