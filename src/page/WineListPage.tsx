@@ -1,6 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useLoaderData, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
+import type { ReactNode } from 'react';
+import {
+  AnimatePresence,
+  motion,
+  useInView,
+  useReducedMotion,
+} from 'motion/react';
 import { customedTheme } from '@/styles/theme';
 import { fetchWineries, fetchWines } from '@/api/wines';
 import type { WineInfoType } from '@/types/wine';
@@ -9,8 +16,71 @@ import { WineTypes } from '@/enum/wine';
 import { distinctVarieties, normalizeVariety } from '@/utils/variety';
 import WineCard from '@/components/WineCard';
 import Seo from '@/components/Seo';
+import {
+  EASE,
+  LoadFade,
+  MaskedLines,
+  useIsoLayoutEffect,
+} from '@/components/motion/reveal';
 
 const { home, font } = customedTheme;
+
+/** 그리드 셀: 첫 진입 시엔 스크롤 등장(Reveal과 동일한 SSG 안전 장치),
+ *  필터 조작 후 마운트되는 카드는 페이드인. 필터 변경 시 남는 카드는
+ *  layout 애니메이션으로 자리를 이동하고 빠지는 카드는 페이드아웃. */
+const GridCell = ({
+  children,
+  column,
+  filtered,
+}: {
+  children: ReactNode;
+  /** 데스크톱 그리드 열 위치(0~2) — 열 기준 stagger */
+  column: number;
+  /** 필터 조작 이후 마운트되었는지 (마운트 시점 스냅샷) */
+  filtered: boolean;
+}) => {
+  const reduce = useReducedMotion();
+  const appear = useRef(filtered).current;
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, amount: 0.15 });
+  const [armed, setArmed] = useState(false);
+
+  useIsoLayoutEffect(() => {
+    if (reduce || appear) return;
+    const el = ref.current;
+    if (el && el.getBoundingClientRect().top > window.innerHeight * 0.85) {
+      setArmed(true);
+    }
+  }, [reduce, appear]);
+
+  return (
+    <motion.div
+      ref={ref}
+      layout={!reduce}
+      initial={appear && !reduce ? { opacity: 0 } : false}
+      animate={
+        appear
+          ? { opacity: 1, transition: { duration: 0.35, ease: EASE } }
+          : armed
+            ? inView
+              ? 'visible'
+              : 'hidden'
+            : undefined
+      }
+      exit={reduce ? undefined : { opacity: 0, transition: { duration: 0.2 } }}
+      variants={{
+        hidden: { opacity: 0, y: 14, transition: { duration: 0 } },
+        visible: {
+          opacity: 1,
+          y: 0,
+          transition: { duration: 0.65, ease: EASE, delay: column * 0.08 },
+        },
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+};
 
 /** 드롭다운 화살표 (Figma chevron-down, #101010 stroke) */
 const CHEVRON =
@@ -62,7 +132,12 @@ const WineListPage: React.FC = () => {
       (!makerFilter || wine.wineryId === Number(makerFilter)),
   );
 
+  // 필터 조작 이후 마운트되는 카드를 구분 — 첫 진입 카드는 스크롤 등장,
+  // 필터 결과로 나타나는 카드는 즉시 페이드인
+  const interacted = useRef(false);
+
   const setFilter = (key: string, value: string) => {
+    interacted.current = true;
     const next = new URLSearchParams(searchParams);
     if (value) {
       next.set(key, value);
@@ -72,7 +147,10 @@ const WineListPage: React.FC = () => {
     setSearchParams(next, { replace: true });
   };
 
-  const resetFilters = () => setSearchParams({}, { replace: true });
+  const resetFilters = () => {
+    interacted.current = true;
+    setSearchParams({}, { replace: true });
+  };
   const hasFilter = Boolean(typeFilter || grapeFilter || makerFilter);
 
   return (
@@ -83,29 +161,43 @@ const WineListPage: React.FC = () => {
         path='/winelist'
       />
       <header className='list-header'>
-        <img
+        <LoadFade
           className='grape-deco'
-          src='/home/winelist/grape-deco.svg'
-          alt=''
-          aria-hidden
-        />
+          delay={0.3}
+        >
+          <img
+            src='/home/winelist/grape-deco.svg'
+            alt=''
+            aria-hidden
+          />
+        </LoadFade>
         <h1 aria-label='WINE LIST'>
           <span
             className='t-wine'
             aria-hidden
           >
-            WINE
+            <MaskedLines
+              text='WINE'
+              mode='load'
+            />
           </span>
           <span
             className='t-list'
             aria-hidden
           >
-            LIST
+            <MaskedLines
+              text='LIST'
+              mode='load'
+              delay={0.12}
+            />
           </span>
         </h1>
       </header>
 
-      <div className='list-filters'>
+      <LoadFade
+        className='list-filters'
+        delay={0.35}
+      >
         <select
           value={typeFilter}
           onChange={(e) => setFilter('type', e.target.value)}
@@ -163,10 +255,15 @@ const WineListPage: React.FC = () => {
         <span className='filter-count'>
           {filtered.length} WINE{filtered.length === 1 ? '' : 'S'}
         </span>
-      </div>
+      </LoadFade>
 
       {filtered.length === 0 ? (
-        <div className='empty-state'>
+        <motion.div
+          className='empty-state'
+          initial={false}
+          animate={{ opacity: [0, 1] }}
+          transition={{ duration: 0.35, ease: EASE }}
+        >
           <p>조건에 맞는 와인이 없습니다.</p>
           <button
             type='button'
@@ -174,16 +271,23 @@ const WineListPage: React.FC = () => {
           >
             필터 초기화
           </button>
-        </div>
+        </motion.div>
       ) : (
         <div className='wine-grid'>
-          {filtered.map((wine) => (
-            <WineCard
-              key={wine.wineId}
-              wine={wine}
-              wineryName={wineryNameById[wine.wineryId]}
-            />
-          ))}
+          <AnimatePresence>
+            {filtered.map((wine, i) => (
+              <GridCell
+                key={wine.wineId}
+                column={i % 3}
+                filtered={interacted.current}
+              >
+                <WineCard
+                  wine={wine}
+                  wineryName={wineryNameById[wine.wineryId]}
+                />
+              </GridCell>
+            ))}
+          </AnimatePresence>
         </div>
       )}
     </Wrapper>
@@ -231,6 +335,11 @@ const Wrapper = styled.div`
     /* Figma Union 446.6px — 와인 상세 페이지와 동일 크기·위치 */
     width: 447px;
     pointer-events: none;
+
+    img {
+      display: block;
+      width: 100%;
+    }
   }
 
   .list-filters {
@@ -287,8 +396,14 @@ const Wrapper = styled.div`
     margin-bottom: 200px;
 
     > * {
+      display: flex;
+      flex-direction: column;
       border-right: 1px solid ${home.dark};
       border-bottom: 1px solid ${home.dark};
+
+      > a {
+        flex: 1;
+      }
     }
   }
 
