@@ -1,27 +1,18 @@
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { customedTheme } from '@/styles/theme';
+import { renderLines } from '@/utils/lines';
+import type { HomeContent } from '@/api/homeContent';
 
 const { home, font } = customedTheme;
 
 /** 주력 와인 피처 섹션 — GERMAN WINE, NATURALLY (슈나이더) */
-const GermanySection = () => {
+const GermanySection = ({ content }: { content: HomeContent }) => {
   return (
     <Wrapper>
       <div className='germany-copy'>
-        <h2 className='font-display'>
-          German
-          <br />
-          Wine,
-          <br />
-          Naturally
-        </h2>
-        <p>
-          독일 최남서단, 스위스 국경과 맞닿은 언덕의 포도밭.
-          <br />
-          여섯 세대를 이어온 슈나이더 가문이 건강한 밭과 적은 수확량으로
-          빚어내는 정직한 와인을 만나보세요.
-        </p>
+        <h2 className='font-display'>{renderLines(content.feature_title)}</h2>
+        <p>{renderLines(content.feature_body)}</p>
         <Link
           to='/winelist'
           className='germany-button'
@@ -29,7 +20,10 @@ const GermanySection = () => {
           VIEW MORE
         </Link>
       </div>
-      <div className='germany-photo' />
+      <div
+        className='germany-photo'
+        style={{ backgroundImage: `url('${content.feature_photo}')` }}
+      />
     </Wrapper>
   );
 };
@@ -90,7 +84,9 @@ const Wrapper = styled.section`
 
   .germany-photo {
     min-height: 820px;
-    background: url('/home/germany/germany-wine.webp') center / cover no-repeat;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
   }
 
   @media (max-width: 1024px) {

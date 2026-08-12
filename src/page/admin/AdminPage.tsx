@@ -20,6 +20,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { deployHookUrl, triggerDeploy } from '@/api/admin';
 import WineAdmin from '@/page/admin/WineAdmin';
 import WineryAdmin from '@/page/admin/WineryAdmin';
+import HomeContentAdmin from '@/page/admin/HomeContentAdmin';
 import BackLabelAdmin from '@/page/admin/backlabel/BackLabelAdmin';
 import Seo from '@/components/Seo';
 
@@ -228,6 +229,13 @@ const AdminPage = () => {
                   setPendingChanges(true);
                 }}
               />
+            ),
+          },
+          {
+            key: 'home',
+            label: '홈 콘텐츠',
+            children: (
+              <HomeContentAdmin onChanged={() => setPendingChanges(true)} />
             ),
           },
           {
