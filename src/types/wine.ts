@@ -17,4 +17,6 @@ export interface WineInfoType {
   wineVariety: string[];
   wineDescription: string;
   wineImagePath: string;
+  /** 솔드아웃 여부 — 더미 데이터 등 미지정 시 판매 중으로 취급 */
+  soldOut?: boolean;
 }

@@ -17,8 +17,12 @@ interface WineCardProps {
 /** 홈 OUR COLLECTION·와인 리스트 공용 와인 카드 (Figma product 프레임).
  *  테두리는 카드가 아니라 그리드(부모)가 그린다. */
 const WineCard = ({ wine, wineryName }: WineCardProps) => (
-  <CardLink to={`/wines/${wine.wineId}`}>
+  <CardLink
+    to={`/wines/${wine.wineId}`}
+    $soldOut={wine.soldOut}
+  >
     <div className='card-image'>
+      {wine.soldOut && <span className='sold-out-badge'>SOLD OUT</span>}
       <img
         src={wine.wineImagePath || DEFAULT_WINE_IMAGE}
         alt={`${wine.wineNameEN} ${wine.wineNameKR}`}
@@ -53,7 +57,7 @@ const WineCard = ({ wine, wineryName }: WineCardProps) => (
   </CardLink>
 );
 
-const CardLink = styled(Link)`
+const CardLink = styled(Link)<{ $soldOut?: boolean }>`
   display: flex;
   flex-direction: column;
   text-decoration: none;
@@ -66,6 +70,7 @@ const CardLink = styled(Link)`
   }
 
   .card-image {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -78,12 +83,28 @@ const CardLink = styled(Link)`
       max-width: 60%;
       object-fit: contain;
       transition: transform 0.5s ease;
+      opacity: ${({ $soldOut }) => ($soldOut ? 0.45 : 1)};
+      filter: ${({ $soldOut }) => ($soldOut ? 'grayscale(60%)' : 'none')};
     }
   }
 
   &:hover .card-image img,
   &:focus-visible .card-image img {
     transform: scale(1.04);
+  }
+
+  .sold-out-badge {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    padding: 6px 14px;
+    border: 1px solid ${home.dark};
+    background: ${home.cream};
+    color: ${home.ink};
+    font-family: ${font.en};
+    font-style: italic;
+    font-size: 13px;
+    letter-spacing: 0.08em;
   }
 
   .card-caption {
