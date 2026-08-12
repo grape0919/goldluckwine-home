@@ -52,6 +52,7 @@ interface WineFormValues {
   description: string;
   is_featured: boolean;
   is_visible: boolean;
+  sold_out: boolean;
   sort_order: number;
   image: string | File | undefined;
 }
@@ -110,6 +111,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
 
   const featuredCount = rows.filter((r) => r.is_featured).length;
   const hiddenCount = rows.filter((r) => r.is_visible === false).length;
+  const soldOutCount = rows.filter((r) => r.sold_out === true).length;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -133,6 +135,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
     form.setFieldsValue({
       is_featured: false,
       is_visible: true,
+      sold_out: false,
       sort_order: rows.length + 1,
       variety: [],
     });
@@ -143,8 +146,9 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
     setEditing(row);
     form.setFieldsValue({
       ...row,
-      // 마이그레이션 전(undefined)은 노출 상태로 취급
+      // 마이그레이션 전(undefined)은 노출·판매 중 상태로 취급
       is_visible: row.is_visible !== false,
+      sold_out: row.sold_out === true,
       image: row.image_path,
     });
     setModalOpen(true);
@@ -163,6 +167,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
       description: row.description,
       is_featured: false,
       is_visible: true,
+      sold_out: false,
       sort_order: rows.length + 1,
       image: row.image_path,
     });
@@ -186,6 +191,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
         description: values.description ?? '',
         is_featured: values.is_featured ?? false,
         is_visible: values.is_visible ?? true,
+        sold_out: values.sold_out ?? false,
         sort_order: values.sort_order ?? 0,
         image_path,
       };
@@ -233,6 +239,18 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
       await updateWine(row.id, { is_visible: next });
       setRows((prev) =>
         prev.map((r) => (r.id === row.id ? { ...r, is_visible: next } : r)),
+      );
+      onChanged?.();
+    } catch (e) {
+      message.error(`변경 실패: ${(e as Error).message}`);
+    }
+  };
+
+  const toggleSoldOut = async (row: WineRow, next: boolean) => {
+    try {
+      await updateWine(row.id, { sold_out: next });
+      setRows((prev) =>
+        prev.map((r) => (r.id === row.id ? { ...r, sold_out: next } : r)),
       );
       onChanged?.();
     } catch (e) {
@@ -303,6 +321,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
           {rows.length}종 · 홈 노출 {featuredCount}개
           {featuredCount > 3 ? ' (홈에는 앞 3개만 표시)' : ''}
           {hiddenCount > 0 ? ` · 숨김 ${hiddenCount}개` : ''}
+          {soldOutCount > 0 ? ` · 솔드아웃 ${soldOutCount}개` : ''}
         </Typography.Text>
         <div style={{ flex: 1 }} />
         <Button
@@ -379,6 +398,20 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
                       size='small'
                       checked={v !== false}
                       onChange={(next) => toggleVisible(row, next)}
+                    />
+                  </Tooltip>
+                ),
+              },
+              {
+                title: '솔드아웃',
+                dataIndex: 'sold_out',
+                width: 80,
+                render: (v: boolean | undefined, row) => (
+                  <Tooltip title='켜면 공개 사이트에 SOLD OUT으로 표시됩니다 (페이지에서 숨겨지지는 않습니다)'>
+                    <Switch
+                      size='small'
+                      checked={v === true}
+                      onChange={(next) => toggleSoldOut(row, next)}
                     />
                   </Tooltip>
                 ),
@@ -512,6 +545,13 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
           <Form.Item
             name='is_visible'
             label='공개 사이트 노출 (끄면 리스트·상세에서 숨김)'
+            valuePropName='checked'
+          >
+            <Switch />
+          </Form.Item>
+          <Form.Item
+            name='sold_out'
+            label='솔드아웃 표시 (공개 사이트에 SOLD OUT 배지가 붙습니다)'
             valuePropName='checked'
           >
             <Switch />

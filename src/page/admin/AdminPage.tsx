@@ -21,6 +21,7 @@ import { deployHookUrl, triggerDeploy } from '@/api/admin';
 import WineAdmin from '@/page/admin/WineAdmin';
 import WineryAdmin from '@/page/admin/WineryAdmin';
 import HomeContentAdmin from '@/page/admin/HomeContentAdmin';
+import BackLabelAdmin from '@/page/admin/backlabel/BackLabelAdmin';
 import Seo from '@/components/Seo';
 
 const { Title } = Typography;
@@ -236,6 +237,12 @@ const AdminPage = () => {
             children: (
               <HomeContentAdmin onChanged={() => setPendingChanges(true)} />
             ),
+          },
+          {
+            key: 'backlabels',
+            // 백라벨은 공개 사이트에 노출되지 않으므로 '사이트 반영'과 무관
+            label: '백라벨',
+            children: <BackLabelAdmin />,
           },
         ]}
       />
