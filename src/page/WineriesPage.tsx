@@ -5,6 +5,7 @@ import { customedTheme } from '@/styles/theme';
 import { fetchWineries } from '@/api/wines';
 import type { WineryInfoType } from '@/types/winery';
 import Seo from '@/components/Seo';
+import { LoadFade, MaskedLines, Reveal } from '@/components/motion/reveal';
 
 const { home, font } = customedTheme;
 
@@ -27,42 +28,57 @@ const WineriesPage: React.FC = () => {
         path='/wineries'
       />
       <header className='list-header'>
-        <img
+        <LoadFade
           className='glasses-deco'
-          src='/home/wineries/glasses-deco.png'
-          alt=''
-          aria-hidden
-        />
+          delay={0.3}
+        >
+          <img
+            src='/home/wineries/glasses-deco.png'
+            alt=''
+            aria-hidden
+          />
+        </LoadFade>
         <h1 aria-label='OUR WINERIES'>
           <span
             className='t-our'
             aria-hidden
           >
-            OUR
+            <MaskedLines
+              text='OUR'
+              mode='load'
+            />
           </span>
           <span
             className='t-wineries'
             aria-hidden
           >
-            WINERIES
+            <MaskedLines
+              text='WINERIES'
+              mode='load'
+              delay={0.12}
+            />
           </span>
         </h1>
       </header>
 
       <div className='winery-list'>
-        {wineries.map((winery) => (
-          <Link
+        {wineries.map((winery, i) => (
+          <Reveal
             key={winery.id}
-            className='winery-row'
-            to={`/wineries/${winery.id}`}
+            delay={(i % 4) * 0.08}
           >
-            <div className='winery-names'>
-              <span className='name-en'>{winery.domaine}</span>
-              <span className='name-kr'>{winery.domaineKR}</span>
-              <span className='location'>{winery.location}</span>
-            </div>
-            <span className='view-more'>VIEW MORE</span>
-          </Link>
+            <Link
+              className='winery-row'
+              to={`/wineries/${winery.id}`}
+            >
+              <div className='winery-names'>
+                <span className='name-en'>{winery.domaine}</span>
+                <span className='name-kr'>{winery.domaineKR}</span>
+                <span className='location'>{winery.location}</span>
+              </div>
+              <span className='view-more'>VIEW MORE</span>
+            </Link>
+          </Reveal>
         ))}
       </div>
     </Wrapper>
@@ -112,6 +128,11 @@ const Wrapper = styled.div`
     width: 329px;
     pointer-events: none;
     z-index: 1;
+
+    img {
+      display: block;
+      width: 100%;
+    }
   }
 
   .winery-list {
@@ -132,12 +153,17 @@ const Wrapper = styled.div`
     &:hover,
     &:focus-visible {
       background: ${home.blueTint};
+
+      .winery-names {
+        transform: translateX(8px);
+      }
     }
   }
 
   .winery-names {
     display: flex;
     flex-direction: column;
+    transition: transform 0.35s ease;
   }
 
   .name-en {
