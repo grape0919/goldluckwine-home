@@ -43,5 +43,7 @@ export interface WineRow {
   is_featured: boolean;
   /** 공개 사이트 노출 여부 — 마이그레이션 전 행에는 없을 수 있어 optional */
   is_visible?: boolean;
+  /** 솔드아웃 표시 — 마이그레이션 전 행에는 없을 수 있어 optional */
+  sold_out?: boolean;
   sort_order: number;
 }

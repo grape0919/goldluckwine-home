@@ -13,6 +13,8 @@ const toWineInfo = (r: WineRow): WineInfoType => ({
   wineVariety: r.variety ?? [],
   wineDescription: r.description,
   wineImagePath: r.image_path,
+  // 마이그레이션 전(컬럼 없음, undefined)은 판매 중으로 취급
+  soldOut: r.sold_out === true,
 });
 
 /** 공개 사이트 노출 대상만 — 마이그레이션 전(컬럼 없음, undefined)은 노출로 취급 */

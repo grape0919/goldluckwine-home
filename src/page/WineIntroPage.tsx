@@ -99,6 +99,9 @@ const WineIntroPage: React.FC = () => {
           {wine ? (
             <div className='info-body'>
               <div className='names'>
+                {wine.soldOut && (
+                  <span className='sold-out-badge'>SOLD OUT</span>
+                )}
                 <h1>{wine.wineNameEN}</h1>
                 <span>{wine.wineNameKR}</span>
               </div>
@@ -238,8 +241,21 @@ const Wrapper = styled.div`
   .names {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     gap: 8px;
     color: ${home.brown};
+
+    .sold-out-badge {
+      margin-bottom: 4px;
+      padding: 5px 12px;
+      border: 1px solid ${home.dark};
+      color: ${home.ink};
+      font-family: ${font.en};
+      font-style: italic;
+      font-size: 13px;
+      line-height: 16px;
+      letter-spacing: 0.08em;
+    }
 
     h1 {
       margin: 0;
