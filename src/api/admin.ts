@@ -42,6 +42,49 @@ export async function triggerDeploy(): Promise<void> {
   await fetch(deployHookUrl, { method: 'POST', mode: 'no-cors' });
 }
 
+/**
+ * 미반영 변경 추적 — 컴포넌트 state 만으로는 새로고침·재로그인 시 사라지고
+ * 편집자 간 공유도 안 되므로, 마지막 "콘텐츠 변경 시각"과 "배포 트리거 시각"을
+ * site_meta 에 기록해 비교한다. (삭제는 updated_at 을 남기지 않아 max(updated_at)
+ * 비교로는 잡히지 않는다 — 변경 시각을 직접 기록하는 이유)
+ */
+const LAST_CHANGE_KEY = 'last_content_change_at';
+const LAST_DEPLOY_KEY = 'last_deploy_triggered_at';
+
+async function fetchSiteMeta(key: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('site_meta')
+    .select('value')
+    .eq('key', key)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.value ?? null;
+}
+
+async function upsertSiteMeta(key: string, value: string): Promise<void> {
+  const { error } = await supabase.from('site_meta').upsert({ key, value });
+  if (error) throw error;
+}
+
+export const recordContentChanged = () =>
+  upsertSiteMeta(LAST_CHANGE_KEY, new Date().toISOString());
+
+export const recordDeployTriggered = () =>
+  upsertSiteMeta(LAST_DEPLOY_KEY, new Date().toISOString());
+
+/** DB 기준 미반영 변경 여부 — 마지막 변경이 마지막 배포 트리거보다 나중이면 true */
+export async function fetchPendingChanges(): Promise<boolean> {
+  const [change, deploy] = await Promise.all([
+    fetchSiteMeta(LAST_CHANGE_KEY),
+    fetchSiteMeta(LAST_DEPLOY_KEY),
+  ]);
+  if (!change) return false;
+  if (!deploy) return true;
+  return change > deploy;
+}
+
+export const fetchLastDeployTriggeredAt = () => fetchSiteMeta(LAST_DEPLOY_KEY);
+
 export async function listWineries(): Promise<WineryRow[]> {
   const { data, error } = await supabase
     .from('wineries')

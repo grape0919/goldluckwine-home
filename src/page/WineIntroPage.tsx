@@ -1,9 +1,10 @@
 import { Link, redirect, useLoaderData, useParams } from 'react-router-dom';
 import type { LoaderFunctionArgs } from 'react-router-dom';
-import React from 'react';
+import React, { useEffect } from 'react';
 import styled from 'styled-components';
 
 import { fetchWineById, fetchWineryById } from '@/api/wines';
+import { trackEvent } from '@/lib/analytics';
 import type { WineInfoType } from '@/types/wine';
 import type { WineryInfoType } from '@/types/winery';
 import { customedTheme } from '@/styles/theme';
@@ -35,6 +36,16 @@ export async function wineLoader({ params }: LoaderFunctionArgs) {
 const WineIntroPage: React.FC = () => {
   const { wineId } = useParams<{ wineId: string }>();
   const { wine, winery } = useLoaderData() as WineLoaderData;
+
+  // GA4: 어떤 와인이 조회되는지 수집 (SSG 빌드 시점엔 실행 안 됨)
+  useEffect(() => {
+    trackEvent('view_item', {
+      item_id: String(wine.wineId),
+      item_name: wine.wineNameEN,
+      item_category: wine.wineType,
+      item_brand: winery?.domaine,
+    });
+  }, [wine.wineId, wine.wineNameEN, wine.wineType, winery?.domaine]);
 
   // schema.org Product — 검색엔진이 와인을 '제품'으로 구조적으로 인식
   const productJsonLd: Record<string, unknown> = {

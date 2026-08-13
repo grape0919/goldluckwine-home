@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { HiMenu } from 'react-icons/hi';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import {
+  Link,
+  Outlet,
+  useLocation,
+  useNavigationType,
+} from 'react-router-dom';
 import styled from 'styled-components';
 import { customedTheme } from '@/styles/theme';
 import SiteFooter from '@/components/layout/SiteFooter';
@@ -20,11 +25,17 @@ const isActive = (pathname: string, to: string) =>
 
 const PageLayout = () => {
   const { pathname } = useLocation();
+  const navigationType = useNavigationType();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // 라우트 이동 시 모바일 메뉴 닫기
   useEffect(() => setMenuOpen(false), [pathname]);
+
+  // 라우트 이동 시 스크롤 최상단으로 (뒤로가기 POP은 브라우저 위치 복원에 맡김)
+  useEffect(() => {
+    if (navigationType !== 'POP') window.scrollTo(0, 0);
+  }, [pathname, navigationType]);
 
   // 바깥 클릭 시 닫기
   useEffect(() => {

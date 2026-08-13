@@ -296,9 +296,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
           placeholder='이름 검색 (영문/한글)'
           style={{ width: 220 }}
           onSearch={setSearch}
-          onChange={(e) => {
-            if (!e.target.value) setSearch('');
-          }}
+          onChange={(e) => setSearch(e.target.value)}
         />
         <Select
           allowClear
@@ -565,7 +563,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
           </Form.Item>
           <Form.Item
             name='sort_order'
-            label='정렬 순서 (표에서 화살표로도 조정 가능)'
+            label='정렬 순서 (표에서 드래그로도 조정 가능)'
           >
             <InputNumber min={0} />
           </Form.Item>

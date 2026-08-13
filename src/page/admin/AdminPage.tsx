@@ -17,11 +17,19 @@ import { CloudUploadOutlined } from '@ant-design/icons';
 import type { Session } from '@supabase/supabase-js';
 import styled from 'styled-components';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { deployHookUrl, triggerDeploy } from '@/api/admin';
+import {
+  deployHookUrl,
+  triggerDeploy,
+  recordContentChanged,
+  recordDeployTriggered,
+  fetchPendingChanges,
+  fetchLastDeployTriggeredAt,
+} from '@/api/admin';
 import WineAdmin from '@/page/admin/WineAdmin';
 import WineryAdmin from '@/page/admin/WineryAdmin';
 import HomeContentAdmin from '@/page/admin/HomeContentAdmin';
 import BackLabelAdmin from '@/page/admin/backlabel/BackLabelAdmin';
+import InquiryAdmin from '@/page/admin/InquiryAdmin';
 import Seo from '@/components/Seo';
 
 const { Title } = Typography;
@@ -33,17 +41,27 @@ const AdminPage = () => {
   const [loggingIn, setLoggingIn] = useState(false);
   const [wineRefreshKey, setWineRefreshKey] = useState(0);
   // 사이트는 SSG(빌드 시점 프리렌더)라 저장 내용이 재배포 전까지 공개
-  // 페이지에 반영되지 않는다 — 저장·삭제 시 true, 재배포 트리거 시 false
+  // 페이지에 반영되지 않는다 — 상태는 site_meta(DB)에 기록해 새로고침·편집자 간에도 유지
   const [pendingChanges, setPendingChanges] = useState(false);
+  const [lastDeployAt, setLastDeployAt] = useState<string | null>(null);
   const [deploying, setDeploying] = useState(false);
+
+  // 저장·삭제 시 호출 — 화면 즉시 반영 + DB 기록 (기록 실패는 치명적이지 않음)
+  const markChanged = () => {
+    setPendingChanges(true);
+    recordContentChanged().catch(() => undefined);
+  };
 
   const handleDeploy = async () => {
     setDeploying(true);
     try {
       await triggerDeploy();
+      await recordDeployTriggered().catch(() => undefined);
       setPendingChanges(false);
+      setLastDeployAt(new Date().toISOString());
       message.success(
-        '사이트 재배포를 시작했습니다. 2~3분 뒤 공개 사이트에 반영됩니다.',
+        '재배포 요청을 보냈습니다. 2~3분 뒤 공개 사이트를 확인하세요. 반영되지 않으면 Vercel 대시보드에서 배포 상태를 확인해 주세요.',
+        6,
       );
     } catch (e) {
       message.error(`재배포 요청 실패: ${(e as Error).message}`);
@@ -66,6 +84,17 @@ const AdminPage = () => {
     });
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  // 로그인 후 DB 기준으로 미반영 상태·마지막 배포 시각 복원
+  useEffect(() => {
+    if (!session) return;
+    fetchPendingChanges()
+      .then(setPendingChanges)
+      .catch(() => undefined);
+    fetchLastDeployTriggeredAt()
+      .then(setLastDeployAt)
+      .catch(() => undefined);
+  }, [session]);
 
   const handleLogin = async (values: { email: string; password: string }) => {
     setLoggingIn(true);
@@ -164,6 +193,14 @@ const AdminPage = () => {
           골드럭와인 관리자
         </Title>
         <Space>
+          {lastDeployAt && (
+            <Typography.Text
+              type='secondary'
+              style={{ fontSize: 12 }}
+            >
+              마지막 반영 요청 {new Date(lastDeployAt).toLocaleString('ko-KR')}
+            </Typography.Text>
+          )}
           {deployHookUrl ? (
             <Popconfirm
               title='공개 사이트에 반영할까요?'
@@ -215,7 +252,7 @@ const AdminPage = () => {
             children: (
               <WineAdmin
                 refreshKey={wineRefreshKey}
-                onChanged={() => setPendingChanges(true)}
+                onChanged={markChanged}
               />
             ),
           },
@@ -226,7 +263,7 @@ const AdminPage = () => {
               <WineryAdmin
                 onChanged={() => {
                   setWineRefreshKey((k) => k + 1);
-                  setPendingChanges(true);
+                  markChanged();
                 }}
               />
             ),
@@ -235,8 +272,14 @@ const AdminPage = () => {
             key: 'home',
             label: '홈 콘텐츠',
             children: (
-              <HomeContentAdmin onChanged={() => setPendingChanges(true)} />
+              <HomeContentAdmin onChanged={markChanged} />
             ),
+          },
+          {
+            key: 'inquiries',
+            // 문의는 공개 사이트가 DB 를 직접 조회하지 않으므로 '사이트 반영'과 무관
+            label: '문의',
+            children: <InquiryAdmin />,
           },
           {
             key: 'backlabels',
