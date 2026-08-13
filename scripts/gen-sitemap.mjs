@@ -1,7 +1,13 @@
 // 빌드(vite-react-ssg) 결과 dist 를 스캔해 sitemap.xml 을 생성한다.
 // 프리렌더된 경로 = sitemap 이므로 항상 실제 페이지와 일치한다.
 // build 스크립트 마지막에 실행: node scripts/gen-sitemap.mjs
-import { readdirSync, writeFileSync, existsSync, statSync } from 'node:fs';
+import {
+  readdirSync,
+  writeFileSync,
+  existsSync,
+  statSync,
+  copyFileSync,
+} from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, relative } from 'node:path';
 
@@ -57,3 +63,13 @@ const publicFile = resolve(root, 'public/sitemap.xml');
 if (existsSync(dirname(publicFile))) writeFileSync(publicFile, xml);
 
 console.log(`[gen-sitemap] ${paths.length}개 URL로 sitemap.xml 생성 완료`);
+
+// 프리렌더된 /not-found 를 Vercel 정적 404 페이지로 복사 —
+// 알 수 없는 URL이 200(홈 HTML)이 아니라 진짜 404 로 응답하게 한다
+const notFoundHtml = resolve(distDir, 'not-found/index.html');
+if (existsSync(notFoundHtml)) {
+  copyFileSync(notFoundHtml, resolve(distDir, '404.html'));
+  console.log('[gen-sitemap] dist/404.html 생성 완료');
+} else {
+  console.warn('[gen-sitemap] dist/not-found/index.html 이 없어 404.html 을 건너뜁니다.');
+}

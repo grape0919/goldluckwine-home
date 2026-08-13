@@ -34,6 +34,8 @@ export const routes: RouteRecord[] = [
           (await fetchWineIds()).map((id) => `/wines/${id}`),
       },
       { path: 'contact', element: <ContactFooter /> },
+      // 명시 라우트라 프리렌더된다 — 빌드 후 dist/404.html 로 복사돼 Vercel 404 응답에 쓰인다
+      { path: 'not-found', element: <NotFoundPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },
