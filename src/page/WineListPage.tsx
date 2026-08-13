@@ -14,6 +14,7 @@ import type { WineInfoType } from '@/types/wine';
 import type { WineryInfoType } from '@/types/winery';
 import { WineTypes } from '@/enum/wine';
 import { distinctVarieties, normalizeVariety } from '@/utils/variety';
+import { trackEvent } from '@/lib/analytics';
 import WineCard from '@/components/WineCard';
 import Seo from '@/components/Seo';
 import {
@@ -145,6 +146,8 @@ const WineListPage: React.FC = () => {
       next.delete(key);
     }
     setSearchParams(next, { replace: true });
+    // GA4: 어떤 필터가 쓰이는지 수집 (해제는 제외)
+    if (value) trackEvent('filter_apply', { filter_type: key, value });
   };
 
   const resetFilters = () => {

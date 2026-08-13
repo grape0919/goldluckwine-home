@@ -284,7 +284,7 @@ const WineryAdmin = ({ onChanged }: { onChanged?: () => void }) => {
           </Form.Item>
           <Form.Item
             name='sort_order'
-            label='정렬 순서 (표에서 화살표로도 조정 가능)'
+            label='정렬 순서 (표에서 드래그로도 조정 가능)'
           >
             <InputNumber min={0} />
           </Form.Item>

@@ -2,6 +2,7 @@ import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { customedTheme } from '@/styles/theme';
 import CloverIcon from '@/components/CloverIcon';
+import { trackEvent } from '@/lib/analytics';
 import type { WineInfoType } from '@/types/wine';
 
 const { home, font, color } = customedTheme;
@@ -20,6 +21,13 @@ const WineCard = ({ wine, wineryName }: WineCardProps) => (
   <CardLink
     to={`/wines/${wine.wineId}`}
     $soldOut={wine.soldOut}
+    onClick={() =>
+      trackEvent('select_item', {
+        item_id: String(wine.wineId),
+        item_name: wine.wineNameEN,
+        item_category: wine.wineType,
+      })
+    }
   >
     <div className='card-image'>
       {wine.soldOut && <span className='sold-out-badge'>SOLD OUT</span>}

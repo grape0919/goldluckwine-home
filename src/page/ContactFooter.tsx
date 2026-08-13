@@ -2,7 +2,9 @@ import React from 'react';
 import styled from 'styled-components';
 import { FaInstagram, FaRegEnvelope } from 'react-icons/fa6';
 import { customedTheme } from '@/styles/theme';
+import { trackEvent } from '@/lib/analytics';
 import Seo from '@/components/Seo';
+import ContactForm from '@/components/ContactForm';
 
 const { home, font } = customedTheme;
 
@@ -36,6 +38,7 @@ const ContactFooter: React.FC = () => (
       <a
         className='info-item'
         href='mailto:goldluckwine@gmail.com'
+        onClick={() => trackEvent('contact_click', { method: 'email' })}
       >
         <FaRegEnvelope aria-hidden />
         goldluckwine@gmail.com
@@ -46,11 +49,14 @@ const ContactFooter: React.FC = () => (
         href='https://www.instagram.com/goldluckwine'
         target='_blank'
         rel='noreferrer'
+        onClick={() => trackEvent('contact_click', { method: 'instagram' })}
       >
         <FaInstagram aria-hidden />
         @goldluckwine
       </a>
     </div>
+
+    <ContactForm />
 
     <img
       className='illustration'

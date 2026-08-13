@@ -1,4 +1,5 @@
 import { ViteReactSSG } from 'vite-react-ssg';
+import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
 import { routes } from './App';
 import './index.css';
 import { initAnalytics } from './lib/analytics';
