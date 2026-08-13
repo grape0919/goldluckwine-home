@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLoaderData, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 import type { ReactNode } from 'react';
@@ -109,6 +109,7 @@ const WineListPage: React.FC = () => {
   const typeFilter = searchParams.get('type') ?? '';
   const grapeFilter = searchParams.get('grape') ?? '';
   const makerFilter = searchParams.get('maker') ?? '';
+  const searchQuery = searchParams.get('q') ?? '';
 
   const wineryNameById = useMemo(() => {
     const map: Record<number, string> = {};
@@ -125,8 +126,18 @@ const WineListPage: React.FC = () => {
   );
 
   const grapeKey = normalizeVariety(grapeFilter);
+  // 텍스트 검색 — 이름(영/한)·품종·도멘명을 부분 일치로 통합 검색
+  const q = searchQuery.trim().toLowerCase();
+  const matchesQuery = (wine: WineInfoType) =>
+    !q ||
+    wine.wineNameEN.toLowerCase().includes(q) ||
+    wine.wineNameKR.toLowerCase().includes(q) ||
+    wine.wineVariety.some((v) => v.toLowerCase().includes(q)) ||
+    (wineryNameById[wine.wineryId] ?? '').toLowerCase().includes(q);
+
   const filtered = wines.filter(
     (wine) =>
+      matchesQuery(wine) &&
       (!typeFilter || wine.wineType === typeFilter) &&
       (!grapeFilter ||
         wine.wineVariety.some((v) => normalizeVariety(v) === grapeKey)) &&
@@ -146,15 +157,28 @@ const WineListPage: React.FC = () => {
       next.delete(key);
     }
     setSearchParams(next, { replace: true });
-    // GA4: 어떤 필터가 쓰이는지 수집 (해제는 제외)
-    if (value) trackEvent('filter_apply', { filter_type: key, value });
+    // GA4: 어떤 필터가 쓰이는지 수집 (해제·타이핑 중인 검색어는 제외)
+    if (value && key !== 'q') trackEvent('filter_apply', { filter_type: key, value });
   };
 
   const resetFilters = () => {
     interacted.current = true;
     setSearchParams({}, { replace: true });
   };
-  const hasFilter = Boolean(typeFilter || grapeFilter || makerFilter);
+  const hasFilter = Boolean(
+    typeFilter || grapeFilter || makerFilter || searchQuery,
+  );
+
+  // GA4: 타이핑이 멈춘 검색어만 search 이벤트로 수집
+  useEffect(() => {
+    const term = searchQuery.trim();
+    if (term.length < 2) return;
+    const timer = setTimeout(
+      () => trackEvent('search', { search_term: term }),
+      1200,
+    );
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   return (
     <Wrapper>
@@ -201,6 +225,14 @@ const WineListPage: React.FC = () => {
         className='list-filters'
         delay={0.35}
       >
+        <input
+          className='filter-search'
+          type='search'
+          value={searchQuery}
+          onChange={(e) => setFilter('q', e.target.value)}
+          placeholder='SEARCH'
+          aria-label='와인 검색 — 이름, 품종, 도멘'
+        />
         <select
           value={typeFilter}
           onChange={(e) => setFilter('type', e.target.value)}
@@ -353,6 +385,35 @@ const Wrapper = styled.div`
     padding: 16px 80px;
   }
 
+  .filter-search {
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid ${home.dark};
+    border-radius: 0;
+    padding: 12px;
+    width: 180px;
+    color: ${home.ink};
+    font-family: ${font.en};
+    font-style: italic;
+    font-size: 16px;
+
+    &::placeholder {
+      color: ${home.ink};
+      text-transform: uppercase;
+    }
+
+    &:focus {
+      outline: none;
+      border-bottom-color: ${home.purple};
+    }
+
+    &::-webkit-search-cancel-button {
+      -webkit-appearance: none;
+    }
+  }
+
   .list-filters select {
     appearance: none;
     -webkit-appearance: none;
@@ -500,6 +561,10 @@ const Wrapper = styled.div`
     .t-wine,
     .t-list {
       top: 104px;
+    }
+
+    .filter-search {
+      width: 100%;
     }
 
     .wine-grid {
