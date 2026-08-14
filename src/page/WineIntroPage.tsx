@@ -58,13 +58,42 @@ const WineIntroPage: React.FC = () => {
     }),
     ...(winery && { brand: { '@type': 'Brand', name: winery.domaine } }),
     ...(wine.wineType && { category: `내추럴 와인 · ${wine.wineType}` }),
-    ...(wine.wineVariety.length > 0 && {
-      additionalProperty: wine.wineVariety.map((v) => ({
+    additionalProperty: [
+      ...wine.wineVariety.map((v) => ({
         '@type': 'PropertyValue',
         name: '품종',
         value: v,
       })),
-    }),
+      ...(wine.vintage
+        ? [{ '@type': 'PropertyValue', name: '빈티지', value: wine.vintage }]
+        : []),
+      ...(wine.volumeMl != null
+        ? [
+            {
+              '@type': 'PropertyValue',
+              name: '용량',
+              value: `${wine.volumeMl}ml`,
+            },
+          ]
+        : []),
+      ...(wine.abv != null
+        ? [
+            {
+              '@type': 'PropertyValue',
+              name: '알코올 도수',
+              value: `${wine.abv}%`,
+            },
+          ]
+        : []),
+    ],
+    // 가격 미표기(수입사) — availability 만으로도 솔드아웃 상태를 구조적으로 전달
+    offers: {
+      '@type': 'Offer',
+      url: `${BASE_URL}/wines/${wine.wineId}`,
+      availability: wine.soldOut
+        ? 'https://schema.org/OutOfStock'
+        : 'https://schema.org/InStock',
+    },
     url: `${BASE_URL}/wines/${wine.wineId}`,
   };
 
@@ -161,6 +190,36 @@ const WineIntroPage: React.FC = () => {
               <dt>GRAPE</dt>
               <dd>{wine?.wineVariety.join(', ')}</dd>
             </div>
+            {wine.vintage && (
+              <div className='spec-row'>
+                <dt>VINTAGE</dt>
+                <dd>{wine.vintage}</dd>
+              </div>
+            )}
+            {wine.volumeMl != null && (
+              <div className='spec-row'>
+                <dt>VOLUME</dt>
+                <dd>{wine.volumeMl}ml</dd>
+              </div>
+            )}
+            {wine.abv != null && (
+              <div className='spec-row'>
+                <dt>ALC.</dt>
+                <dd>{wine.abv}%</dd>
+              </div>
+            )}
+            {wine.servingTemp && (
+              <div className='spec-row'>
+                <dt>SERVING</dt>
+                <dd>{wine.servingTemp}</dd>
+              </div>
+            )}
+            {wine.foodPairing && (
+              <div className='spec-row'>
+                <dt>PAIRING</dt>
+                <dd>{wine.foodPairing}</dd>
+              </div>
+            )}
           </dl>
         </div>
       </section>

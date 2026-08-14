@@ -55,6 +55,12 @@ interface WineFormValues {
   sold_out: boolean;
   sort_order: number;
   image: string | File | undefined;
+  // 상품 스펙 — 모두 선택 입력
+  vintage?: string;
+  volume_ml?: number | null;
+  abv?: number | null;
+  serving_temp?: string;
+  food_pairing?: string;
 }
 
 const WINE_TYPE_OPTIONS = Object.values(WineTypes).map((t) => ({
@@ -165,6 +171,11 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
       wine_type: row.wine_type,
       variety: row.variety ?? [],
       description: row.description,
+      vintage: row.vintage,
+      volume_ml: row.volume_ml,
+      abv: row.abv,
+      serving_temp: row.serving_temp,
+      food_pairing: row.food_pairing,
       is_featured: false,
       is_visible: true,
       sold_out: false,
@@ -194,6 +205,11 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
         sold_out: values.sold_out ?? false,
         sort_order: values.sort_order ?? 0,
         image_path,
+        vintage: values.vintage ?? '',
+        volume_ml: values.volume_ml ?? null,
+        abv: values.abv ?? null,
+        serving_temp: values.serving_temp ?? '',
+        food_pairing: values.food_pairing ?? '',
       };
       if (editing) {
         await updateWine(editing.id, input);
@@ -539,6 +555,60 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
             label='설명'
           >
             <Input.TextArea rows={4} />
+          </Form.Item>
+          <Space
+            wrap
+            size='middle'
+          >
+            <Form.Item
+              name='vintage'
+              label='빈티지'
+            >
+              <Input
+                placeholder='2023 / NV'
+                style={{ width: 110 }}
+              />
+            </Form.Item>
+            <Form.Item
+              name='volume_ml'
+              label='용량(ml)'
+            >
+              <InputNumber
+                min={0}
+                placeholder='750'
+                style={{ width: 110 }}
+              />
+            </Form.Item>
+            <Form.Item
+              name='abv'
+              label='도수(%)'
+            >
+              <InputNumber
+                min={0}
+                max={99}
+                step={0.1}
+                placeholder='12.5'
+                style={{ width: 110 }}
+              />
+            </Form.Item>
+            <Form.Item
+              name='serving_temp'
+              label='서빙 온도'
+            >
+              <Input
+                placeholder='10~12°C'
+                style={{ width: 140 }}
+              />
+            </Form.Item>
+          </Space>
+          <Form.Item
+            name='food_pairing'
+            label='푸드 페어링'
+          >
+            <Input.TextArea
+              rows={2}
+              placeholder='해산물, 흰살 생선 요리, 프레시 치즈'
+            />
           </Form.Item>
           <Form.Item
             name='is_visible'
