@@ -85,6 +85,45 @@ export async function fetchPendingChanges(): Promise<boolean> {
 
 export const fetchLastDeployTriggeredAt = () => fetchSiteMeta(LAST_DEPLOY_KEY);
 
+/** Storage 공개 URL → 버킷 내 경로 (우리 버킷의 업로드 파일이 아니면 null) */
+function storagePathFromUrl(url: string): string | null {
+  const marker = `/object/public/${BUCKET}/`;
+  const i = url.indexOf(marker);
+  return i === -1 ? null : decodeURIComponent(url.slice(i + marker.length));
+}
+
+/**
+ * 어떤 행도 더 이상 참조하지 않는 업로드 이미지를 Storage 에서 삭제한다.
+ * 이미지 교체·행 삭제 후에 호출 — 복제된 와인이 같은 파일을 공유할 수 있어
+ * 참조가 남아 있으면 지우지 않는다. 정리 실패는 치명적이지 않으므로
+ * 호출부에서 await 없이(fire-and-forget) 써도 된다.
+ */
+export async function removeImageIfOrphan(
+  url: string | null | undefined,
+): Promise<void> {
+  if (!url) return;
+  const path = storagePathFromUrl(url);
+  if (!path) return; // public/ 정적 자산 등은 대상이 아니다
+  const [wines, wineries, home] = await Promise.all([
+    supabase.from('wines').select('id').eq('image_path', url).limit(1),
+    supabase.from('wineries').select('id').eq('image_path', url).limit(1),
+    supabase.from('home_content').select('key').eq('value', url).limit(1),
+  ]);
+  if (wines.data?.length || wineries.data?.length || home.data?.length) return;
+  await supabase.storage.from(BUCKET).remove([path]);
+}
+
+/** 도멘별 와인 수 — 도멘 표의 '와인 N종' 표시·삭제 경고용 */
+export async function countWinesByWinery(): Promise<Record<number, number>> {
+  const { data, error } = await supabase.from('wines').select('winery_id');
+  if (error) throw error;
+  const counts: Record<number, number> = {};
+  for (const r of (data as { winery_id: number }[]) ?? []) {
+    counts[r.winery_id] = (counts[r.winery_id] ?? 0) + 1;
+  }
+  return counts;
+}
+
 export async function listWineries(): Promise<WineryRow[]> {
   const { data, error } = await supabase
     .from('wineries')
@@ -109,8 +148,22 @@ export async function updateWinery(
 }
 
 export async function deleteWinery(id: number): Promise<void> {
+  // cascade 로 함께 지워질 와인 이미지들을 삭제 전에 수집해 두었다가 고아면 정리
+  const [{ data: wineImages }, { data: winery }] = await Promise.all([
+    supabase.from('wines').select('image_path').eq('winery_id', id),
+    supabase.from('wineries').select('image_path').eq('id', id).maybeSingle(),
+  ]);
   const { error } = await supabase.from('wineries').delete().eq('id', id);
   if (error) throw error;
+  const urls = new Set(
+    [
+      ...((wineImages as { image_path: string }[]) ?? []).map(
+        (r) => r.image_path,
+      ),
+      (winery as { image_path: string } | null)?.image_path,
+    ].filter(Boolean),
+  );
+  await Promise.allSettled([...urls].map((u) => removeImageIfOrphan(u)));
 }
 
 export async function listWines(): Promise<WineRow[]> {

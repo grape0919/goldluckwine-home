@@ -29,6 +29,9 @@ export interface WineryRow {
   description: string;
   image_path: string;
   sort_order: number;
+  /** 공개 사이트 노출 여부 — 마이그레이션 전 행에는 없을 수 있어 optional.
+   *  숨기면 소속 와인도 공개 사이트에서 함께 숨겨진다. */
+  is_visible?: boolean;
 }
 
 export interface WineRow {
