@@ -38,6 +38,7 @@ import {
   deleteWine,
   listWineries,
   listWines,
+  removeImageIfOrphan,
   updateWine,
   uploadImage,
 } from '@/api/admin';
@@ -213,6 +214,10 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
       };
       if (editing) {
         await updateWine(editing.id, input);
+        // 이미지를 교체했으면 이전 업로드 파일이 고아가 됐는지 확인 후 정리
+        if (editing.image_path && editing.image_path !== image_path) {
+          void removeImageIfOrphan(editing.image_path).catch(() => undefined);
+        }
       } else {
         await createWine(input);
       }
@@ -230,6 +235,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
   const handleDelete = async (row: WineRow) => {
     try {
       await deleteWine(row.id);
+      void removeImageIfOrphan(row.image_path).catch(() => undefined);
       message.success('삭제되었습니다.');
       await reload();
       onChanged?.();

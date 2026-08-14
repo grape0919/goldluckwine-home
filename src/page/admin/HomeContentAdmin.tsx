@@ -7,7 +7,7 @@ import {
   HOME_CONTENT_DEFAULTS,
 } from '@/api/homeContent';
 import type { HomeContent, HomeContentKey } from '@/api/homeContent';
-import { uploadImage } from '@/api/admin';
+import { removeImageIfOrphan, uploadImage } from '@/api/admin';
 import ImageUploadItem from '@/page/admin/ImageUploadItem';
 
 const { Text } = Typography;
@@ -63,24 +63,37 @@ const HomeContentAdmin = ({ onChanged }: HomeContentAdminProps) => {
     setSaving(true);
     try {
       const entries: Partial<Record<HomeContentKey, string>> = {};
+      const replacedImages: string[] = [];
       for (const key of Object.keys(HOME_CONTENT_DEFAULTS) as HomeContentKey[]) {
         const value = values[key];
         if (value instanceof File) {
           entries[key] = await uploadImage(value, 'home');
-        } else if (
-          typeof value === 'string' &&
-          value.trim() &&
-          value !== initial[key]
-        ) {
-          entries[key] = value;
+          replacedImages.push(initial[key]);
+          continue;
         }
+        // 빈 값(지운 이미지·비운 문구)은 '' 로 저장 → 공개 사이트는 기본값으로 폴백
+        const next = typeof value === 'string' && value.trim() ? value : '';
+        if (next === initial[key]) continue; // 변경 없음
+        if (next === '' && initial[key] === HOME_CONTENT_DEFAULTS[key]) continue; // 이미 기본값
+        entries[key] = next;
+        if (next === '') replacedImages.push(initial[key]);
       }
       if (Object.keys(entries).length === 0) {
         message.info('변경된 내용이 없습니다.');
         return;
       }
       await upsertHomeContent(entries);
-      const next = { ...initial, ...entries };
+      // 교체·제거된 기존 업로드 이미지가 고아가 됐으면 정리 (정적 기본 이미지는 무시됨)
+      replacedImages.forEach((url) => {
+        void removeImageIfOrphan(url).catch(() => undefined);
+      });
+      const next = { ...initial } as HomeContent;
+      for (const [key, value] of Object.entries(entries) as [
+        HomeContentKey,
+        string,
+      ][]) {
+        next[key] = value || HOME_CONTENT_DEFAULTS[key];
+      }
       setInitial(next);
       form.setFieldsValue(next);
       onChanged();
@@ -117,14 +130,13 @@ const HomeContentAdmin = ({ onChanged }: HomeContentAdminProps) => {
           style={{ display: 'block', marginBottom: 16 }}
         >
           입력창의 줄바꿈이 화면의 줄바꿈으로 그대로 표시됩니다. (모바일에서는
-          화면 폭에 맞춰 자동 조정)
+          화면 폭에 맞춰 자동 조정) 비우고 저장하면 기본 문구로 복원됩니다.
         </Text>
         {TEXT_FIELDS.map(({ key, label, rows }) => (
           <Form.Item
             key={key}
             name={key}
             label={label}
-            rules={[{ required: true, message: '문구를 입력하세요' }]}
           >
             <Input.TextArea rows={rows} />
           </Form.Item>
@@ -135,6 +147,14 @@ const HomeContentAdmin = ({ onChanged }: HomeContentAdminProps) => {
         <Card
           key={title}
           title={title}
+          extra={
+            <Text
+              type='secondary'
+              style={{ fontSize: 12 }}
+            >
+              이미지를 지우고 저장하면 기본 이미지로 복원됩니다
+            </Text>
+          }
           style={{ marginBottom: 16 }}
         >
           <div
