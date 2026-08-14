@@ -19,4 +19,10 @@ export interface WineInfoType {
   wineImagePath: string;
   /** 솔드아웃 여부 — 더미 데이터 등 미지정 시 판매 중으로 취급 */
   soldOut?: boolean;
+  /** 상품 스펙 — 모두 선택 입력, 없으면 상세 스펙표에서 해당 행 숨김 */
+  vintage?: string;
+  volumeMl?: number;
+  abv?: number;
+  servingTemp?: string;
+  foodPairing?: string;
 }
