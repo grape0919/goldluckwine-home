@@ -24,6 +24,7 @@ import {
   recordDeployTriggered,
   fetchPendingChanges,
   fetchLastDeployTriggeredAt,
+  fetchIsAdmin,
 } from '@/api/admin';
 import WineAdmin from '@/page/admin/WineAdmin';
 import WineryAdmin from '@/page/admin/WineryAdmin';
@@ -37,6 +38,8 @@ const { Title } = Typography;
 const AdminPage = () => {
   const { message } = App.useApp();
   const [session, setSession] = useState<Session | null>(null);
+  // null = 확인 중 — 거래처 등 일반 로그인 사용자가 관리자 화면을 보지 못하게 한다
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [checking, setChecking] = useState(true);
   const [loggingIn, setLoggingIn] = useState(false);
   const [wineRefreshKey, setWineRefreshKey] = useState(0);
@@ -84,6 +87,17 @@ const AdminPage = () => {
     });
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  // 관리자 여부 확인 (admins 테이블 등재 기준)
+  useEffect(() => {
+    if (!session) {
+      setIsAdmin(null);
+      return;
+    }
+    fetchIsAdmin(session.user.id)
+      .then(setIsAdmin)
+      .catch(() => setIsAdmin(false));
+  }, [session]);
 
   // 로그인 후 DB 기준으로 미반영 상태·마지막 배포 시각 복원
   useEffect(() => {
@@ -174,6 +188,38 @@ const AdminPage = () => {
               로그인
             </Button>
           </Form>
+        </Card>
+      </Wrapper>
+    );
+  }
+
+  // 관리자 여부 확인 중 — 일반 사용자에게 관리자 UI가 잠깐이라도 보이지 않게
+  if (isAdmin === null) return null;
+
+  if (!isAdmin) {
+    return (
+      <Wrapper>
+        <Seo
+          title='관리자'
+          noindex
+        />
+        <Card className='login-card'>
+          <Title
+            level={4}
+            style={{ marginTop: 0 }}
+          >
+            접근 권한이 없습니다
+          </Title>
+          <Typography.Paragraph type='secondary'>
+            이 계정({session.user.email})은 관리자로 등록되어 있지 않습니다.
+            거래처 발주는 발주 페이지를 이용해 주세요.
+          </Typography.Paragraph>
+          <Button
+            block
+            onClick={() => supabase.auth.signOut()}
+          >
+            로그아웃
+          </Button>
         </Card>
       </Wrapper>
     );
