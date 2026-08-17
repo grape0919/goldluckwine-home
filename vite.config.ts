@@ -25,7 +25,12 @@ export default defineConfig({
     // /wines/1 -> dist/wines/1/index.html (Vercel이 확장자 없이 서빙)
     dirStyle: 'nested',
     formatting: 'none',
-    // /admin 은 로그인 필요·noindex·antd(CJS) 의존이라 프리렌더 제외 (CSR 유지)
-    includedRoutes: (paths) => paths.filter((p) => !p.startsWith('/admin')),
+    // /admin·/order 는 세션 의존(로그인 상태 분기)이라 프리렌더 제외 (CSR 유지)
+    // 하위 라우트 경로는 슬래시 없이 올 수 있어 정규화 후 비교한다
+    includedRoutes: (paths) =>
+      paths.filter((p) => {
+        const norm = p.replace(/^\//, '');
+        return !norm.startsWith('admin') && !norm.startsWith('order');
+      }),
   },
 });

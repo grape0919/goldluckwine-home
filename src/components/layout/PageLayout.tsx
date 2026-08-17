@@ -18,6 +18,8 @@ const NAV_ITEMS = [
   { to: '/winelist', label: 'WINE LIST' },
   { to: '/wineries', label: 'WINERIES' },
   { to: '/contact', label: 'CONTACT' },
+  // 거래처 전용 발주 — 로그인 여부와 무관하게 노출, 미로그인 시 소개·로그인 화면
+  { to: '/order', label: 'ORDER' },
 ];
 
 const isActive = (pathname: string, to: string) =>
