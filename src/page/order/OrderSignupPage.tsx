@@ -54,13 +54,14 @@ const OrderSignupPage = () => {
     await refresh();
   };
 
-  const handleVerify = async (businessNo: string) => {
+  /** 번호 입력을 벗어나면 자동 조회 — 실패는 조용히 넘기고 제출 시 재시도한다 */
+  const autoVerify = async (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length !== 10 || verifying) return;
     setVerifying(true);
-    setError('');
     try {
-      setVerification(await verifyBusinessNo(businessNo));
-    } catch (e) {
-      setError((e as Error).message);
+      setVerification(await verifyBusinessNo(digits));
+    } catch {
       setVerification(null);
     } finally {
       setVerifying(false);
@@ -74,6 +75,19 @@ const OrderSignupPage = () => {
     setBusy(true);
     setError('');
     try {
+      // 아직 조회가 안 됐으면(빠른 제출·일시 오류) 제출 시점에 한 번 더 —
+      // 그래도 실패하면 빈 값으로 두고 관리자가 수동 확인한다
+      let nts = verification;
+      if (!nts?.available) {
+        try {
+          nts = await verifyBusinessNo(
+            String(data.get('business_no') ?? '').replace(/\D/g, ''),
+          );
+          setVerification(nts);
+        } catch {
+          nts = null;
+        }
+      }
       const files = (data.getAll('licenses') as File[]).filter(
         (f) => f && f.size > 0,
       );
@@ -90,7 +104,7 @@ const OrderSignupPage = () => {
           address: String(data.get('address') ?? '').trim(),
         },
         paths,
-        verification?.status ?? '',
+        nts?.available ? (nts.status ?? '') : '',
       );
       navigate('/order', { replace: true });
     } catch (e) {
@@ -209,30 +223,18 @@ const OrderSignupPage = () => {
         onSubmit={handleProfile}
       >
         <label>
-          사업자등록번호 (숫자 10자리)
-          <span className='verify-line'>
-            <input
-              name='business_no'
-              required
-              inputMode='numeric'
-              pattern='[\d-]{10,12}'
-              placeholder='000-00-00000'
-              onChange={() => setVerification(null)}
-            />
-            <button
-              type='button'
-              className='verify-button'
-              disabled={verifying}
-              onClick={(e) => {
-                const input = (e.currentTarget.parentElement
-                  ?.querySelector('input') ?? null) as HTMLInputElement | null;
-                if (input) handleVerify(input.value);
-              }}
-            >
-              {verifying ? '조회 중…' : '국세청 조회'}
-            </button>
-          </span>
+          사업자등록번호 (숫자 10자리 — 입력하면 자동으로 국세청 조회됩니다)
+          <input
+            name='business_no'
+            required
+            inputMode='numeric'
+            pattern='[\d-]{10,12}'
+            placeholder='000-00-00000'
+            onChange={() => setVerification(null)}
+            onBlur={(e) => autoVerify(e.target.value)}
+          />
         </label>
+        {verifying && <p className='order-hint'>국세청 조회 중…</p>}
         {verification &&
           (verification.available ? (
             <p className={verification.ok ? 'verify-ok' : 'verify-bad'}>
