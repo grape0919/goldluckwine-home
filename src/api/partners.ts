@@ -126,8 +126,11 @@ export async function updateMyPartner(
 export interface BusinessVerification {
   available: boolean;
   registered?: boolean;
+  /** 계속사업자(01)일 때만 true — 휴·폐업자는 registered 여도 false */
+  ok?: boolean;
   status?: string;
   taxType?: string;
+  endDate?: string;
 }
 
 export async function verifyBusinessNo(

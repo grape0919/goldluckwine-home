@@ -235,10 +235,8 @@ const OrderSignupPage = () => {
         </label>
         {verification &&
           (verification.available ? (
-            <p
-              className={verification.registered ? 'verify-ok' : 'verify-bad'}
-            >
-              {verification.registered ? '✓' : '✕'} {verification.status}
+            <p className={verification.ok ? 'verify-ok' : 'verify-bad'}>
+              {verification.ok ? '✓' : '✕'} {verification.status}
               {verification.taxType ? ` · ${verification.taxType}` : ''}
             </p>
           ) : (

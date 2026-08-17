@@ -37,15 +37,17 @@ export default async function handler(req, res) {
       res.status(502).json({ error: '국세청 응답이 비어 있습니다.' });
       return;
     }
-    // b_stt: "계속사업자" | "휴업자" | "폐업자" | "" (미등록이면 빈 값)
+    // b_stt_cd: "01" 계속사업자 | "02" 휴업자 | "03" 폐업자 | 없음(미등록)
+    // 미등록이면 tax_type 에 "국세청에 등록되지 않은 사업자등록번호입니다" 가 온다
     const registered = Boolean(item.b_stt);
+    const ok = item.b_stt_cd === '01'; // 계속사업자만 정상 — 휴·폐업은 경고 표시
     res.status(200).json({
       available: true,
       registered,
-      status: registered
-        ? item.b_stt
-        : '국세청에 등록되지 않은 사업자등록번호',
-      taxType: item.tax_type ?? '',
+      ok,
+      status: registered ? item.b_stt : (item.tax_type ?? '국세청 미등록'),
+      taxType: registered ? (item.tax_type ?? '') : '',
+      endDate: item.end_dt ?? '',
     });
   } catch (e) {
     res.status(502).json({ error: `국세청 조회 오류: ${e.message}` });
