@@ -41,6 +41,8 @@ function collectPaths(dir) {
 const today = new Date().toISOString().slice(0, 10);
 const paths = collectPaths(distDir)
   .filter((p) => !EXCLUDE.has(p))
+  // 발주 영역은 noindex(거래처 전용) — 프리렌더는 하되 sitemap 에는 넣지 않는다
+  .filter((p) => !p.startsWith('/order'))
   .sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
 
 const xml = `<?xml version="1.0" encoding="UTF-8"?>

@@ -25,12 +25,11 @@ export default defineConfig({
     // /wines/1 -> dist/wines/1/index.html (Vercel이 확장자 없이 서빙)
     dirStyle: 'nested',
     formatting: 'none',
-    // /admin·/order 는 세션 의존(로그인 상태 분기)이라 프리렌더 제외 (CSR 유지)
+    // /admin 은 antd(CJS) SSR 이슈로 프리렌더 제외 (CSR + rewrite).
+    // /order 는 프리렌더 포함 — 초기 렌더가 로딩 셸이라 세션과 무관하게 결정적이고,
+    // rewrite 로 홈 HTML 을 서빙하면 hydration 불일치(React #418/#423)가 난다.
     // 하위 라우트 경로는 슬래시 없이 올 수 있어 정규화 후 비교한다
     includedRoutes: (paths) =>
-      paths.filter((p) => {
-        const norm = p.replace(/^\//, '');
-        return !norm.startsWith('admin') && !norm.startsWith('order');
-      }),
+      paths.filter((p) => !p.replace(/^\//, '').startsWith('admin')),
   },
 });
