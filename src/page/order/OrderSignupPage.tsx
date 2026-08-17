@@ -42,11 +42,18 @@ const OrderSignupPage = () => {
     });
     setBusy(false);
     if (err) {
-      setError(
-        err.message.includes('Signups not allowed')
-          ? '현재 가입이 비활성화되어 있습니다. 관리자에게 문의해 주세요.'
-          : `가입 실패: ${err.message}`,
-      );
+      if (err.message.includes('Signups not allowed')) {
+        setError('현재 가입이 비활성화되어 있습니다. 관리자에게 문의해 주세요.');
+      } else if (
+        err.message.includes('already registered') ||
+        err.message.includes('already been registered')
+      ) {
+        setError(
+          '이미 계정이 만들어진 이메일입니다. 로그인하면 이어서 진행됩니다.',
+        );
+      } else {
+        setError(`가입 실패: ${err.message}`);
+      }
       return;
     }
     // 이메일 인증이 켜져 있으면 세션이 없다 — 인증 안내
@@ -149,6 +156,15 @@ const OrderSignupPage = () => {
             인증 메일을 보냈습니다. 메일의 링크로 인증을 마친 뒤{' '}
             <Link to='/order/login'>로그인</Link>하면 사업자 정보 입력이
             이어집니다.
+            <br />
+            <button
+              type='button'
+              className='verify-button'
+              style={{ marginTop: 12 }}
+              onClick={() => setMailSent(false)}
+            >
+              이메일 다시 입력
+            </button>
           </div>
         ) : (
           <>
@@ -218,6 +234,19 @@ const OrderSignupPage = () => {
       />
       <p className='order-eyebrow'>FOR BUSINESS · STEP 2/2</p>
       <h1>BUSINESS INFO</h1>
+      <p className='order-hint'>
+        로그인 계정: <b>{session.user.email}</b> — 계정이 이미 만들어졌습니다.
+        이메일을 바꾸려면{' '}
+        <button
+          type='button'
+          className='verify-button'
+          onClick={() => supabase.auth.signOut()}
+        >
+          로그아웃 후 다시 시작
+        </button>
+        {'  '}
+        (기존 이메일 계정은 관리자에게 삭제를 요청하거나 그대로 두어도 됩니다)
+      </p>
       <form
         className='order-form'
         onSubmit={handleProfile}
