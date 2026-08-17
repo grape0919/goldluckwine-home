@@ -43,6 +43,12 @@ import {
   uploadImage,
 } from '@/api/admin';
 import ImageUploadItem from '@/page/admin/ImageUploadItem';
+import {
+  fetchWinePrices,
+  upsertWinePrice,
+  deleteWinePrice,
+} from '@/api/pricing';
+import type { WinePriceRow } from '@/api/pricing';
 
 interface WineFormValues {
   winery_id: number;
@@ -56,6 +62,10 @@ interface WineFormValues {
   sold_out: boolean;
   sort_order: number;
   image: string | File | undefined;
+  // 발주 (B2B) — 공급가를 비우면 발주 목록에 노출되지 않는다
+  orderable: boolean;
+  price?: number | null;
+  sale_price?: number | null;
   // 상품 스펙 — 모두 선택 입력
   vintage?: string;
   volume_ml?: number | null;
@@ -83,6 +93,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
   const [editing, setEditing] = useState<WineRow | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [prices, setPrices] = useState<Record<number, WinePriceRow>>({});
   const [form] = Form.useForm<WineFormValues>();
 
   // 테이블 필터 — 이름 검색 · 도멘 · 타입
@@ -93,12 +104,15 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
   const reload = useCallback(async () => {
     setLoading(true);
     try {
-      const [wineRows, wineryRows] = await Promise.all([
+      const [wineRows, wineryRows, priceMap] = await Promise.all([
         listWines(),
         listWineries(),
+        // wine_prices 미생성(마이그레이션 전)이어도 목록은 떠야 한다
+        fetchWinePrices().catch(() => ({}) as Record<number, WinePriceRow>),
       ]);
       setRows(wineRows);
       setWineries(wineryRows);
+      setPrices(priceMap);
     } catch (e) {
       message.error(`와인 목록을 불러오지 못했습니다: ${(e as Error).message}`);
     } finally {
@@ -156,6 +170,9 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
       // 마이그레이션 전(undefined)은 노출·판매 중 상태로 취급
       is_visible: row.is_visible !== false,
       sold_out: row.sold_out === true,
+      orderable: row.orderable === true,
+      price: prices[row.id]?.price ?? null,
+      sale_price: prices[row.id]?.sale_price ?? null,
       image: row.image_path,
     });
     setModalOpen(true);
@@ -172,6 +189,9 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
       wine_type: row.wine_type,
       variety: row.variety ?? [],
       description: row.description,
+      orderable: false,
+      price: prices[row.id]?.price ?? null,
+      sale_price: prices[row.id]?.sale_price ?? null,
       vintage: row.vintage,
       volume_ml: row.volume_ml,
       abv: row.abv,
@@ -204,6 +224,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
         is_featured: values.is_featured ?? false,
         is_visible: values.is_visible ?? true,
         sold_out: values.sold_out ?? false,
+        orderable: values.orderable ?? false,
         sort_order: values.sort_order ?? 0,
         image_path,
         vintage: values.vintage ?? '',
@@ -212,14 +233,22 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
         serving_temp: values.serving_temp ?? '',
         food_pairing: values.food_pairing ?? '',
       };
+      let wineId: number;
       if (editing) {
         await updateWine(editing.id, input);
+        wineId = editing.id;
         // 이미지를 교체했으면 이전 업로드 파일이 고아가 됐는지 확인 후 정리
         if (editing.image_path && editing.image_path !== image_path) {
           void removeImageIfOrphan(editing.image_path).catch(() => undefined);
         }
       } else {
-        await createWine(input);
+        wineId = await createWine(input);
+      }
+      // 공급가 — 입력이 있으면 upsert, 비웠으면 가격 행 제거(발주 목록에서 빠진다)
+      if (values.price != null) {
+        await upsertWinePrice(wineId, values.price, values.sale_price ?? null);
+      } else if (prices[wineId]) {
+        await deleteWinePrice(wineId);
       }
       message.success('저장되었습니다.');
       setModalOpen(false);
@@ -241,6 +270,23 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
       onChanged?.();
     } catch (e) {
       message.error(`삭제 실패: ${(e as Error).message}`);
+    }
+  };
+
+  /** 발주 노출 토글 — 발주 데이터는 DB 조회형이라 '사이트 반영'과 무관 */
+  const toggleOrderable = async (row: WineRow, next: boolean) => {
+    try {
+      await updateWine(row.id, { orderable: next });
+      setRows((prev) =>
+        prev.map((r) => (r.id === row.id ? { ...r, orderable: next } : r)),
+      );
+      if (next && !prices[row.id]) {
+        message.warning(
+          '공급가가 없어 발주 목록에 표시되지 않습니다. 수정에서 공급가를 입력하세요.',
+        );
+      }
+    } catch (e) {
+      message.error(`발주 설정 실패: ${(e as Error).message}`);
     }
   };
 
@@ -437,6 +483,31 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
                 ),
               },
               {
+                title: '발주',
+                dataIndex: 'orderable',
+                width: 96,
+                render: (_: unknown, row: WineRow) => (
+                  <Space
+                    direction='vertical'
+                    size={0}
+                    align='center'
+                  >
+                    <Switch
+                      size='small'
+                      checked={row.orderable === true}
+                      onChange={(next) => toggleOrderable(row, next)}
+                    />
+                    <span style={{ fontSize: 11, color: '#888' }}>
+                      {prices[row.id]
+                        ? `${(
+                            prices[row.id].sale_price ?? prices[row.id].price
+                          ).toLocaleString()}원`
+                        : '가격 없음'}
+                    </span>
+                  </Space>
+                ),
+              },
+              {
                 title: '홈 노출',
                 dataIndex: 'is_featured',
                 width: 90,
@@ -616,6 +687,40 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
               placeholder='해산물, 흰살 생선 요리, 프레시 치즈'
             />
           </Form.Item>
+          <Space
+            wrap
+            size='middle'
+          >
+            <Form.Item
+              name='price'
+              label='공급가(원) — 비우면 발주 목록 제외'
+            >
+              <InputNumber
+                min={0}
+                step={1000}
+                style={{ width: 140 }}
+                placeholder='28000'
+              />
+            </Form.Item>
+            <Form.Item
+              name='sale_price'
+              label='할인가(원) — 선택'
+            >
+              <InputNumber
+                min={0}
+                step={1000}
+                style={{ width: 140 }}
+                placeholder='25000'
+              />
+            </Form.Item>
+            <Form.Item
+              name='orderable'
+              label='발주 가능 (거래처 발주 목록 노출)'
+              valuePropName='checked'
+            >
+              <Switch />
+            </Form.Item>
+          </Space>
           <Form.Item
             name='is_visible'
             label='공개 사이트 노출 (끄면 리스트·상세에서 숨김)'

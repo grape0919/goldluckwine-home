@@ -32,6 +32,7 @@ import HomeContentAdmin from '@/page/admin/HomeContentAdmin';
 import BackLabelAdmin from '@/page/admin/backlabel/BackLabelAdmin';
 import InquiryAdmin from '@/page/admin/InquiryAdmin';
 import PartnerAdmin from '@/page/admin/PartnerAdmin';
+import SettingsAdmin from '@/page/admin/SettingsAdmin';
 import Seo from '@/components/Seo';
 
 const { Title } = Typography;
@@ -333,6 +334,12 @@ const AdminPage = () => {
             // 문의는 공개 사이트가 DB 를 직접 조회하지 않으므로 '사이트 반영'과 무관
             label: '문의',
             children: <InquiryAdmin />,
+          },
+          {
+            key: 'settings',
+            // 발주 운영 설정 — DB 조회형, '사이트 반영'과 무관
+            label: '설정',
+            children: <SettingsAdmin />,
           },
           {
             key: 'backlabels',
