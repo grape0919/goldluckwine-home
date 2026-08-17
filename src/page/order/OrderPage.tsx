@@ -3,6 +3,7 @@ import Seo from '@/components/Seo';
 import OrderShell from '@/page/order/OrderShell';
 import { useOrderAuth } from '@/page/order/useOrderAuth';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import OrderCatalog from '@/page/order/OrderCatalog';
 
 /** /order — 발주 홈. 로그인·거래처 상태에 따라 분기한다.
  *  발주 품목 화면은 Phase 2(PR 2-B)에서 이 자리에 들어온다. */
@@ -108,7 +109,7 @@ const OrderPage = () => {
     );
   }
 
-  // 승인 완료 — Phase 2 에서 발주 품목 화면으로 교체된다
+  // 승인 완료 — 발주 화면 (화면이 곧 장바구니)
   return (
     <OrderShell>
       <Seo
@@ -117,14 +118,8 @@ const OrderPage = () => {
       />
       <p className='order-eyebrow'>FOR BUSINESS</p>
       <h1>ORDER</h1>
-      <div className='status-card'>
-        <strong>{partner.business_name}</strong> 님, 거래처 승인이
-        완료되었습니다.
-        <br />
-        온라인 발주 기능을 준비하고 있습니다. 오픈 전까지는 기존 방식(전화·카톡)
-        으로 발주해 주세요.
-      </div>
       <div className='order-links'>
+        <Link to='/order/history'>발주 내역</Link>
         <Link to='/order/account'>내 정보</Link>
         <button
           type='button'
@@ -134,6 +129,7 @@ const OrderPage = () => {
           로그아웃
         </button>
       </div>
+      <OrderCatalog partner={partner} />
     </OrderShell>
   );
 };

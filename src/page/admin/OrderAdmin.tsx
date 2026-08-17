@@ -1,0 +1,236 @@
+import { useCallback, useEffect, useState } from 'react';
+import {
+  App,
+  Badge,
+  Button,
+  Popconfirm,
+  Radio,
+  Space,
+  Table,
+  Tag,
+  Typography,
+} from 'antd';
+import { ReloadOutlined } from '@ant-design/icons';
+import type { ColumnsType } from 'antd/es/table';
+import {
+  listOrders,
+  updateOrderStatus,
+  ORDER_STATUS_LABEL,
+} from '@/api/orders';
+import type { AdminOrderRow, OrderStatus } from '@/api/orders';
+
+const STATUS_COLOR: Record<OrderStatus, string> = {
+  awaiting_deposit: 'gold',
+  paid: 'blue',
+  shipping: 'geekblue',
+  done: 'green',
+  canceled: 'default',
+};
+
+/** 다음 단계 버튼 — 상태 흐름: 입금대기 → 입금확인 → 배송중 → 완료 */
+const NEXT_ACTION: Partial<
+  Record<OrderStatus, { next: OrderStatus; label: string }>
+> = {
+  awaiting_deposit: { next: 'paid', label: '입금확인' },
+  paid: { next: 'shipping', label: '배송중으로' },
+  shipping: { next: 'done', label: '완료(배송완료)' },
+};
+
+/** 발주 관리 — 상태 변경. 완료 처리 시 세금계산서 자동 발행은 Phase 4 에서 연결된다. */
+const OrderAdmin = () => {
+  const { message } = App.useApp();
+  const [rows, setRows] = useState<AdminOrderRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState<OrderStatus | 'all'>('all');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      setRows(await listOrders());
+    } catch (e) {
+      message.error(`발주 목록을 불러오지 못했습니다: ${(e as Error).message}`);
+    } finally {
+      setLoading(false);
+    }
+  }, [message]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const setStatus = async (row: AdminOrderRow, status: OrderStatus) => {
+    try {
+      await updateOrderStatus(row.id, status);
+      await load();
+      message.success(`No.${row.id} → ${ORDER_STATUS_LABEL[status]}`);
+    } catch (e) {
+      message.error(`상태 변경 실패: ${(e as Error).message}`);
+    }
+  };
+
+  const overdue = (r: AdminOrderRow) =>
+    r.status === 'awaiting_deposit' &&
+    r.deposit_deadline != null &&
+    new Date(r.deposit_deadline) < new Date();
+
+  const filtered =
+    filter === 'all' ? rows : rows.filter((r) => r.status === filter);
+  const countOf = (s: OrderStatus) =>
+    rows.filter((r) => r.status === s).length;
+
+  const columns: ColumnsType<AdminOrderRow> = [
+    {
+      title: 'No.',
+      dataIndex: 'id',
+      width: 70,
+      render: (v: number) => <b>{v}</b>,
+    },
+    {
+      title: '거래처',
+      render: (_, r) => (
+        <>
+          {r.partners?.business_name ?? `#${r.partner_id}`}
+          <br />
+          <Typography.Text type='secondary'>
+            {r.partners?.contact_name} {r.partners?.phone}
+          </Typography.Text>
+        </>
+      ),
+    },
+    {
+      title: '접수일',
+      dataIndex: 'created_at',
+      width: 110,
+      render: (v: string) => new Date(v).toLocaleDateString('ko-KR'),
+    },
+    { title: '병수', dataIndex: 'total_bottles', width: 70 },
+    {
+      title: '금액',
+      dataIndex: 'total_amount',
+      width: 110,
+      render: (v: number) => `${v.toLocaleString()}원`,
+    },
+    {
+      title: '상태',
+      width: 110,
+      render: (_, r) => (
+        <>
+          <Tag color={STATUS_COLOR[r.status]}>
+            {ORDER_STATUS_LABEL[r.status]}
+          </Tag>
+          {overdue(r) && <Tag color='red'>기한초과</Tag>}
+        </>
+      ),
+    },
+    {
+      title: '',
+      width: 220,
+      render: (_, r) => {
+        const action = NEXT_ACTION[r.status];
+        return (
+          <Space size={4}>
+            {action && (
+              <Popconfirm
+                title={`No.${r.id} 을 '${ORDER_STATUS_LABEL[action.next]}' 처리할까요?`}
+                onConfirm={() => setStatus(r, action.next)}
+              >
+                <Button
+                  size='small'
+                  type='primary'
+                >
+                  {action.label}
+                </Button>
+              </Popconfirm>
+            )}
+            {r.status !== 'canceled' && r.status !== 'done' && (
+              <Popconfirm
+                title={`No.${r.id} 을 취소할까요?`}
+                onConfirm={() => setStatus(r, 'canceled')}
+              >
+                <Button
+                  size='small'
+                  danger
+                >
+                  취소
+                </Button>
+              </Popconfirm>
+            )}
+          </Space>
+        );
+      },
+    },
+  ];
+
+  return (
+    <>
+      <Space
+        wrap
+        style={{ marginBottom: 16, justifyContent: 'space-between', width: '100%' }}
+      >
+        <Radio.Group
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+        >
+          <Radio.Button value='all'>전체 {rows.length}</Radio.Button>
+          {(
+            Object.keys(ORDER_STATUS_LABEL) as OrderStatus[]
+          ).map((s) => (
+            <Radio.Button
+              key={s}
+              value={s}
+            >
+              <Badge
+                dot={s === 'awaiting_deposit' && countOf(s) > 0}
+                offset={[4, 0]}
+              >
+                {ORDER_STATUS_LABEL[s]} {countOf(s)}
+              </Badge>
+            </Radio.Button>
+          ))}
+        </Radio.Group>
+        <Button
+          icon={<ReloadOutlined />}
+          onClick={load}
+        >
+          새로고침
+        </Button>
+      </Space>
+      <Table
+        rowKey='id'
+        size='middle'
+        loading={loading}
+        columns={columns}
+        dataSource={filtered}
+        pagination={{ pageSize: 20 }}
+        expandable={{
+          expandedRowRender: (r) => (
+            <Typography.Paragraph style={{ margin: 0 }}>
+              {r.order_items.map((i) => (
+                <span key={i.id}>
+                  {i.name_en} × {i.qty}병 = {i.amount.toLocaleString()}원 (병당{' '}
+                  {i.unit_price.toLocaleString()}원)
+                  <br />
+                </span>
+              ))}
+              소계 {r.subtotal.toLocaleString()}원 · 할인 −
+              {r.discount_amount.toLocaleString()}원 · 합계{' '}
+              <b>{r.total_amount.toLocaleString()}원</b>
+              <br />
+              배송지 {r.address || '—'}
+              {r.memo && <> · 메모 {r.memo}</>}
+              {r.deposit_deadline && (
+                <>
+                  {' '}
+                  · 입금 기한{' '}
+                  {new Date(r.deposit_deadline).toLocaleDateString('ko-KR')}
+                </>
+              )}
+            </Typography.Paragraph>
+          ),
+        }}
+      />
+    </>
+  );
+};
+
+export default OrderAdmin;
