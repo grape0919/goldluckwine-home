@@ -85,6 +85,20 @@ export async function fetchPendingChanges(): Promise<boolean> {
 
 export const fetchLastDeployTriggeredAt = () => fetchSiteMeta(LAST_DEPLOY_KEY);
 
+/** 현재 로그인 사용자가 관리자(admins 등재)인지 — RLS상 본인 행만 조회된다 */
+export async function fetchIsAdmin(userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('admins')
+    .select('user_id')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) {
+    // admins 테이블 미생성(마이그레이션 전)이면 기존 동작(로그인=관리자) 유지
+    return true;
+  }
+  return Boolean(data);
+}
+
 /** Storage 공개 URL → 버킷 내 경로 (우리 버킷의 업로드 파일이 아니면 null) */
 function storagePathFromUrl(url: string): string | null {
   const marker = `/object/public/${BUCKET}/`;
