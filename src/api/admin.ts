@@ -190,9 +190,14 @@ export async function listWines(): Promise<WineRow[]> {
   return data as WineRow[];
 }
 
-export async function createWine(input: WineInput): Promise<void> {
-  const { error } = await supabase.from('wines').insert(input);
+export async function createWine(input: WineInput): Promise<number> {
+  const { data, error } = await supabase
+    .from('wines')
+    .insert(input)
+    .select('id')
+    .single();
   if (error) throw error;
+  return (data as { id: number }).id;
 }
 
 export async function updateWine(
