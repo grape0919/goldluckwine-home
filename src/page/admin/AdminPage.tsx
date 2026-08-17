@@ -32,6 +32,7 @@ import HomeContentAdmin from '@/page/admin/HomeContentAdmin';
 import BackLabelAdmin from '@/page/admin/backlabel/BackLabelAdmin';
 import InquiryAdmin from '@/page/admin/InquiryAdmin';
 import PartnerAdmin from '@/page/admin/PartnerAdmin';
+import OrderAdmin from '@/page/admin/OrderAdmin';
 import SettingsAdmin from '@/page/admin/SettingsAdmin';
 import Seo from '@/components/Seo';
 
@@ -322,6 +323,12 @@ const AdminPage = () => {
             children: (
               <HomeContentAdmin onChanged={markChanged} />
             ),
+          },
+          {
+            key: 'orders',
+            // 발주는 DB 조회형 — '사이트 반영'과 무관
+            label: '발주',
+            children: <OrderAdmin />,
           },
           {
             key: 'partners',

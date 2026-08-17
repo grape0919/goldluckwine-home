@@ -12,6 +12,9 @@ import OrderLoginPage from '@/page/order/OrderLoginPage';
 import OrderSignupPage from '@/page/order/OrderSignupPage';
 import OrderResetPage from '@/page/order/OrderResetPage';
 import OrderAccountPage from '@/page/order/OrderAccountPage';
+import OrderCheckoutPage from '@/page/order/OrderCheckoutPage';
+import OrderCompletePage from '@/page/order/OrderCompletePage';
+import OrderHistoryPage from '@/page/order/OrderHistoryPage';
 import OrderTermsPage from '@/page/order/OrderTermsPage';
 import OrderPrivacyPage from '@/page/order/OrderPrivacyPage';
 import AdminRoot from '@/page/admin/AdminRoot';
@@ -46,6 +49,9 @@ export const routes: RouteRecord[] = [
       { path: 'order/login', element: <OrderLoginPage /> },
       { path: 'order/signup', element: <OrderSignupPage /> },
       { path: 'order/reset', element: <OrderResetPage /> },
+      { path: 'order/checkout', element: <OrderCheckoutPage /> },
+      { path: 'order/complete', element: <OrderCompletePage /> },
+      { path: 'order/history', element: <OrderHistoryPage /> },
       { path: 'order/account', element: <OrderAccountPage /> },
       { path: 'order/terms', element: <OrderTermsPage /> },
       { path: 'order/privacy', element: <OrderPrivacyPage /> },

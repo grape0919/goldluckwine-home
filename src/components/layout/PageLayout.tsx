@@ -10,6 +10,7 @@ import styled from 'styled-components';
 import { customedTheme } from '@/styles/theme';
 import SiteFooter from '@/components/layout/SiteFooter';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { useCartCount } from '@/page/order/useCartCount';
 
 const { home, font } = customedTheme;
 
@@ -28,6 +29,7 @@ const isActive = (pathname: string, to: string) =>
 const PageLayout = () => {
   const { pathname } = useLocation();
   const navigationType = useNavigationType();
+  const cartCount = useCartCount();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -73,6 +75,9 @@ const PageLayout = () => {
               className={isActive(pathname, to) ? 'active' : ''}
             >
               {label}
+              {to === '/order' && cartCount > 0 && (
+                <span className='cart-badge'>{cartCount}</span>
+              )}
             </Link>
           ))}
         </nav>
@@ -98,6 +103,9 @@ const PageLayout = () => {
                   className={isActive(pathname, to) ? 'active' : ''}
                 >
                   {label}
+                  {to === '/order' && cartCount > 0 && (
+                    <span className='cart-badge'>{cartCount}</span>
+                  )}
                 </Link>
               ))}
             </div>
@@ -160,6 +168,18 @@ const Wrapper = styled.div`
         font-weight: 700;
       }
     }
+  }
+
+  .cart-badge {
+    display: inline-block;
+    margin-left: 5px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: ${home.purple};
+    color: #fff;
+    font-size: 11px;
+    line-height: 17px;
+    vertical-align: 2px;
   }
 
   .gnb-mobile {
