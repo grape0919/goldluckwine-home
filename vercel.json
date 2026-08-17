@@ -1,7 +1,3 @@
 {
-  "rewrites": [
-    { "source": "/admin", "destination": "/index.html" },
-    { "source": "/order", "destination": "/index.html" },
-    { "source": "/order/:path*", "destination": "/index.html" }
-  ]
+  "rewrites": [{ "source": "/admin", "destination": "/index.html" }]
 }

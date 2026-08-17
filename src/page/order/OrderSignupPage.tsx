@@ -257,7 +257,7 @@ const OrderSignupPage = () => {
             name='business_no'
             required
             inputMode='numeric'
-            pattern='[\d-]{10,12}'
+            pattern='[0-9\-]{10,12}'
             placeholder='000-00-00000'
             onChange={() => setVerification(null)}
             onBlur={(e) => autoVerify(e.target.value)}
