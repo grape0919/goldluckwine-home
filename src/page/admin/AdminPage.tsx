@@ -31,6 +31,7 @@ import WineryAdmin from '@/page/admin/WineryAdmin';
 import HomeContentAdmin from '@/page/admin/HomeContentAdmin';
 import BackLabelAdmin from '@/page/admin/backlabel/BackLabelAdmin';
 import InquiryAdmin from '@/page/admin/InquiryAdmin';
+import PartnerAdmin from '@/page/admin/PartnerAdmin';
 import Seo from '@/components/Seo';
 
 const { Title } = Typography;
@@ -320,6 +321,12 @@ const AdminPage = () => {
             children: (
               <HomeContentAdmin onChanged={markChanged} />
             ),
+          },
+          {
+            key: 'partners',
+            // 거래처·발주는 DB 조회형 — '사이트 반영'과 무관
+            label: '거래처',
+            children: <PartnerAdmin />,
           },
           {
             key: 'inquiries',
