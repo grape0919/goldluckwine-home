@@ -54,9 +54,9 @@ export const vatOf = (supplyAmount: number): number =>
 
 export const ORDER_SETTING_DEFAULTS = {
   min_bottles: '6',
-  bank_name: '',
-  bank_account: '',
-  bank_holder: '',
+  bank_name: '하나은행',
+  bank_account: '218-910408-18407',
+  bank_holder: '골드럭와인',
   deposit_days: '3',
   notice: '',
   admin_email: '',
