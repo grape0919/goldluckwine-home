@@ -10,16 +10,23 @@ import { updateMyPartner } from '@/api/partners';
 /** 마이페이지 — 사업자 정보 수정 + 비밀번호 변경 (재설정 링크 착지점 겸용) */
 const OrderAccountPage = () => {
   const { session, partner, loading, refresh } = useOrderAuth();
-  const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState('');
-  const [error, setError] = useState('');
+  // 두 폼(정보 수정 / 비밀번호)의 진행 상태·메시지를 분리 —
+  // 메시지는 해당 폼 안에 표시해야 어디가 저장됐는지 보인다
+  const [profileBusy, setProfileBusy] = useState(false);
+  const [pwBusy, setPwBusy] = useState(false);
+  const [profileMsg, setProfileMsg] = useState<{
+    text: string;
+    isError: boolean;
+  } | null>(null);
+  const [pwMsg, setPwMsg] = useState<{ text: string; isError: boolean } | null>(
+    null,
+  );
 
   const handleProfile = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
-    setBusy(true);
-    setError('');
-    setNotice('');
+    setProfileBusy(true);
+    setProfileMsg(null);
     try {
       await updateMyPartner({
         business_name: String(data.get('business_name') ?? '').trim(),
@@ -30,11 +37,14 @@ const OrderAccountPage = () => {
         address: String(data.get('address') ?? '').trim(),
       });
       await refresh();
-      setNotice('저장했습니다.');
+      setProfileMsg({ text: '저장했습니다.', isError: false });
     } catch (err) {
-      setError(`저장 실패: ${(err as Error).message}`);
+      setProfileMsg({
+        text: `저장 실패: ${(err as Error).message}`,
+        isError: true,
+      });
     } finally {
-      setBusy(false);
+      setProfileBusy(false);
     }
   };
 
@@ -44,20 +54,19 @@ const OrderAccountPage = () => {
     const data = new FormData(form);
     const password = String(data.get('new_password') ?? '');
     if (password !== String(data.get('new_password2') ?? '')) {
-      setError('새 비밀번호가 일치하지 않습니다.');
+      setPwMsg({ text: '새 비밀번호가 일치하지 않습니다.', isError: true });
       return;
     }
-    setBusy(true);
-    setError('');
-    setNotice('');
+    setPwBusy(true);
+    setPwMsg(null);
     const { error: err } = await supabase.auth.updateUser({ password });
-    setBusy(false);
+    setPwBusy(false);
     if (err) {
-      setError(`변경 실패: ${err.message}`);
+      setPwMsg({ text: `변경 실패: ${err.message}`, isError: true });
       return;
     }
     form.reset();
-    setNotice('비밀번호를 변경했습니다.');
+    setPwMsg({ text: '비밀번호를 변경했습니다.', isError: false });
   };
 
   if (loading) return <OrderShell />;
@@ -71,6 +80,16 @@ const OrderAccountPage = () => {
       />
       <p className='order-eyebrow'>FOR BUSINESS</p>
       <h1>ACCOUNT</h1>
+      <p className='order-hint'>
+        로그인 계정: <b>{session.user.email}</b>{' '}
+        <button
+          type='button'
+          className='verify-button'
+          onClick={() => supabase.auth.signOut()}
+        >
+          로그아웃
+        </button>
+      </p>
 
       {partner ? (
         <form
@@ -134,12 +153,20 @@ const OrderAccountPage = () => {
               defaultValue={partner.address}
             />
           </label>
+          {profileMsg && (
+            <p
+              className={profileMsg.isError ? 'order-error' : 'verify-ok'}
+              role='status'
+            >
+              {profileMsg.text}
+            </p>
+          )}
           <button
             type='submit'
             className='order-button'
-            disabled={busy}
+            disabled={profileBusy}
           >
-            SAVE
+            {profileBusy ? '저장 중…' : 'SAVE'}
           </button>
         </form>
       ) : (
@@ -175,14 +202,20 @@ const OrderAccountPage = () => {
             />
           </label>
         </div>
-        {error && <p className='order-error'>{error}</p>}
-        {notice && <p className='verify-ok'>{notice}</p>}
+        {pwMsg && (
+          <p
+            className={pwMsg.isError ? 'order-error' : 'verify-ok'}
+            role='status'
+          >
+            {pwMsg.text}
+          </p>
+        )}
         <button
           type='submit'
           className='order-button'
-          disabled={busy}
+          disabled={pwBusy}
         >
-          CHANGE
+          {pwBusy ? '변경 중…' : 'CHANGE'}
         </button>
       </form>
     </OrderShell>

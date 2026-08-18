@@ -76,7 +76,12 @@ const PageLayout = () => {
             >
               {label}
               {to === '/order' && cartCount > 0 && (
-                <span className='cart-badge'>{cartCount}</span>
+                <span
+                  className='cart-badge'
+                  aria-label={`장바구니 ${cartCount}병`}
+                >
+                  {cartCount}
+                </span>
               )}
             </Link>
           ))}
@@ -104,7 +109,12 @@ const PageLayout = () => {
                 >
                   {label}
                   {to === '/order' && cartCount > 0 && (
-                    <span className='cart-badge'>{cartCount}</span>
+                    <span
+                  className='cart-badge'
+                  aria-label={`장바구니 ${cartCount}병`}
+                >
+                  {cartCount}
+                </span>
                   )}
                 </Link>
               ))}

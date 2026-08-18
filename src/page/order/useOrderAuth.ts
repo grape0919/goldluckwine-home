@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { fetchMyPartner } from '@/api/partners';
@@ -10,13 +10,16 @@ export function useOrderAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [partner, setPartner] = useState<PartnerRow | null>(null);
   const [loading, setLoading] = useState(true);
+  // 토큰 갱신·탭 복귀 때마다 화면이 로딩으로 리셋되지 않도록,
+  // loading 은 첫 로드에만 켠다 (이후 refresh 는 조용히 상태만 갱신)
+  const loadedOnce = useRef(false);
 
   const refresh = useCallback(async () => {
     if (!isSupabaseConfigured) {
       setLoading(false);
       return;
     }
-    setLoading(true);
+    if (!loadedOnce.current) setLoading(true);
     try {
       const { data } = await supabase.auth.getSession();
       setSession(data.session);
@@ -24,6 +27,7 @@ export function useOrderAuth() {
     } catch {
       setPartner(null);
     } finally {
+      loadedOnce.current = true;
       setLoading(false);
     }
   }, []);
