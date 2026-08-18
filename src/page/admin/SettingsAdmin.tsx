@@ -25,6 +25,11 @@ interface FormValues {
   bank_holder: string;
   notice: string;
   admin_email: string;
+  supplier_name: string;
+  supplier_business_no: string;
+  supplier_ceo: string;
+  supplier_address: string;
+  supplier_phone: string;
 }
 
 /** 발주 운영 설정 — DB 조회형이라 저장 즉시 반영('사이트 반영' 불필요) */
@@ -45,6 +50,11 @@ const SettingsAdmin = () => {
           bank_holder: s.bank_holder,
           notice: s.notice,
           admin_email: s.admin_email,
+          supplier_name: s.supplier_name,
+          supplier_business_no: s.supplier_business_no,
+          supplier_ceo: s.supplier_ceo,
+          supplier_address: s.supplier_address,
+          supplier_phone: s.supplier_phone,
         });
         setLoaded(true);
       })
@@ -142,6 +152,42 @@ const SettingsAdmin = () => {
           label='예금주'
         >
           <Input placeholder='골드럭와인' />
+        </Form.Item>
+      </Card>
+
+      <Card
+        title='공급자 정보 (거래명세표 표기)'
+        style={{ marginBottom: 16 }}
+      >
+        <Form.Item
+          name='supplier_name'
+          label='상호'
+        >
+          <Input placeholder='골드럭와인' />
+        </Form.Item>
+        <Form.Item
+          name='supplier_business_no'
+          label='사업자등록번호'
+        >
+          <Input placeholder='000-00-00000' />
+        </Form.Item>
+        <Form.Item
+          name='supplier_ceo'
+          label='대표자'
+        >
+          <Input />
+        </Form.Item>
+        <Form.Item
+          name='supplier_address'
+          label='주소'
+        >
+          <Input />
+        </Form.Item>
+        <Form.Item
+          name='supplier_phone'
+          label='연락처'
+        >
+          <Input placeholder='010-0000-0000' />
         </Form.Item>
       </Card>
 

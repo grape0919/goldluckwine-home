@@ -19,6 +19,9 @@ import {
   ORDER_STATUS_LABEL,
 } from '@/api/orders';
 import type { AdminOrderRow, OrderStatus } from '@/api/orders';
+import { fetchOrderSettings, ORDER_SETTING_DEFAULTS } from '@/api/pricing';
+import type { OrderSettings } from '@/api/pricing';
+import { openStatement } from '@/utils/statement';
 
 /** 부가세 포함 합계 → 공급가액·세액 역산 (홈택스 계산서용) */
 const splitVat = (total: number) => {
@@ -92,6 +95,15 @@ const OrderAdmin = () => {
   const [rows, setRows] = useState<AdminOrderRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<OrderStatus | 'all'>('all');
+  const [settings, setSettings] = useState<OrderSettings>({
+    ...ORDER_SETTING_DEFAULTS,
+  });
+
+  useEffect(() => {
+    fetchOrderSettings()
+      .then(setSettings)
+      .catch(() => undefined);
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -246,6 +258,26 @@ const OrderAdmin = () => {
                   취소
                 </Button>
               </Popconfirm>
+            )}
+            {r.status !== 'canceled' && (
+              <Button
+                size='small'
+                onClick={() =>
+                  openStatement(
+                    r,
+                    {
+                      business_name: r.partners?.business_name ?? '',
+                      business_no: r.partners?.business_no ?? '',
+                      ceo_name: r.partners?.ceo_name ?? '',
+                      address: r.address || (r.partners?.address ?? ''),
+                      phone: r.partners?.phone,
+                    },
+                    settings,
+                  )
+                }
+              >
+                명세표
+              </Button>
             )}
             {r.status === 'done' &&
               (r.invoiced_at ? (
