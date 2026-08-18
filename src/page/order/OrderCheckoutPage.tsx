@@ -28,6 +28,7 @@ const OrderCheckoutPage = () => {
   const [cart, setCart] = useState<Record<number, number>>({});
   const [minBottles, setMinBottles] = useState(6);
   const [busy, setBusy] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -46,7 +47,8 @@ const OrderCheckoutPage = () => {
         for (const c of cartRows) map[c.wine_id] = c.qty;
         setCart(map);
       })
-      .catch((e) => setError(`불러오기 실패: ${(e as Error).message}`));
+      .catch((e) => setError(`불러오기 실패: ${(e as Error).message}`))
+      .finally(() => setDataLoaded(true));
   }, [partner]);
 
   const lines = useMemo(() => {
@@ -84,7 +86,12 @@ const OrderCheckoutPage = () => {
       );
       navigate(`/order/complete?id=${orderId}`, { replace: true });
     } catch (err) {
-      setError((err as Error).message);
+      const msg = (err as Error).message;
+      setError(
+        msg.includes('Failed to fetch') || msg.includes('NetworkError')
+          ? '네트워크 오류로 제출하지 못했습니다. 연결을 확인하고 다시 시도해 주세요.'
+          : msg,
+      );
       setBusy(false);
     }
   };
@@ -98,12 +105,17 @@ const OrderCheckoutPage = () => {
       <p className='order-eyebrow'>FOR BUSINESS</p>
       <h1>CHECKOUT</h1>
 
-      {lines.length === 0 ? (
+      {!dataLoaded ? (
+        <p className='order-hint'>발주서를 불러오는 중…</p>
+      ) : lines.length === 0 ? (
         <div className='status-card'>
           담긴 품목이 없습니다. <Link to='/order'>발주 화면으로</Link>
         </div>
       ) : (
         <>
+          <div className='order-links'>
+            <Link to='/order'>← 수량 수정하러 가기</Link>
+          </div>
           <div className='status-card'>
             {lines.map((l) => (
               <div key={l.wine.id}>
@@ -129,7 +141,7 @@ const OrderCheckoutPage = () => {
             {bottles < minBottles && (
               <p className='order-error'>
                 최소 발주 수량 {minBottles}병에 {minBottles - bottles}병
-                부족합니다.
+                부족합니다. <Link to='/order'>더 담으러 가기</Link>
               </p>
             )}
           </div>

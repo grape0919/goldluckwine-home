@@ -11,7 +11,13 @@ const OrderPage = () => {
   const { session, partner, loading } = useOrderAuth();
 
   if (!isSupabaseConfigured) return null;
-  if (loading) return <OrderShell />;
+  if (loading) {
+    return (
+      <OrderShell>
+        <p className='order-hint'>불러오는 중…</p>
+      </OrderShell>
+    );
+  }
 
   // 미로그인 — 서비스 소개
   if (!session) {

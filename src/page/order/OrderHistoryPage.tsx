@@ -29,10 +29,21 @@ const OrderHistoryPage = () => {
     ...ORDER_SETTING_DEFAULTS,
   });
 
+  const [listLoaded, setListLoaded] = useState(false);
+  // 액션 결과는 해당 발주 상세 안에 표시한다 (페이지 상단은 시야 밖일 수 있음)
+  const [actionMsg, setActionMsg] = useState<{
+    id: number;
+    text: string;
+    isError: boolean;
+  } | null>(null);
+  const [confirmCancel, setConfirmCancel] = useState<number | null>(null);
+  const [confirmReorder, setConfirmReorder] = useState<number | null>(null);
+
   const load = useCallback(() => {
     listMyOrders()
       .then(setOrders)
-      .catch((e) => setError(`불러오기 실패: ${(e as Error).message}`));
+      .catch((e) => setError(`불러오기 실패: ${(e as Error).message}`))
+      .finally(() => setListLoaded(true));
   }, []);
 
   useEffect(() => {
@@ -44,22 +55,28 @@ const OrderHistoryPage = () => {
   }, [partner, load]);
 
   const handleCancel = async (id: number) => {
-    if (!window.confirm(`발주 No.${id} 를 취소할까요?`)) return;
+    setConfirmCancel(null);
     try {
       await cancelMyOrder(id);
       load();
+      setActionMsg({ id, text: '발주를 취소했습니다.', isError: false });
     } catch (e) {
-      setError((e as Error).message);
+      setActionMsg({ id, text: (e as Error).message, isError: true });
     }
   };
 
   const handleReorder = async (order: OrderRow) => {
     if (!partner) return;
+    setConfirmReorder(null);
     try {
       await refillCartFromOrder(partner.id, order);
       navigate('/order');
     } catch (e) {
-      setError((e as Error).message);
+      setActionMsg({
+        id: order.id,
+        text: (e as Error).message,
+        isError: true,
+      });
     }
   };
 
@@ -80,8 +97,15 @@ const OrderHistoryPage = () => {
             <button
               type='button'
               className='row'
+              aria-expanded={open === o.id}
               onClick={() => setOpen(open === o.id ? null : o.id)}
             >
+              <span
+                className='chevron'
+                aria-hidden
+              >
+                {open === o.id ? '▾' : '▸'}
+              </span>
               <span className='no'>No.{o.id}</span>
               <span>{new Date(o.created_at).toLocaleDateString('ko-KR')}</span>
               <span>{o.total_bottles}병</span>
@@ -98,6 +122,20 @@ const OrderHistoryPage = () => {
                     {i.name_en} × {i.qty}병 = {i.amount.toLocaleString()}원
                   </div>
                 ))}
+                {o.vat_amount > 0 && (
+                  <div>
+                    공급가{' '}
+                    {(o.total_amount - o.vat_amount).toLocaleString()}원 +
+                    부가세 {o.vat_amount.toLocaleString()}원 = 입금액{' '}
+                    <b>{o.total_amount.toLocaleString()}원</b>
+                  </div>
+                )}
+                {o.status === 'awaiting_deposit' && (
+                  <div className='pay-info'>
+                    입금 계좌: {settings.bank_name} {settings.bank_account}{' '}
+                    (예금주 {settings.bank_holder}) · 입금자명은 상호로
+                  </div>
+                )}
                 <div className='detail-meta'>
                   배송지 {o.address}
                   {o.memo && <> · 메모 {o.memo}</>}
@@ -116,21 +154,67 @@ const OrderHistoryPage = () => {
                     </>
                   )}
                 </div>
+                {actionMsg?.id === o.id && (
+                  <p
+                    className={actionMsg.isError ? 'order-error' : 'verify-ok'}
+                    role='status'
+                  >
+                    {actionMsg.text}
+                  </p>
+                )}
                 <div className='actions'>
-                  {o.status === 'awaiting_deposit' && (
+                  {o.status === 'awaiting_deposit' &&
+                    (confirmCancel === o.id ? (
+                      <>
+                        <span className='confirm-ask'>정말 취소할까요?</span>
+                        <button
+                          type='button'
+                          onClick={() => handleCancel(o.id)}
+                        >
+                          네, 취소합니다
+                        </button>
+                        <button
+                          type='button'
+                          onClick={() => setConfirmCancel(null)}
+                        >
+                          아니오
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type='button'
+                        onClick={() => setConfirmCancel(o.id)}
+                      >
+                        발주 취소
+                      </button>
+                    ))}
+                  {confirmReorder === o.id ? (
+                    <>
+                      <span className='confirm-ask'>
+                        지금 장바구니에 같은 품목이 있으면 이 발주의 수량으로
+                        바뀝니다.
+                      </span>
+                      <button
+                        type='button'
+                        onClick={() => handleReorder(o)}
+                      >
+                        담기
+                      </button>
+                      <button
+                        type='button'
+                        onClick={() => setConfirmReorder(null)}
+                      >
+                        취소
+                      </button>
+                    </>
+                  ) : (
                     <button
                       type='button'
-                      onClick={() => handleCancel(o.id)}
+                      onClick={() => setConfirmReorder(o.id)}
                     >
-                      발주 취소
+                      재발주 (장바구니에 담기)
                     </button>
                   )}
-                  <button
-                    type='button'
-                    onClick={() => handleReorder(o)}
-                  >
-                    재발주 (장바구니에 담기)
-                  </button>
                   {o.status !== 'canceled' && partner && (
                     <button
                       type='button'
@@ -156,12 +240,15 @@ const OrderHistoryPage = () => {
             )}
           </li>
         ))}
-        {orders.length === 0 && (
-          <p className='order-hint'>
-            발주 내역이 없습니다. <Link to='/order'>첫 발주 하러 가기</Link>
-          </p>
-        )}
       </List>
+      {!listLoaded && !error && (
+        <p className='order-hint'>발주 내역을 불러오는 중…</p>
+      )}
+      {listLoaded && orders.length === 0 && !error && (
+        <p className='order-hint'>
+          발주 내역이 없습니다. <Link to='/order'>첫 발주 하러 가기</Link>
+        </p>
+      )}
     </OrderShell>
   );
 };
@@ -178,8 +265,9 @@ const List = styled.ul`
 
   .row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 14px;
+    gap: 6px 14px;
     width: 100%;
     padding: 14px 4px;
     border: none;
@@ -188,6 +276,11 @@ const List = styled.ul`
     color: ${home.ink};
     cursor: pointer;
     text-align: left;
+
+    .chevron {
+      color: ${home.grayLight};
+      font-size: 12px;
+    }
 
     .no {
       font-weight: 700;
@@ -232,10 +325,25 @@ const List = styled.ul`
     color: ${home.grayLight};
   }
 
+  .pay-info {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: ${home.blueTint};
+    color: ${home.ink};
+    font-size: 13px;
+  }
+
   .actions {
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 10px;
     margin-top: 12px;
+
+    .confirm-ask {
+      color: ${home.brown};
+      font-size: 13px;
+    }
 
     button {
       padding: 7px 16px;
@@ -244,6 +352,16 @@ const List = styled.ul`
       color: ${home.brown};
       font-size: 13px;
       cursor: pointer;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .row {
+      font-size: 13.5px;
+
+      .amt {
+        margin-left: 0;
+      }
     }
   }
 `;

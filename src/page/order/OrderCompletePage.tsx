@@ -14,15 +14,22 @@ const OrderCompletePage = () => {
   const id = Number(params.get('id'));
   const [order, setOrder] = useState<OrderRow | null>(null);
   const [settings, setSettings] = useState<OrderSettings | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      setLoaded(true);
+      return;
+    }
     Promise.all([fetchOrderById(id), fetchOrderSettings()])
       .then(([o, s]) => {
         setOrder(o);
         setSettings(s);
-        if (o) {
+        // GA purchase — 새로고침·뒤로가기로 재방문해도 발주당 1회만
+        const gaKey = `glw:purchase:${id}`;
+        if (o && !sessionStorage.getItem(gaKey)) {
+          sessionStorage.setItem(gaKey, '1');
           trackEvent('purchase', {
             transaction_id: String(o.id),
             value: o.total_amount,
@@ -30,7 +37,8 @@ const OrderCompletePage = () => {
           });
         }
       })
-      .catch((e) => setError(`불러오기 실패: ${(e as Error).message}`));
+      .catch((e) => setError(`불러오기 실패: ${(e as Error).message}`))
+      .finally(() => setLoaded(true));
   }, [id]);
 
   return (
@@ -42,6 +50,12 @@ const OrderCompletePage = () => {
       <p className='order-eyebrow'>FOR BUSINESS</p>
       <h1>ORDER PLACED</h1>
       {error && <p className='order-error'>{error}</p>}
+      {!loaded && <p className='order-hint'>발주 정보를 불러오는 중…</p>}
+      {loaded && !order && !error && (
+        <div className='status-card'>
+          발주 정보를 찾을 수 없습니다. 발주 내역에서 확인해 주세요.
+        </div>
+      )}
       {order && (
         <div className='status-card'>
           발주 No.{order.id} 이 접수되었습니다.
