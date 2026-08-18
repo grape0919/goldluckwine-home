@@ -41,8 +41,12 @@ export interface OrderRow {
   partner_id: number;
   status: OrderStatus;
   total_bottles: number;
+  /** 할인 전 공급가 합계 (부가세 별도) */
   subtotal: number;
   discount_amount: number;
+  /** 부가세 — 구버전(부가세 포함가 시절) 발주는 0 */
+  vat_amount: number;
+  /** 실제 입금 금액 = 공급가(할인 후) + 부가세 */
   total_amount: number;
   address: string;
   memo: string;

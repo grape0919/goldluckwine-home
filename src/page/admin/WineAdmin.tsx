@@ -693,7 +693,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
           >
             <Form.Item
               name='price'
-              label='공급가(원) — 비우면 발주 목록 제외'
+              label='공급가(원, 부가세 별도) — 비우면 발주 목록 제외'
             >
               <InputNumber
                 min={0}

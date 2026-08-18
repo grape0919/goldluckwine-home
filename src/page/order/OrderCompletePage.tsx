@@ -52,8 +52,15 @@ const OrderCompletePage = () => {
             </div>
           ))}
           <hr />
-          합계 {order.total_bottles}병 ·{' '}
-          <b>{order.total_amount.toLocaleString()}원</b>
+          합계 {order.total_bottles}병
+          {order.vat_amount > 0 && (
+            <>
+              {' '}
+              · 공급가 {(order.total_amount - order.vat_amount).toLocaleString()}
+              원 + 부가세 {order.vat_amount.toLocaleString()}원
+            </>
+          )}{' '}
+          · <b>입금액 {order.total_amount.toLocaleString()}원</b>
           <br />
           <br />
           <strong>입금 안내</strong>

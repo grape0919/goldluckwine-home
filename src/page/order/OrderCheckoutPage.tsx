@@ -8,6 +8,7 @@ import {
   fetchWinePrices,
   fetchOrderSettings,
   effectiveUnitPrice,
+  vatOf,
 } from '@/api/pricing';
 import type { WinePriceRow } from '@/api/pricing';
 import {
@@ -62,7 +63,9 @@ const OrderCheckoutPage = () => {
   }, [wines, prices, cart, partner]);
 
   const bottles = lines.reduce((s, l) => s + l.qty, 0);
-  const total = lines.reduce((s, l) => s + l.amount, 0);
+  const supplyTotal = lines.reduce((s, l) => s + l.amount, 0);
+  const vatTotal = lines.reduce((s, l) => s + vatOf(l.amount), 0);
+  const total = supplyTotal + vatTotal;
 
   if (loading) return <OrderShell />;
   if (!partner || partner.status !== 'approved') {
@@ -113,7 +116,9 @@ const OrderCheckoutPage = () => {
             ))}
             <hr />
             <div>
-              합계 <b>{bottles}병</b> · <b>{total.toLocaleString()}원</b>
+              합계 <b>{bottles}병</b> · 공급가 {supplyTotal.toLocaleString()}원
+              + 부가세 {vatTotal.toLocaleString()}원 ={' '}
+              <b>입금액 {total.toLocaleString()}원</b>
               {partner.discount_rate > 0 && (
                 <span style={{ opacity: 0.6 }}>
                   {' '}

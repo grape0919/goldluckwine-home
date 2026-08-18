@@ -8,6 +8,7 @@ import {
   fetchWinePrices,
   fetchOrderSettings,
   effectiveUnitPrice,
+  vatOf,
 } from '@/api/pricing';
 import type { WinePriceRow, OrderSettings } from '@/api/pricing';
 import {
@@ -62,18 +63,20 @@ const OrderCatalog = ({ partner }: OrderCatalogProps) => {
     return p ? effectiveUnitPrice(p, partner.discount_rate) : null;
   };
 
-  const { bottles, total } = useMemo(() => {
+  const { bottles, supply, vat } = useMemo(() => {
     let b = 0;
-    let t = 0;
+    let s = 0;
+    let v = 0;
     for (const w of wines) {
       const q = qty[w.id] ?? 0;
       const u = unitOf(w.id);
       if (q > 0 && u != null && w.sold_out !== true) {
         b += q;
-        t += u * q;
+        s += u * q;
+        v += vatOf(u * q); // 행 단위 부가세 — 서버 계산과 동일 규칙
       }
     }
-    return { bottles: b, total: t };
+    return { bottles: b, supply: s, vat: v };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wines, qty, prices]);
 
@@ -86,7 +89,8 @@ const OrderCatalog = ({ partner }: OrderCatalogProps) => {
       {error && <p className='error'>{error}</p>}
       <p className='hint'>
         {partner.business_name} · 할인율 {partner.discount_rate}% 적용가 기준 ·
-        병 단위 발주 · 최소 {minBottles}병
+        가격은 <b>부가세 별도</b> (입금 시 10% 가산) · 병 단위 발주 · 최소{' '}
+        {minBottles}병
       </p>
 
       <div className='items'>
@@ -176,7 +180,12 @@ const OrderCatalog = ({ partner }: OrderCatalogProps) => {
           합계 <b>{bottles}</b>병
           {short > 0 && <em> · 최소 {minBottles}병까지 {short}병 부족</em>}
         </span>
-        <span className='amount'>{total.toLocaleString()}원</span>
+        <span className='amount'>
+          <small>
+            공급가 {supply.toLocaleString()} + VAT {vat.toLocaleString()} ={' '}
+          </small>
+          {(supply + vat).toLocaleString()}원
+        </span>
         <button
           type='button'
           disabled={bottles === 0 || short > 0}
@@ -348,6 +357,12 @@ const Wrapper = styled.div`
       margin-left: auto;
       font-size: 17px;
       font-weight: 700;
+
+      small {
+        font-size: 12px;
+        font-weight: 400;
+        opacity: 0.85;
+      }
     }
 
     button {

@@ -23,10 +23,14 @@ import { fetchOrderSettings, ORDER_SETTING_DEFAULTS } from '@/api/pricing';
 import type { OrderSettings } from '@/api/pricing';
 import { openStatement } from '@/utils/statement';
 
-/** 부가세 포함 합계 → 공급가액·세액 역산 (홈택스 계산서용) */
-const splitVat = (total: number) => {
-  const supply = Math.round(total / 1.1);
-  return { supply, vat: total - supply };
+/** 공급가액·세액 — 부가세 별도 발주는 저장값 사용,
+ *  구버전(부가세 포함가 시절, vat_amount=0) 발주는 역산 호환 */
+const splitVat = (r: AdminOrderRow) => {
+  if (r.vat_amount > 0) {
+    return { supply: r.total_amount - r.vat_amount, vat: r.vat_amount };
+  }
+  const supply = Math.round(r.total_amount / 1.1);
+  return { supply, vat: r.total_amount - supply };
 };
 
 /** 완료·미발행 발주들의 세금계산서 대장 CSV (UTF-8 BOM — 엑셀에서 바로 열림) */
@@ -47,7 +51,7 @@ function invoiceCsv(rows: AdminOrderRow[]): string {
   const BOM = '﻿'; // 엑셀이 UTF-8 한글을 올바르게 열도록
   const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
   const lines = rows.map((r) => {
-    const { supply, vat } = splitVat(r.total_amount);
+    const { supply, vat } = splitVat(r);
     const first = r.order_items[0];
     const item =
       r.order_items.length > 1
@@ -363,9 +367,12 @@ const OrderAdmin = () => {
                   <br />
                 </span>
               ))}
-              소계 {r.subtotal.toLocaleString()}원 · 할인 −
-              {r.discount_amount.toLocaleString()}원 · 합계{' '}
-              <b>{r.total_amount.toLocaleString()}원</b>
+              공급가 {r.subtotal.toLocaleString()}원 · 할인 −
+              {r.discount_amount.toLocaleString()}원
+              {r.vat_amount > 0 && (
+                <> · 부가세 {r.vat_amount.toLocaleString()}원</>
+              )}{' '}
+              · 입금액 <b>{r.total_amount.toLocaleString()}원</b>
               <br />
               배송지 {r.address || '—'}
               {r.memo && <> · 메모 {r.memo}</>}

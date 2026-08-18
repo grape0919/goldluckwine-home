@@ -16,20 +16,20 @@ const won = (n: number) => n.toLocaleString('ko-KR');
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-/** 부가세 포함 금액 → 공급가액/세액 (행 단위 역산) */
-const splitVat = (amount: number) => {
-  const supply = Math.round(amount / 1.1);
-  return { supply, vat: amount - supply };
-};
-
 export function openStatement(
   order: OrderRow,
   buyer: StatementBuyer,
   settings: OrderSettings,
 ): void {
+  // 부가세 별도 발주(vat_amount 기록됨): 품목 금액이 곧 공급가액, 세액은 10%.
+  // 구버전(부가세 포함가 시절) 발주는 역산으로 호환한다.
+  const vatExclusive = order.vat_amount > 0;
   const lines = order.order_items.map((i) => {
-    const { supply, vat } = splitVat(i.amount);
-    return { ...i, supply, vat };
+    if (vatExclusive) {
+      return { ...i, supply: i.amount, vat: Math.round(i.amount * 0.1) };
+    }
+    const supply = Math.round(i.amount / 1.1);
+    return { ...i, supply, vat: i.amount - supply };
   });
   const totalSupply = lines.reduce((s, l) => s + l.supply, 0);
   const totalVat = lines.reduce((s, l) => s + l.vat, 0);
@@ -112,7 +112,7 @@ export function openStatement(
 
   <table class="items">
     <thead><tr>
-      <th>품명</th><th>수량(병)</th><th>단가</th><th>공급가액</th><th>세액</th><th>합계</th>
+      <th>품명</th><th>수량(병)</th><th>단가(공급가)</th><th>공급가액</th><th>세액</th><th>합계</th>
     </tr></thead>
     <tbody>
       ${lines
@@ -123,7 +123,7 @@ export function openStatement(
         <td class="num">${won(l.unit_price)}</td>
         <td class="num">${won(l.supply)}</td>
         <td class="num">${won(l.vat)}</td>
-        <td class="num">${won(l.amount)}</td>
+        <td class="num">${won(l.supply + l.vat)}</td>
       </tr>`,
         )
         .join('')}
