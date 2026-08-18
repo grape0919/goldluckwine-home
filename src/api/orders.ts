@@ -205,6 +205,35 @@ export async function markInvoiced(id: number, on: boolean): Promise<void> {
   if (error) throw error;
 }
 
+/** 관리자 대리 발주 — 전화·카톡 주문 입력. 단가는 관리자 재량, 최소 병수 미적용 */
+export async function adminSubmitOrder(
+  partnerId: number,
+  items: { wine_id: number; qty: number; unit_price: number }[],
+  address: string,
+  memo: string,
+): Promise<number> {
+  const { data, error } = await supabase.rpc('admin_submit_order', {
+    p_partner_id: partnerId,
+    p_items: items,
+    p_address: address,
+    p_memo: memo,
+  });
+  if (error) throw error;
+  return data as number;
+}
+
+/** 관리자 품목 단가 수정 — 발주 합계·부가세는 서버에서 재계산 */
+export async function adminUpdateItemPrice(
+  itemId: number,
+  unitPrice: number,
+): Promise<void> {
+  const { error } = await supabase.rpc('admin_update_item_price', {
+    p_item_id: itemId,
+    p_unit_price: unitPrice,
+  });
+  if (error) throw error;
+}
+
 /** 관리자 상태 변경 — 상태별 시각도 함께 기록 */
 export async function updateOrderStatus(
   id: number,

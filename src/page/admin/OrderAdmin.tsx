@@ -3,8 +3,12 @@ import {
   App,
   Badge,
   Button,
+  Input,
+  InputNumber,
+  Modal,
   Popconfirm,
   Radio,
+  Select,
   Space,
   Table,
   Tag,
@@ -16,12 +20,30 @@ import {
   listOrders,
   updateOrderStatus,
   markInvoiced,
+  fetchOrderableWines,
+  adminSubmitOrder,
+  adminUpdateItemPrice,
   ORDER_STATUS_LABEL,
 } from '@/api/orders';
 import type { AdminOrderRow, OrderStatus } from '@/api/orders';
-import { fetchOrderSettings, ORDER_SETTING_DEFAULTS } from '@/api/pricing';
-import type { OrderSettings } from '@/api/pricing';
+import {
+  fetchOrderSettings,
+  fetchWinePrices,
+  effectiveUnitPrice,
+  vatOf,
+  ORDER_SETTING_DEFAULTS,
+} from '@/api/pricing';
+import type { OrderSettings, WinePriceRow } from '@/api/pricing';
+import { listPartners } from '@/api/partners';
+import type { PartnerRow } from '@/api/partners';
+import type { WineRow } from '@/lib/supabase';
 import { openStatement } from '@/utils/statement';
+
+interface ProxyItem {
+  wine_id?: number;
+  qty: number;
+  unit_price: number;
+}
 
 /** 공급가액·세액 — 부가세 별도 발주는 저장값 사용,
  *  구버전(부가세 포함가 시절, vat_amount=0) 발주는 역산 호환 */
@@ -108,6 +130,105 @@ const OrderAdmin = () => {
       .then(setSettings)
       .catch(() => undefined);
   }, []);
+
+  // ── 대리 발주 (전화·카톡 주문 입력) ──────────────────────
+  const [proxyOpen, setProxyOpen] = useState(false);
+  const [proxySaving, setProxySaving] = useState(false);
+  const [partners, setPartners] = useState<PartnerRow[]>([]);
+  const [wines, setWines] = useState<WineRow[]>([]);
+  const [prices, setPrices] = useState<Record<number, WinePriceRow>>({});
+  const [proxyPartnerId, setProxyPartnerId] = useState<number | undefined>();
+  const [proxyItems, setProxyItems] = useState<ProxyItem[]>([
+    { qty: 1, unit_price: 0 },
+  ]);
+  const [proxyAddress, setProxyAddress] = useState('');
+  const [proxyMemo, setProxyMemo] = useState('');
+
+  const openProxy = async () => {
+    setProxyOpen(true);
+    if (partners.length === 0) {
+      try {
+        const [ps, ws, pm] = await Promise.all([
+          listPartners(),
+          fetchOrderableWines(),
+          fetchWinePrices(),
+        ]);
+        setPartners(ps.filter((p) => p.status === 'approved'));
+        setWines(ws);
+        setPrices(pm);
+      } catch (e) {
+        message.error(`불러오기 실패: ${(e as Error).message}`);
+      }
+    }
+  };
+
+  const proxyPartner = partners.find((p) => p.id === proxyPartnerId);
+
+  const setProxyItem = (idx: number, patch: Partial<ProxyItem>) =>
+    setProxyItems((items) =>
+      items.map((it, i) => (i === idx ? { ...it, ...patch } : it)),
+    );
+
+  const proxySupply = proxyItems.reduce(
+    (s, it) => s + (it.wine_id ? it.unit_price * it.qty : 0),
+    0,
+  );
+  const proxyVat = proxyItems.reduce(
+    (s, it) => s + (it.wine_id ? vatOf(it.unit_price * it.qty) : 0),
+    0,
+  );
+
+  const submitProxy = async () => {
+    const items = proxyItems.filter(
+      (it): it is Required<ProxyItem> => it.wine_id != null && it.qty > 0,
+    );
+    if (!proxyPartnerId || items.length === 0) {
+      message.warning('거래처와 품목을 선택하세요.');
+      return;
+    }
+    setProxySaving(true);
+    try {
+      const id = await adminSubmitOrder(
+        proxyPartnerId,
+        items.map((it) => ({
+          wine_id: it.wine_id,
+          qty: it.qty,
+          unit_price: it.unit_price,
+        })),
+        proxyAddress,
+        proxyMemo,
+      );
+      message.success(`대리 발주 No.${id} 를 등록했습니다.`);
+      setProxyOpen(false);
+      setProxyPartnerId(undefined);
+      setProxyItems([{ qty: 1, unit_price: 0 }]);
+      setProxyAddress('');
+      setProxyMemo('');
+      await load();
+    } catch (e) {
+      message.error(`등록 실패: ${(e as Error).message}`);
+    } finally {
+      setProxySaving(false);
+    }
+  };
+
+  // ── 품목 단가 수정 ───────────────────────────────────────
+  const [editingItem, setEditingItem] = useState<{
+    id: number;
+    price: number;
+  } | null>(null);
+
+  const saveItemPrice = async () => {
+    if (!editingItem) return;
+    try {
+      await adminUpdateItemPrice(editingItem.id, editingItem.price);
+      setEditingItem(null);
+      await load();
+      message.success('단가를 수정했습니다. 합계·부가세가 재계산되었습니다.');
+    } catch (e) {
+      message.error(`수정 실패: ${(e as Error).message}`);
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -333,6 +454,12 @@ const OrderAdmin = () => {
           ))}
         </Radio.Group>
         <Space size={8}>
+          <Button
+            type='primary'
+            onClick={openProxy}
+          >
+            대리 발주
+          </Button>
           <Button onClick={downloadInvoiceCsv}>
             세금계산서 대장
             {(() => {
@@ -363,7 +490,50 @@ const OrderAdmin = () => {
               {r.order_items.map((i) => (
                 <span key={i.id}>
                   {i.name_en} × {i.qty}병 = {i.amount.toLocaleString()}원 (병당{' '}
-                  {i.unit_price.toLocaleString()}원)
+                  {editingItem?.id === i.id ? (
+                    <>
+                      <InputNumber
+                        size='small'
+                        min={0}
+                        step={1000}
+                        value={editingItem.price}
+                        onChange={(v) =>
+                          setEditingItem({ id: i.id, price: v ?? 0 })
+                        }
+                        style={{ width: 100 }}
+                      />
+                      원{' '}
+                      <Button
+                        size='small'
+                        type='primary'
+                        onClick={saveItemPrice}
+                      >
+                        저장
+                      </Button>{' '}
+                      <Button
+                        size='small'
+                        onClick={() => setEditingItem(null)}
+                      >
+                        취소
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      {i.unit_price.toLocaleString()}원
+                      {r.status !== 'canceled' && (
+                        <Button
+                          size='small'
+                          type='link'
+                          onClick={() =>
+                            setEditingItem({ id: i.id, price: i.unit_price })
+                          }
+                        >
+                          단가 수정
+                        </Button>
+                      )}
+                    </>
+                  )}
+                  )
                   <br />
                 </span>
               ))}
@@ -387,6 +557,137 @@ const OrderAdmin = () => {
           ),
         }}
       />
+
+      <Modal
+        title='대리 발주 — 전화·카톡 주문 입력'
+        open={proxyOpen}
+        onOk={submitProxy}
+        onCancel={() => setProxyOpen(false)}
+        confirmLoading={proxySaving}
+        okText='발주 등록'
+        cancelText='취소'
+        width={640}
+        destroyOnClose
+      >
+        <Space
+          direction='vertical'
+          style={{ width: '100%' }}
+          size={12}
+        >
+          <Select
+            showSearch
+            placeholder='거래처 선택 (승인·수기 포함)'
+            style={{ width: '100%' }}
+            value={proxyPartnerId}
+            optionFilterProp='label'
+            options={partners.map((p) => ({
+              value: p.id,
+              label: `${p.business_name} (${p.business_no})${p.user_id ? '' : ' [수기]'}`,
+            }))}
+            onChange={(id: number) => {
+              setProxyPartnerId(id);
+              const p = partners.find((x) => x.id === id);
+              setProxyAddress(p?.address ?? '');
+              // 이미 고른 품목들의 단가를 이 거래처 적용가로 갱신
+              setProxyItems((items) =>
+                items.map((it) =>
+                  it.wine_id && prices[it.wine_id]
+                    ? {
+                        ...it,
+                        unit_price: effectiveUnitPrice(
+                          prices[it.wine_id],
+                          p?.discount_rate ?? 0,
+                        ),
+                      }
+                    : it,
+                ),
+              );
+            }}
+          />
+          {proxyItems.map((it, idx) => (
+            <Space key={idx}>
+              <Select
+                showSearch
+                placeholder='품목'
+                style={{ width: 260 }}
+                value={it.wine_id}
+                optionFilterProp='label'
+                options={wines
+                  .filter((w) => prices[w.id])
+                  .map((w) => ({
+                    value: w.id,
+                    label: `${w.name_en}${w.sold_out ? ' (솔드아웃)' : ''}`,
+                  }))}
+                onChange={(wineId: number) =>
+                  setProxyItem(idx, {
+                    wine_id: wineId,
+                    unit_price: prices[wineId]
+                      ? effectiveUnitPrice(
+                          prices[wineId],
+                          proxyPartner?.discount_rate ?? 0,
+                        )
+                      : 0,
+                  })
+                }
+              />
+              <InputNumber
+                min={1}
+                value={it.qty}
+                onChange={(v) => setProxyItem(idx, { qty: v ?? 1 })}
+                addonAfter='병'
+                style={{ width: 100 }}
+              />
+              <InputNumber
+                min={0}
+                step={1000}
+                value={it.unit_price}
+                onChange={(v) => setProxyItem(idx, { unit_price: v ?? 0 })}
+                addonAfter='원'
+                style={{ width: 140 }}
+              />
+              <Button
+                size='small'
+                danger
+                disabled={proxyItems.length === 1}
+                onClick={() =>
+                  setProxyItems((items) => items.filter((_, i) => i !== idx))
+                }
+              >
+                삭제
+              </Button>
+            </Space>
+          ))}
+          <Button
+            size='small'
+            onClick={() =>
+              setProxyItems((items) => [...items, { qty: 1, unit_price: 0 }])
+            }
+          >
+            + 품목 추가
+          </Button>
+          <Input
+            placeholder='배송지 (비우면 거래처 기본 주소)'
+            value={proxyAddress}
+            onChange={(e) => setProxyAddress(e.target.value)}
+          />
+          <Input
+            placeholder='메모 (선택)'
+            value={proxyMemo}
+            onChange={(e) => setProxyMemo(e.target.value)}
+          />
+          <Typography.Text>
+            공급가 {proxySupply.toLocaleString()}원 + 부가세{' '}
+            {proxyVat.toLocaleString()}원 ={' '}
+            <b>입금액 {(proxySupply + proxyVat).toLocaleString()}원</b>
+            <Typography.Text
+              type='secondary'
+              style={{ marginLeft: 8 }}
+            >
+              (단가는 거래처 적용가 기본, 수정 가능 · 최소 병수 미적용)
+            </Typography.Text>
+          </Typography.Text>
+        </Space>
+      </Modal>
     </>
   );
 };

@@ -28,8 +28,13 @@ async function getSettings() {
   const rows = await sb('order_settings?select=key,value');
   const map = {};
   for (const r of rows) map[r.key] = r.value;
-  // 관리자 알림 수신처 — 설정 탭에서 바꿀 수 있고, 비어 있으면 기본 주소
+  // 설정 탭에서 바꿀 수 있고, 비어 있으면 기본값 사용
   if (!map.admin_email) map.admin_email = 'goldluckwine@gmail.com';
+  if (!map.bank_account) {
+    map.bank_name = '하나은행';
+    map.bank_account = '218-910408-18407';
+    map.bank_holder = '골드럭와인';
+  }
   return map;
 }
 

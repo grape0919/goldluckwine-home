@@ -20,6 +20,7 @@ import {
   updatePartnerStatus,
   updatePartnerAdmin,
   getPartnerDocUrl,
+  createManualPartner,
 } from '@/api/partners';
 import type { PartnerRow, PartnerStatus } from '@/api/partners';
 
@@ -42,7 +43,20 @@ const PartnerAdmin = () => {
     status: PartnerStatus;
   } | null>(null);
   const [reason, setReason] = useState('');
+  const [manualOpen, setManualOpen] = useState(false);
+  const [manualSaving, setManualSaving] = useState(false);
   const [form] = Form.useForm<{ discount_rate: number; memo: string }>();
+  const [manualForm] = Form.useForm<{
+    business_name: string;
+    business_no: string;
+    ceo_name: string;
+    contact_name: string;
+    phone: string;
+    email: string;
+    invoice_email: string;
+    address: string;
+    discount_rate: number;
+  }>();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -86,6 +100,27 @@ const PartnerAdmin = () => {
       }
     } catch (e) {
       message.error(`서류 열람 실패: ${(e as Error).message}`);
+    }
+  };
+
+  /** 계정 없는 수기 거래처 등록 — 대리 발주·명세표·계산서용 */
+  const saveManual = async () => {
+    const values = await manualForm.validateFields();
+    setManualSaving(true);
+    try {
+      await createManualPartner({
+        ...values,
+        business_no: values.business_no.replace(/\D/g, ''),
+        discount_rate: values.discount_rate ?? 0,
+      });
+      setManualOpen(false);
+      manualForm.resetFields();
+      await load();
+      message.success('수기 거래처를 등록했습니다.');
+    } catch (e) {
+      message.error(`등록 실패: ${(e as Error).message}`);
+    } finally {
+      setManualSaving(false);
     }
   };
 
@@ -158,9 +193,12 @@ const PartnerAdmin = () => {
       ).map(([value, m]) => ({ text: m.label, value })),
       onFilter: (value, r) => r.status === value,
       render: (_, r) => (
-        <Tag color={STATUS_META[r.status].color}>
-          {STATUS_META[r.status].label}
-        </Tag>
+        <>
+          <Tag color={STATUS_META[r.status].color}>
+            {STATUS_META[r.status].label}
+          </Tag>
+          {!r.user_id && <Tag>수기</Tag>}
+        </>
       ),
     },
     {
@@ -265,12 +303,15 @@ const PartnerAdmin = () => {
           onSearch={setSearch}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <Button
-          icon={<ReloadOutlined />}
-          onClick={load}
-        >
-          새로고침
-        </Button>
+        <Space size={8}>
+          <Button onClick={() => setManualOpen(true)}>거래처 직접 등록</Button>
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={load}
+          >
+            새로고침
+          </Button>
+        </Space>
       </Space>
       <Table
         rowKey='id'
@@ -304,6 +345,83 @@ const PartnerAdmin = () => {
           ),
         }}
       />
+
+      <Modal
+        title='거래처 직접 등록 (계정 없음 — 대리 발주용)'
+        open={manualOpen}
+        onOk={saveManual}
+        onCancel={() => setManualOpen(false)}
+        confirmLoading={manualSaving}
+        okText='등록'
+        cancelText='취소'
+        destroyOnClose
+      >
+        <Form
+          form={manualForm}
+          layout='vertical'
+        >
+          <Form.Item
+            name='business_name'
+            label='상호'
+            rules={[{ required: true, message: '상호를 입력하세요' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name='business_no'
+            label='사업자등록번호'
+            rules={[{ required: true, message: '사업자번호를 입력하세요' }]}
+          >
+            <Input placeholder='000-00-00000' />
+          </Form.Item>
+          <Form.Item
+            name='ceo_name'
+            label='대표자'
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name='contact_name'
+            label='담당자'
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name='phone'
+            label='연락처'
+          >
+            <Input placeholder='010-0000-0000' />
+          </Form.Item>
+          <Form.Item
+            name='email'
+            label='이메일 (선택 — 있으면 발주 알림 발송)'
+          >
+            <Input type='email' />
+          </Form.Item>
+          <Form.Item
+            name='invoice_email'
+            label='세금계산서 이메일 (선택, 비우면 이메일과 동일)'
+          >
+            <Input type='email' />
+          </Form.Item>
+          <Form.Item
+            name='address'
+            label='배송지 주소'
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name='discount_rate'
+            label='할인율(%)'
+          >
+            <InputNumber
+              min={0}
+              max={99}
+              step={0.5}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
 
       <Modal
         title={`${editing?.business_name ?? ''} — 할인율·메모`}

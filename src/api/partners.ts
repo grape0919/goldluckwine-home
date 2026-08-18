@@ -7,7 +7,8 @@ export type PartnerStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
 
 export interface PartnerRow {
   id: number;
-  user_id: string;
+  /** null = 계정 없는 수기 거래처 (관리자가 직접 등록, 대리 발주 전용) */
+  user_id: string | null;
   business_no: string;
   business_name: string;
   ceo_name: string;
@@ -151,6 +152,22 @@ export async function verifyBusinessNo(
 }
 
 // ── 관리자용 ────────────────────────────────────────────────
+
+/** 관리자 — 계정 없는 수기 거래처 등록 (즉시 승인 상태, 대리 발주용) */
+export async function createManualPartner(
+  input: PartnerProfileInput & { email?: string; discount_rate?: number },
+): Promise<void> {
+  const { error } = await supabase.from('partners').insert({
+    ...input,
+    email: input.email ?? '',
+    invoice_email: input.invoice_email || (input.email ?? ''),
+    user_id: null,
+    status: 'approved',
+    nts_status: '',
+    memo: '수기 등록',
+  });
+  if (error) throw error;
+}
 
 export async function listPartners(): Promise<PartnerRow[]> {
   const { data, error } = await supabase
