@@ -15,9 +15,59 @@ import type { ColumnsType } from 'antd/es/table';
 import {
   listOrders,
   updateOrderStatus,
+  markInvoiced,
   ORDER_STATUS_LABEL,
 } from '@/api/orders';
 import type { AdminOrderRow, OrderStatus } from '@/api/orders';
+
+/** 부가세 포함 합계 → 공급가액·세액 역산 (홈택스 계산서용) */
+const splitVat = (total: number) => {
+  const supply = Math.round(total / 1.1);
+  return { supply, vat: total - supply };
+};
+
+/** 완료·미발행 발주들의 세금계산서 대장 CSV (UTF-8 BOM — 엑셀에서 바로 열림) */
+function invoiceCsv(rows: AdminOrderRow[]): string {
+  const header = [
+    '발주번호',
+    '작성일자(완료일)',
+    '공급받는자 등록번호',
+    '상호',
+    '대표자',
+    '계산서 이메일',
+    '주소',
+    '품목',
+    '공급가액',
+    '세액',
+    '합계금액',
+  ];
+  const BOM = '﻿'; // 엑셀이 UTF-8 한글을 올바르게 열도록
+  const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+  const lines = rows.map((r) => {
+    const { supply, vat } = splitVat(r.total_amount);
+    const first = r.order_items[0];
+    const item =
+      r.order_items.length > 1
+        ? `${first?.name_en ?? ''} 외 ${r.order_items.length - 1}건`
+        : (first?.name_en ?? '');
+    return [
+      r.id,
+      (r.done_at ?? r.created_at).slice(0, 10),
+      r.partners?.business_no ?? '',
+      r.partners?.business_name ?? '',
+      r.partners?.ceo_name ?? '',
+      r.partners?.invoice_email || r.partners?.email || '',
+      r.partners?.address ?? '',
+      item,
+      supply,
+      vat,
+      r.total_amount,
+    ]
+      .map(esc)
+      .join(',');
+  });
+  return `${BOM}${header.map(esc).join(',')}\n${lines.join('\n')}`;
+}
 
 const STATUS_COLOR: Record<OrderStatus, string> = {
   awaiting_deposit: 'gold',
@@ -66,6 +116,43 @@ const OrderAdmin = () => {
     } catch (e) {
       message.error(`상태 변경 실패: ${(e as Error).message}`);
     }
+  };
+
+  /** 홈택스 발행 후 발행 여부 기록 */
+  const toggleInvoiced = async (row: AdminOrderRow, on: boolean) => {
+    try {
+      await markInvoiced(row.id, on);
+      setRows((rs) =>
+        rs.map((r) =>
+          r.id === row.id
+            ? { ...r, invoiced_at: on ? new Date().toISOString() : null }
+            : r,
+        ),
+      );
+    } catch (e) {
+      message.error(`기록 실패: ${(e as Error).message}`);
+    }
+  };
+
+  /** 완료 상태·미발행 발주를 홈택스 일괄발행용 대장으로 다운로드 */
+  const downloadInvoiceCsv = () => {
+    const targets = rows.filter((r) => r.status === 'done' && !r.invoiced_at);
+    if (targets.length === 0) {
+      message.info('완료 상태의 미발행 발주가 없습니다.');
+      return;
+    }
+    const blob = new Blob([invoiceCsv(targets)], {
+      type: 'text/csv;charset=utf-8',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `세금계산서대장-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    message.success(
+      `${targets.length}건 대장을 내려받았습니다. 홈택스 발행 후 각 발주에 '계산서 발행됨'을 체크해 주세요.`,
+    );
   };
 
   const overdue = (r: AdminOrderRow) =>
@@ -119,6 +206,11 @@ const OrderAdmin = () => {
             {ORDER_STATUS_LABEL[r.status]}
           </Tag>
           {overdue(r) && <Tag color='red'>기한초과</Tag>}
+          {r.status === 'done' && (
+            <Tag color={r.invoiced_at ? 'green' : 'orange'}>
+              {r.invoiced_at ? '계산서 ✓' : '계산서 미발행'}
+            </Tag>
+          )}
         </>
       ),
     },
@@ -155,6 +247,22 @@ const OrderAdmin = () => {
                 </Button>
               </Popconfirm>
             )}
+            {r.status === 'done' &&
+              (r.invoiced_at ? (
+                <Button
+                  size='small'
+                  onClick={() => toggleInvoiced(r, false)}
+                >
+                  발행 취소
+                </Button>
+              ) : (
+                <Button
+                  size='small'
+                  onClick={() => toggleInvoiced(r, true)}
+                >
+                  계산서 발행됨
+                </Button>
+              ))}
           </Space>
         );
       },
@@ -188,12 +296,23 @@ const OrderAdmin = () => {
             </Radio.Button>
           ))}
         </Radio.Group>
-        <Button
-          icon={<ReloadOutlined />}
-          onClick={load}
-        >
-          새로고침
-        </Button>
+        <Space size={8}>
+          <Button onClick={downloadInvoiceCsv}>
+            세금계산서 대장
+            {(() => {
+              const n = rows.filter(
+                (r) => r.status === 'done' && !r.invoiced_at,
+              ).length;
+              return n > 0 ? ` (미발행 ${n})` : '';
+            })()}
+          </Button>
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={load}
+          >
+            새로고침
+          </Button>
+        </Space>
       </Space>
       <Table
         rowKey='id'
