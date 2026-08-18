@@ -58,7 +58,9 @@ const OrderCatalog = ({ partner }: OrderCatalogProps) => {
         setWines(wineRows);
         setPrices(priceMap);
         setSettings(s);
-        setAwaiting(orders.filter((o) => o.status === 'awaiting_deposit'));
+        setAwaiting(
+          orders.filter((o) => !o.paid_at && o.status !== 'canceled'),
+        );
         const map: Record<number, number> = {};
         for (const c of cart) map[c.wine_id] = c.qty;
         setQty(map);
@@ -156,7 +158,7 @@ const OrderCatalog = ({ partner }: OrderCatalogProps) => {
     <Wrapper>
       {awaiting.length > 0 && settings && (
         <div className='deposit-banner'>
-          <b>입금 대기 {awaiting.length}건</b> · 합계{' '}
+          <b>미입금 발주 {awaiting.length}건</b> · 합계{' '}
           {awaiting
             .reduce((s, o) => s + o.total_amount, 0)
             .toLocaleString()}

@@ -10,6 +10,7 @@ import {
   cancelMyOrder,
   refillCartFromOrder,
   ORDER_STATUS_LABEL,
+  isUnpaid,
 } from '@/api/orders';
 import type { OrderRow } from '@/api/orders';
 import { fetchOrderSettings, ORDER_SETTING_DEFAULTS } from '@/api/pricing';
@@ -113,6 +114,13 @@ const OrderHistoryPage = () => {
               <span className={`badge st-${o.status}`}>
                 {ORDER_STATUS_LABEL[o.status]}
               </span>
+              {o.status !== 'canceled' && (
+                <span
+                  className={`badge ${o.paid_at ? 'st-done' : 'st-awaiting_deposit'}`}
+                >
+                  {o.paid_at ? '입금완료' : '미입금'}
+                </span>
+              )}
               {o.invoiced_at && <span className='badge st-done'>계산서 ✓</span>}
             </button>
             {open === o.id && (
@@ -130,7 +138,7 @@ const OrderHistoryPage = () => {
                     <b>{o.total_amount.toLocaleString()}원</b>
                   </div>
                 )}
-                {o.status === 'awaiting_deposit' && (
+                {isUnpaid(o) && (
                   <div className='pay-info'>
                     입금 계좌: {settings.bank_name} {settings.bank_account}{' '}
                     (예금주 {settings.bank_holder}) · 입금자명은 상호로
@@ -139,7 +147,7 @@ const OrderHistoryPage = () => {
                 <div className='detail-meta'>
                   배송지 {o.address}
                   {o.memo && <> · 메모 {o.memo}</>}
-                  {o.deposit_deadline && o.status === 'awaiting_deposit' && (
+                  {o.deposit_deadline && isUnpaid(o) && (
                     <>
                       {' '}
                       · 입금 기한{' '}

@@ -10,13 +10,19 @@ export type OrderStatus =
   | 'done'
   | 'canceled';
 
+/** 상태 흐름은 접수 → 배송중 → 완료. 입금 여부는 paid_at 로 별도 관리
+ *  ('paid' 상태는 구버전 호환용으로만 남아 있다) */
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
-  awaiting_deposit: '입금대기',
-  paid: '입금확인',
+  awaiting_deposit: '접수',
+  paid: '접수(입금)',
   shipping: '배송중',
   done: '완료',
   canceled: '취소',
 };
+
+/** 입금 여부 — 취소 발주는 제외 */
+export const isUnpaid = (o: { paid_at: string | null; status: OrderStatus }) =>
+  !o.paid_at && o.status !== 'canceled';
 
 export interface CartItemRow {
   id: number;
@@ -220,6 +226,29 @@ export async function adminSubmitOrder(
   });
   if (error) throw error;
   return data as number;
+}
+
+/** 관리자 입금 확인/취소 — 상태 흐름과 독립적으로 기록한다 */
+export async function markPaid(id: number, on: boolean): Promise<void> {
+  const { error } = await supabase
+    .from('orders')
+    .update({ paid_at: on ? new Date().toISOString() : null })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+/** 관리자 품목 일괄 수정 — 수량·단가 변경, 수량 0 은 삭제. 합계 서버 재계산 */
+export async function adminUpdateOrderItem(
+  itemId: number,
+  qty: number,
+  unitPrice: number,
+): Promise<void> {
+  const { error } = await supabase.rpc('admin_update_order_item', {
+    p_item_id: itemId,
+    p_qty: qty,
+    p_unit_price: unitPrice,
+  });
+  if (error) throw error;
 }
 
 /** 관리자 발주 품목 추가 — 발주 가능 여부와 무관(재량), 합계는 서버에서 재계산 */

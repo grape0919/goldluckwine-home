@@ -195,7 +195,7 @@ async function handleOrder(type, record, old) {
            } · <b>입금액 ${won(record.total_amount)}</b></p>
            <p><b>입금 안내</b><br/>${bank}<br/>
            입금자명은 상호로 해주세요.${record.deposit_deadline ? ` 기한: ${record.deposit_deadline}` : ''}</p>
-           <p>입금 확인 후 배송이 시작됩니다.</p>`,
+           <p>상품은 접수 순서대로 배송되며, 위 계좌로 기한 내 입금해 주세요.</p>`,
         ),
       ),
     );
@@ -208,36 +208,50 @@ async function handleOrder(type, record, old) {
           `<p><b>${partner.business_name}</b> 신규 발주 (No.${record.id})</p>
            <p>${items}</p>
            <p>합계 ${record.total_bottles}병 · <b>${won(record.total_amount)}</b></p>
-           <p>입금 확인 후 관리자 페이지 → 발주 탭에서 상태를 변경해 주세요.</p>`,
+           <p>관리자 페이지 → 발주 탭에서 배송·입금을 처리해 주세요.</p>`,
         ),
       ),
     );
   }
 
-  if (type === 'UPDATE' && old && old.status !== record.status) {
-    const subjects = {
-      paid: `[골드럭와인] 발주 No.${record.id} 입금 확인 — 배송을 준비합니다`,
-      shipping: `[골드럭와인] 발주 No.${record.id} 배송이 시작되었습니다`,
-      done: `[골드럭와인] 발주 No.${record.id} 배송 완료 — 세금계산서 안내`,
-      canceled: `[골드럭와인] 발주 No.${record.id} 취소 안내`,
-    };
-    const bodies = {
-      paid: `<p>입금이 확인되었습니다. 배송을 준비하겠습니다.</p>`,
-      shipping: `<p>상품이 출고되어 배송 중입니다.</p>`,
-      done: `<p>배송이 완료되었습니다. 세금계산서는 등록하신 이메일(${partner.invoice_email || partner.email})로 발행됩니다.</p>`,
-      canceled: `<p>발주가 취소되었습니다. 문의: goldluckwine@gmail.com</p>`,
-    };
-    if (subjects[record.status]) {
+  if (type === 'UPDATE' && old) {
+    // 입금 확인은 상태 흐름과 분리(paid_at) — 플래그가 새로 켜질 때 안내
+    if (!old.paid_at && record.paid_at) {
       jobs.push(
         sendEmail(
           partner.email,
-          subjects[record.status],
+          `[골드럭와인] 발주 No.${record.id} 입금 확인 안내`,
           wrap(
-            `<p><b>${partner.business_name}</b> 님,</p>${bodies[record.status]}
+            `<p><b>${partner.business_name}</b> 님,</p>
+             <p>발주 No.${record.id} 의 입금(${won(record.total_amount)})이 확인되었습니다. 감사합니다.</p>
              <p><a href="https://goldluckwine.com/order/history">발주 내역 확인</a></p>`,
           ),
         ),
       );
+    }
+    if (old.status !== record.status) {
+      const subjects = {
+        shipping: `[골드럭와인] 발주 No.${record.id} 배송이 시작되었습니다`,
+        done: `[골드럭와인] 발주 No.${record.id} 배송 완료 — 세금계산서 안내`,
+        canceled: `[골드럭와인] 발주 No.${record.id} 취소 안내`,
+      };
+      const bodies = {
+        shipping: `<p>상품이 출고되어 배송 중입니다.</p>`,
+        done: `<p>배송이 완료되었습니다. 세금계산서는 등록하신 이메일(${partner.invoice_email || partner.email})로 발행됩니다.</p>`,
+        canceled: `<p>발주가 취소되었습니다. 문의: goldluckwine@gmail.com</p>`,
+      };
+      if (subjects[record.status]) {
+        jobs.push(
+          sendEmail(
+            partner.email,
+            subjects[record.status],
+            wrap(
+              `<p><b>${partner.business_name}</b> 님,</p>${bodies[record.status]}
+               <p><a href="https://goldluckwine.com/order/history">발주 내역 확인</a></p>`,
+            ),
+          ),
+        );
+      }
     }
   }
 

@@ -22,8 +22,9 @@ import {
   markInvoiced,
   adminSubmitOrder,
   adminAddOrderItem,
-  adminUpdateItemPrice,
+  adminUpdateOrderItem,
   adminUpdateOrderMemo,
+  markPaid,
   ORDER_STATUS_LABEL,
 } from '@/api/orders';
 import { listWines } from '@/api/admin';
@@ -108,14 +109,23 @@ const STATUS_COLOR: Record<OrderStatus, string> = {
   canceled: 'default',
 };
 
-/** 다음 단계 버튼 — 상태 흐름: 입금대기 → 입금확인 → 배송중 → 완료 */
+/** 다음 단계 버튼 — 상태 흐름: 접수 → 배송중 → 완료.
+ *  입금 확인은 흐름과 독립(paid_at) — 배송 먼저·입금 나중이 흔한 실무 반영 */
 const NEXT_ACTION: Partial<
   Record<OrderStatus, { next: OrderStatus; label: string }>
 > = {
-  awaiting_deposit: { next: 'paid', label: '입금확인' },
-  paid: { next: 'shipping', label: '배송중으로' },
+  awaiting_deposit: { next: 'shipping', label: '배송중으로' },
+  paid: { next: 'shipping', label: '배송중으로' }, // 구버전 상태 호환
   shipping: { next: 'done', label: '완료(배송완료)' },
 };
+
+/** 필터에 노출할 상태 — 'paid' 는 구버전 호환용이라 숨긴다 */
+const FILTER_STATUSES: OrderStatus[] = [
+  'awaiting_deposit',
+  'shipping',
+  'done',
+  'canceled',
+];
 
 /** 발주 관리 — 상태 변경. 완료 처리 시 세금계산서 자동 발행은 Phase 4 에서 연결된다. */
 const OrderAdmin = () => {
@@ -146,9 +156,9 @@ const OrderAdmin = () => {
   const [proxyAddress, setProxyAddress] = useState('');
   const [proxyMemo, setProxyMemo] = useState('');
 
-  /** 대리 발주·품목 추가에 쓰는 카탈로그 — 발주 Off·가격 미설정 와인도 포함(관리자 재량) */
+  /** 대리 발주·품목 추가용 카탈로그 — 발주 Off·가격 미설정·숨김 와인까지 전부
+   *  포함(관리자 재량)하고, 열 때마다 새로 불러와 방금 추가한 품목도 보이게 한다 */
   const ensureCatalog = async () => {
-    if (partners.length > 0) return;
     try {
       const [ps, ws, pm] = await Promise.all([
         listPartners(),
@@ -156,7 +166,7 @@ const OrderAdmin = () => {
         fetchWinePrices(),
       ]);
       setPartners(ps.filter((p) => p.status === 'approved'));
-      setWines(ws.filter((w) => w.is_visible !== false));
+      setWines(ws);
       setPrices(pm);
     } catch (e) {
       message.error(`불러오기 실패: ${(e as Error).message}`);
@@ -171,7 +181,27 @@ const OrderAdmin = () => {
   const wineLabel = (w: WineRow) =>
     `${w.name_en}${w.sold_out ? ' (솔드아웃)' : ''}${
       w.orderable !== true ? ' [발주Off]' : ''
-    }${!prices[w.id] ? ' [가격없음]' : ''}`;
+    }${w.is_visible === false ? ' [숨김]' : ''}${
+      !prices[w.id] ? ' [가격없음]' : ''
+    }`;
+
+  /** 기존 발주를 대리 발주 폼에 복사 — 같은 구성으로 새 발주 */
+  const copyOrder = async (r: AdminOrderRow) => {
+    setProxyOpen(true);
+    await ensureCatalog();
+    setProxyPartnerId(r.partner_id);
+    setProxyItems(
+      r.order_items
+        .filter((i) => i.wine_id != null)
+        .map((i) => ({
+          wine_id: i.wine_id!,
+          qty: i.qty,
+          unit_price: i.unit_price,
+        })),
+    );
+    setProxyAddress(r.address);
+    setProxyMemo(r.memo);
+  };
 
   const proxyPartner = partners.find((p) => p.id === proxyPartnerId);
 
@@ -223,48 +253,76 @@ const OrderAdmin = () => {
     }
   };
 
-  // ── 발주에 품목 추가 (발주 Off 와인 포함 — 관리자 재량) ──
-  const [addItem, setAddItem] = useState<{
-    orderId: number;
-    wineId?: number;
+  // ── 발주 수정 다이얼로그 — 수량·단가 변경(0=삭제)·품목 추가를 한 번에 ──
+  interface EditRow {
+    item_id: number;
+    name: string;
     qty: number;
     price: number;
-  } | null>(null);
-  const [addSaving, setAddSaving] = useState(false);
+  }
+  const [editTarget, setEditTarget] = useState<AdminOrderRow | null>(null);
+  const [editRows, setEditRows] = useState<EditRow[]>([]);
+  const [editAdds, setEditAdds] = useState<ProxyItem[]>([]);
+  const [editSaving, setEditSaving] = useState(false);
 
-  const startAddItem = async (orderId: number) => {
+  const openEditOrder = async (r: AdminOrderRow) => {
+    setEditTarget(r);
+    setEditRows(
+      r.order_items.map((i) => ({
+        item_id: i.id,
+        name: i.name_en,
+        qty: i.qty,
+        price: i.unit_price,
+      })),
+    );
+    setEditAdds([]);
     await ensureCatalog();
-    setAddItem({ orderId, qty: 1, price: 0 });
   };
 
-  const saveAddItem = async () => {
-    if (!addItem?.wineId) {
-      message.warning('품목을 선택하세요.');
-      return;
-    }
-    setAddSaving(true);
+  const setEditRow = (itemId: number, patch: Partial<EditRow>) =>
+    setEditRows((rows2) =>
+      rows2.map((x) => (x.item_id === itemId ? { ...x, ...patch } : x)),
+    );
+
+  const saveEditOrder = async () => {
+    if (!editTarget) return;
+    setEditSaving(true);
     try {
-      await adminAddOrderItem(
-        addItem.orderId,
-        addItem.wineId,
-        addItem.qty,
-        addItem.price,
-      );
-      setAddItem(null);
+      for (const row of editRows) {
+        const orig = editTarget.order_items.find((i) => i.id === row.item_id);
+        if (orig && (row.qty !== orig.qty || row.price !== orig.unit_price)) {
+          await adminUpdateOrderItem(row.item_id, row.qty, row.price);
+        }
+      }
+      for (const a of editAdds) {
+        if (a.wine_id && a.qty > 0) {
+          await adminAddOrderItem(
+            editTarget.id,
+            a.wine_id,
+            a.qty,
+            a.unit_price,
+          );
+        }
+      }
+      setEditTarget(null);
       await load();
-      message.success('품목을 추가했습니다. 합계·부가세가 재계산되었습니다.');
+      message.success('발주를 수정했습니다. 합계·부가세가 재계산되었습니다.');
     } catch (e) {
-      message.error(`추가 실패: ${(e as Error).message}`);
+      message.error(`수정 실패: ${(e as Error).message}`);
     } finally {
-      setAddSaving(false);
+      setEditSaving(false);
     }
   };
 
-  // ── 품목 단가 수정 ───────────────────────────────────────
-  const [editingItem, setEditingItem] = useState<{
-    id: number;
-    price: number;
-  } | null>(null);
+  const editSupply =
+    editRows.reduce((s, x) => s + x.qty * x.price, 0) +
+    editAdds.reduce((s, a) => s + (a.wine_id ? a.qty * a.unit_price : 0), 0);
+  const editVat =
+    editRows.reduce((s, x) => s + vatOf(x.qty * x.price), 0) +
+    editAdds.reduce(
+      (s, a) => s + (a.wine_id ? vatOf(a.qty * a.unit_price) : 0),
+      0,
+    );
 
   // ── 메모 수정 (거래명세표 비고란에 표시) ─────────────────
   const [editingMemo, setEditingMemo] = useState<{
@@ -285,18 +343,6 @@ const OrderAdmin = () => {
       message.success('메모를 저장했습니다. 거래명세표 비고란에 표시됩니다.');
     } catch (e) {
       message.error(`저장 실패: ${(e as Error).message}`);
-    }
-  };
-
-  const saveItemPrice = async () => {
-    if (!editingItem) return;
-    try {
-      await adminUpdateItemPrice(editingItem.id, editingItem.price);
-      setEditingItem(null);
-      await load();
-      message.success('단가를 수정했습니다. 합계·부가세가 재계산되었습니다.');
-    } catch (e) {
-      message.error(`수정 실패: ${(e as Error).message}`);
     }
   };
 
@@ -363,9 +409,29 @@ const OrderAdmin = () => {
   };
 
   const overdue = (r: AdminOrderRow) =>
-    r.status === 'awaiting_deposit' &&
+    !r.paid_at &&
+    r.status !== 'canceled' &&
     r.deposit_deadline != null &&
     new Date(r.deposit_deadline) < new Date();
+
+  /** 입금 확인/취소 — 상태 흐름과 독립 */
+  const togglePaid = async (r: AdminOrderRow, on: boolean) => {
+    try {
+      await markPaid(r.id, on);
+      setRows((rs) =>
+        rs.map((x) =>
+          x.id === r.id
+            ? { ...x, paid_at: on ? new Date().toISOString() : null }
+            : x,
+        ),
+      );
+      message.success(
+        on ? `No.${r.id} 입금 확인 처리했습니다.` : `No.${r.id} 입금 확인을 취소했습니다.`,
+      );
+    } catch (e) {
+      message.error(`처리 실패: ${(e as Error).message}`);
+    }
+  };
 
   const filtered =
     filter === 'all' ? rows : rows.filter((r) => r.status === filter);
@@ -412,6 +478,11 @@ const OrderAdmin = () => {
           <Tag color={STATUS_COLOR[r.status]}>
             {ORDER_STATUS_LABEL[r.status]}
           </Tag>
+          {r.status !== 'canceled' && (
+            <Tag color={r.paid_at ? 'green' : 'gold'}>
+              {r.paid_at ? '입금완료' : '미입금'}
+            </Tag>
+          )}
           {overdue(r) && <Tag color='red'>기한초과</Tag>}
           {r.status === 'done' && (
             <Tag color={r.invoiced_at ? 'green' : 'orange'}>
@@ -427,7 +498,26 @@ const OrderAdmin = () => {
       render: (_, r) => {
         const action = NEXT_ACTION[r.status];
         return (
-          <Space size={4}>
+          <Space
+            size={4}
+            wrap
+          >
+            {r.status !== 'canceled' &&
+              (r.paid_at ? (
+                <Popconfirm
+                  title={`No.${r.id} 입금 확인을 취소할까요?`}
+                  onConfirm={() => togglePaid(r, false)}
+                >
+                  <Button size='small'>입금취소</Button>
+                </Popconfirm>
+              ) : (
+                <Popconfirm
+                  title={`No.${r.id} 입금을 확인 처리할까요?`}
+                  onConfirm={() => togglePaid(r, true)}
+                >
+                  <Button size='small'>입금확인</Button>
+                </Popconfirm>
+              ))}
             {action && (
               <Popconfirm
                 title={`No.${r.id} 을 '${ORDER_STATUS_LABEL[action.next]}' 처리할까요?`}
@@ -474,6 +564,12 @@ const OrderAdmin = () => {
                 명세표
               </Button>
             )}
+            <Button
+              size='small'
+              onClick={() => copyOrder(r)}
+            >
+              복사
+            </Button>
             {r.status === 'done' &&
               (r.invoiced_at ? (
                 <Button
@@ -507,9 +603,7 @@ const OrderAdmin = () => {
           onChange={(e) => setFilter(e.target.value)}
         >
           <Radio.Button value='all'>전체 {rows.length}</Radio.Button>
-          {(
-            Object.keys(ORDER_STATUS_LABEL) as OrderStatus[]
-          ).map((s) => (
+          {FILTER_STATUSES.map((s) => (
             <Radio.Button
               key={s}
               value={s}
@@ -560,118 +654,18 @@ const OrderAdmin = () => {
               {r.order_items.map((i) => (
                 <span key={i.id}>
                   {i.name_en} × {i.qty}병 = {i.amount.toLocaleString()}원 (병당{' '}
-                  {editingItem?.id === i.id ? (
-                    <>
-                      <InputNumber
-                        size='small'
-                        min={0}
-                        step={1000}
-                        value={editingItem.price}
-                        onChange={(v) =>
-                          setEditingItem({ id: i.id, price: v ?? 0 })
-                        }
-                        style={{ width: 100 }}
-                      />
-                      원{' '}
-                      <Button
-                        size='small'
-                        type='primary'
-                        onClick={saveItemPrice}
-                      >
-                        저장
-                      </Button>{' '}
-                      <Button
-                        size='small'
-                        onClick={() => setEditingItem(null)}
-                      >
-                        취소
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      {i.unit_price.toLocaleString()}원
-                      {r.status !== 'canceled' && (
-                        <Button
-                          size='small'
-                          type='link'
-                          onClick={() =>
-                            setEditingItem({ id: i.id, price: i.unit_price })
-                          }
-                        >
-                          단가 수정
-                        </Button>
-                      )}
-                    </>
-                  )}
-                  )
+                  {i.unit_price.toLocaleString()}원)
                   <br />
                 </span>
               ))}
-              {addItem?.orderId === r.id ? (
-                <Space
-                  wrap
-                  style={{ margin: '6px 0' }}
+              {r.status !== 'canceled' && (
+                <Button
+                  size='small'
+                  type='link'
+                  onClick={() => openEditOrder(r)}
                 >
-                  <Select
-                    showSearch
-                    placeholder='품목 (발주Off 포함)'
-                    style={{ width: 240 }}
-                    value={addItem.wineId}
-                    optionFilterProp='label'
-                    options={wines.map((w) => ({
-                      value: w.id,
-                      label: wineLabel(w),
-                    }))}
-                    onChange={(wineId: number) =>
-                      setAddItem({
-                        ...addItem,
-                        wineId,
-                        price: prices[wineId]
-                          ? effectiveUnitPrice(prices[wineId], 0)
-                          : 0,
-                      })
-                    }
-                  />
-                  <InputNumber
-                    min={1}
-                    value={addItem.qty}
-                    addonAfter='병'
-                    style={{ width: 100 }}
-                    onChange={(v) => setAddItem({ ...addItem, qty: v ?? 1 })}
-                  />
-                  <InputNumber
-                    min={0}
-                    step={1000}
-                    value={addItem.price}
-                    addonAfter='원'
-                    style={{ width: 140 }}
-                    onChange={(v) => setAddItem({ ...addItem, price: v ?? 0 })}
-                  />
-                  <Button
-                    size='small'
-                    type='primary'
-                    loading={addSaving}
-                    onClick={saveAddItem}
-                  >
-                    추가
-                  </Button>
-                  <Button
-                    size='small'
-                    onClick={() => setAddItem(null)}
-                  >
-                    취소
-                  </Button>
-                </Space>
-              ) : (
-                r.status !== 'canceled' && (
-                  <Button
-                    size='small'
-                    type='link'
-                    onClick={() => startAddItem(r.id)}
-                  >
-                    + 품목 추가
-                  </Button>
-                )
+                  품목·수량·단가 수정
+                </Button>
               )}
               <br />
               공급가 {r.subtotal.toLocaleString()}원 · 할인 −
@@ -738,6 +732,125 @@ const OrderAdmin = () => {
           ),
         }}
       />
+
+      <Modal
+        title={`발주 No.${editTarget?.id ?? ''} 수정 — 수량 0 은 삭제`}
+        open={Boolean(editTarget)}
+        onOk={saveEditOrder}
+        onCancel={() => setEditTarget(null)}
+        confirmLoading={editSaving}
+        okText='저장'
+        cancelText='취소'
+        width={640}
+        destroyOnClose
+      >
+        <Space
+          direction='vertical'
+          style={{ width: '100%' }}
+          size={10}
+        >
+          {editRows.map((row) => (
+            <Space key={row.item_id}>
+              <span style={{ display: 'inline-block', width: 220 }}>
+                {row.name}
+              </span>
+              <InputNumber
+                min={0}
+                value={row.qty}
+                addonAfter='병'
+                style={{ width: 100 }}
+                onChange={(v) => setEditRow(row.item_id, { qty: v ?? 0 })}
+              />
+              <InputNumber
+                min={0}
+                step={1000}
+                value={row.price}
+                addonAfter='원'
+                style={{ width: 140 }}
+                onChange={(v) => setEditRow(row.item_id, { price: v ?? 0 })}
+              />
+              {row.qty === 0 && <Tag color='red'>삭제됨</Tag>}
+            </Space>
+          ))}
+          {editAdds.map((a, idx) => (
+            <Space key={`add-${idx}`}>
+              <Select
+                showSearch
+                placeholder='추가 품목 (발주Off·숨김 포함)'
+                style={{ width: 220 }}
+                value={a.wine_id}
+                optionFilterProp='label'
+                options={wines.map((w) => ({
+                  value: w.id,
+                  label: wineLabel(w),
+                }))}
+                onChange={(wineId: number) =>
+                  setEditAdds((adds) =>
+                    adds.map((x, i) =>
+                      i === idx
+                        ? {
+                            ...x,
+                            wine_id: wineId,
+                            unit_price: prices[wineId]
+                              ? effectiveUnitPrice(prices[wineId], 0)
+                              : 0,
+                          }
+                        : x,
+                    ),
+                  )
+                }
+              />
+              <InputNumber
+                min={1}
+                value={a.qty}
+                addonAfter='병'
+                style={{ width: 100 }}
+                onChange={(v) =>
+                  setEditAdds((adds) =>
+                    adds.map((x, i) => (i === idx ? { ...x, qty: v ?? 1 } : x)),
+                  )
+                }
+              />
+              <InputNumber
+                min={0}
+                step={1000}
+                value={a.unit_price}
+                addonAfter='원'
+                style={{ width: 140 }}
+                onChange={(v) =>
+                  setEditAdds((adds) =>
+                    adds.map((x, i) =>
+                      i === idx ? { ...x, unit_price: v ?? 0 } : x,
+                    ),
+                  )
+                }
+              />
+              <Button
+                size='small'
+                danger
+                onClick={() =>
+                  setEditAdds((adds) => adds.filter((_, i) => i !== idx))
+                }
+              >
+                삭제
+              </Button>
+            </Space>
+          ))}
+          <Button
+            size='small'
+            onClick={() =>
+              setEditAdds((adds) => [...adds, { qty: 1, unit_price: 0 }])
+            }
+          >
+            + 품목 추가
+          </Button>
+          <Typography.Text>
+            공급가 {editSupply.toLocaleString()}원 + 부가세{' '}
+            {editVat.toLocaleString()}원 ={' '}
+            <b>입금액 {(editSupply + editVat).toLocaleString()}원</b>
+          </Typography.Text>
+        </Space>
+      </Modal>
 
       <Modal
         title='대리 발주 — 전화·카톡 주문 입력'
