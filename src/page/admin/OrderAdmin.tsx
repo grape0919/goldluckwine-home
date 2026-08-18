@@ -23,6 +23,7 @@ import {
   fetchOrderableWines,
   adminSubmitOrder,
   adminUpdateItemPrice,
+  adminUpdateOrderMemo,
   ORDER_STATUS_LABEL,
 } from '@/api/orders';
 import type { AdminOrderRow, OrderStatus } from '@/api/orders';
@@ -217,6 +218,28 @@ const OrderAdmin = () => {
     id: number;
     price: number;
   } | null>(null);
+
+  // ── 메모 수정 (거래명세표 비고란에 표시) ─────────────────
+  const [editingMemo, setEditingMemo] = useState<{
+    id: number;
+    memo: string;
+  } | null>(null);
+
+  const saveMemo = async () => {
+    if (!editingMemo) return;
+    try {
+      await adminUpdateOrderMemo(editingMemo.id, editingMemo.memo.trim());
+      setRows((rs) =>
+        rs.map((r) =>
+          r.id === editingMemo.id ? { ...r, memo: editingMemo.memo.trim() } : r,
+        ),
+      );
+      setEditingMemo(null);
+      message.success('메모를 저장했습니다. 거래명세표 비고란에 표시됩니다.');
+    } catch (e) {
+      message.error(`저장 실패: ${(e as Error).message}`);
+    }
+  };
 
   const saveItemPrice = async () => {
     if (!editingItem) return;
@@ -545,12 +568,56 @@ const OrderAdmin = () => {
               · 입금액 <b>{r.total_amount.toLocaleString()}원</b>
               <br />
               배송지 {r.address || '—'}
-              {r.memo && <> · 메모 {r.memo}</>}
               {r.deposit_deadline && (
                 <>
                   {' '}
                   · 입금 기한{' '}
                   {new Date(r.deposit_deadline).toLocaleDateString('ko-KR')}
+                </>
+              )}
+              <br />
+              {editingMemo?.id === r.id ? (
+                <Space
+                  style={{ marginTop: 4, width: '100%' }}
+                >
+                  <Input.TextArea
+                    autoSize={{ minRows: 1, maxRows: 3 }}
+                    style={{ width: 360 }}
+                    value={editingMemo.memo}
+                    onChange={(e) =>
+                      setEditingMemo({ id: r.id, memo: e.target.value })
+                    }
+                    placeholder='명세표 비고란에 표시됩니다'
+                  />
+                  <Button
+                    size='small'
+                    type='primary'
+                    onClick={saveMemo}
+                  >
+                    저장
+                  </Button>
+                  <Button
+                    size='small'
+                    onClick={() => setEditingMemo(null)}
+                  >
+                    취소
+                  </Button>
+                </Space>
+              ) : (
+                <>
+                  메모 {r.memo || '—'}
+                  <Button
+                    size='small'
+                    type='link'
+                    onClick={() =>
+                      setEditingMemo({ id: r.id, memo: r.memo })
+                    }
+                  >
+                    메모 수정
+                  </Button>
+                  <Typography.Text type='secondary'>
+                    (거래명세표 비고란에 표시)
+                  </Typography.Text>
                 </>
               )}
             </Typography.Paragraph>

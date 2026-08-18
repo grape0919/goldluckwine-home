@@ -234,6 +234,15 @@ export async function adminUpdateItemPrice(
   if (error) throw error;
 }
 
+/** 관리자 메모 수정 — 거래명세표 비고란에 표시된다 */
+export async function adminUpdateOrderMemo(
+  id: number,
+  memo: string,
+): Promise<void> {
+  const { error } = await supabase.from('orders').update({ memo }).eq('id', id);
+  if (error) throw error;
+}
+
 /** 관리자 상태 변경 — 상태별 시각도 함께 기록 */
 export async function updateOrderStatus(
   id: number,
