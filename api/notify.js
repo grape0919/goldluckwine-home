@@ -149,7 +149,11 @@ async function handleOrder(type, record, old) {
         wrap(
           `<p><b>${partner.business_name}</b> 님, 발주가 접수되었습니다.</p>
            <p>${items}</p>
-           <p>합계 <b>${record.total_bottles}병 · ${won(record.total_amount)}</b></p>
+           <p>합계 <b>${record.total_bottles}병</b>${
+             record.vat_amount > 0
+               ? ` · 공급가 ${won(record.total_amount - record.vat_amount)} + 부가세 ${won(record.vat_amount)}`
+               : ''
+           } · <b>입금액 ${won(record.total_amount)}</b></p>
            <p><b>입금 안내</b><br/>${bank}<br/>
            입금자명은 상호로 해주세요.${record.deposit_deadline ? ` 기한: ${record.deposit_deadline}` : ''}</p>
            <p>입금 확인 후 배송이 시작됩니다.</p>`,
