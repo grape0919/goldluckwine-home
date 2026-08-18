@@ -20,12 +20,13 @@ import {
   listOrders,
   updateOrderStatus,
   markInvoiced,
-  fetchOrderableWines,
   adminSubmitOrder,
+  adminAddOrderItem,
   adminUpdateItemPrice,
   adminUpdateOrderMemo,
   ORDER_STATUS_LABEL,
 } from '@/api/orders';
+import { listWines } from '@/api/admin';
 import type { AdminOrderRow, OrderStatus } from '@/api/orders';
 import {
   fetchOrderSettings,
@@ -145,23 +146,32 @@ const OrderAdmin = () => {
   const [proxyAddress, setProxyAddress] = useState('');
   const [proxyMemo, setProxyMemo] = useState('');
 
-  const openProxy = async () => {
-    setProxyOpen(true);
-    if (partners.length === 0) {
-      try {
-        const [ps, ws, pm] = await Promise.all([
-          listPartners(),
-          fetchOrderableWines(),
-          fetchWinePrices(),
-        ]);
-        setPartners(ps.filter((p) => p.status === 'approved'));
-        setWines(ws);
-        setPrices(pm);
-      } catch (e) {
-        message.error(`불러오기 실패: ${(e as Error).message}`);
-      }
+  /** 대리 발주·품목 추가에 쓰는 카탈로그 — 발주 Off·가격 미설정 와인도 포함(관리자 재량) */
+  const ensureCatalog = async () => {
+    if (partners.length > 0) return;
+    try {
+      const [ps, ws, pm] = await Promise.all([
+        listPartners(),
+        listWines(),
+        fetchWinePrices(),
+      ]);
+      setPartners(ps.filter((p) => p.status === 'approved'));
+      setWines(ws.filter((w) => w.is_visible !== false));
+      setPrices(pm);
+    } catch (e) {
+      message.error(`불러오기 실패: ${(e as Error).message}`);
     }
   };
+
+  const openProxy = async () => {
+    setProxyOpen(true);
+    await ensureCatalog();
+  };
+
+  const wineLabel = (w: WineRow) =>
+    `${w.name_en}${w.sold_out ? ' (솔드아웃)' : ''}${
+      w.orderable !== true ? ' [발주Off]' : ''
+    }${!prices[w.id] ? ' [가격없음]' : ''}`;
 
   const proxyPartner = partners.find((p) => p.id === proxyPartnerId);
 
@@ -210,6 +220,43 @@ const OrderAdmin = () => {
       message.error(`등록 실패: ${(e as Error).message}`);
     } finally {
       setProxySaving(false);
+    }
+  };
+
+  // ── 발주에 품목 추가 (발주 Off 와인 포함 — 관리자 재량) ──
+  const [addItem, setAddItem] = useState<{
+    orderId: number;
+    wineId?: number;
+    qty: number;
+    price: number;
+  } | null>(null);
+  const [addSaving, setAddSaving] = useState(false);
+
+  const startAddItem = async (orderId: number) => {
+    await ensureCatalog();
+    setAddItem({ orderId, qty: 1, price: 0 });
+  };
+
+  const saveAddItem = async () => {
+    if (!addItem?.wineId) {
+      message.warning('품목을 선택하세요.');
+      return;
+    }
+    setAddSaving(true);
+    try {
+      await adminAddOrderItem(
+        addItem.orderId,
+        addItem.wineId,
+        addItem.qty,
+        addItem.price,
+      );
+      setAddItem(null);
+      await load();
+      message.success('품목을 추가했습니다. 합계·부가세가 재계산되었습니다.');
+    } catch (e) {
+      message.error(`추가 실패: ${(e as Error).message}`);
+    } finally {
+      setAddSaving(false);
     }
   };
 
@@ -560,6 +607,73 @@ const OrderAdmin = () => {
                   <br />
                 </span>
               ))}
+              {addItem?.orderId === r.id ? (
+                <Space
+                  wrap
+                  style={{ margin: '6px 0' }}
+                >
+                  <Select
+                    showSearch
+                    placeholder='품목 (발주Off 포함)'
+                    style={{ width: 240 }}
+                    value={addItem.wineId}
+                    optionFilterProp='label'
+                    options={wines.map((w) => ({
+                      value: w.id,
+                      label: wineLabel(w),
+                    }))}
+                    onChange={(wineId: number) =>
+                      setAddItem({
+                        ...addItem,
+                        wineId,
+                        price: prices[wineId]
+                          ? effectiveUnitPrice(prices[wineId], 0)
+                          : 0,
+                      })
+                    }
+                  />
+                  <InputNumber
+                    min={1}
+                    value={addItem.qty}
+                    addonAfter='병'
+                    style={{ width: 100 }}
+                    onChange={(v) => setAddItem({ ...addItem, qty: v ?? 1 })}
+                  />
+                  <InputNumber
+                    min={0}
+                    step={1000}
+                    value={addItem.price}
+                    addonAfter='원'
+                    style={{ width: 140 }}
+                    onChange={(v) => setAddItem({ ...addItem, price: v ?? 0 })}
+                  />
+                  <Button
+                    size='small'
+                    type='primary'
+                    loading={addSaving}
+                    onClick={saveAddItem}
+                  >
+                    추가
+                  </Button>
+                  <Button
+                    size='small'
+                    onClick={() => setAddItem(null)}
+                  >
+                    취소
+                  </Button>
+                </Space>
+              ) : (
+                r.status !== 'canceled' && (
+                  <Button
+                    size='small'
+                    type='link'
+                    onClick={() => startAddItem(r.id)}
+                  >
+                    + 품목 추가
+                  </Button>
+                )
+              )}
+              <br />
               공급가 {r.subtotal.toLocaleString()}원 · 할인 −
               {r.discount_amount.toLocaleString()}원
               {r.vat_amount > 0 && (
@@ -679,12 +793,10 @@ const OrderAdmin = () => {
                 style={{ width: 260 }}
                 value={it.wine_id}
                 optionFilterProp='label'
-                options={wines
-                  .filter((w) => prices[w.id])
-                  .map((w) => ({
-                    value: w.id,
-                    label: `${w.name_en}${w.sold_out ? ' (솔드아웃)' : ''}`,
-                  }))}
+                options={wines.map((w) => ({
+                  value: w.id,
+                  label: wineLabel(w),
+                }))}
                 onChange={(wineId: number) =>
                   setProxyItem(idx, {
                     wine_id: wineId,
