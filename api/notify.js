@@ -5,15 +5,30 @@
 // 클라이언트는 발송에 관여하지 않는다 — DB 변경이 곧 트리거라 위조가 불가능.
 //
 // 필요한 환경변수:
-//   RESEND_API_KEY            Resend API 키
-//   RESEND_FROM               발신자 (예: "골드럭와인 <order@goldluckwine.com>",
-//                             도메인 인증 전에는 "onboarding@resend.dev" 만 가능)
-//   NOTIFY_WEBHOOK_SECRET     Webhook 요청 검증용 임의 문자열
-//   VITE_SUPABASE_URL         (기존) Supabase URL
-//   SUPABASE_SERVICE_ROLE_KEY 서버 전용 service_role 키 (설정·품목 조회용)
+//   GMAIL_USER / GMAIL_APP_PASSWORD  Gmail SMTP (도메인 인증 불필요 — 기본 발송 경로)
+//   RESEND_API_KEY / RESEND_FROM     (대안) Resend — Gmail 미설정 시에만 사용
+//   NOTIFY_WEBHOOK_SECRET            Webhook 요청 검증용 임의 문자열
+//   VITE_SUPABASE_URL                (기존) Supabase URL
+//   SUPABASE_SERVICE_ROLE_KEY        서버 전용 service_role 키 (설정·품목 조회용)
+
+import nodemailer from 'nodemailer';
 
 const SB_URL = process.env.VITE_SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const GMAIL_USER = process.env.GMAIL_USER;
+const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD;
+
+let transporter = null;
+function getTransporter() {
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: GMAIL_USER, pass: GMAIL_PASS },
+    });
+  }
+  return transporter;
+}
 
 /** Supabase REST 조회 (service role — RLS 우회, 서버 전용) */
 async function sb(path) {
@@ -40,6 +55,17 @@ async function getSettings() {
 
 async function sendEmail(to, subject, html) {
   if (!to) return { skipped: true };
+  // 기본: Gmail SMTP (발신자 = GMAIL_USER, 수신 제한 없음)
+  if (GMAIL_USER && GMAIL_PASS) {
+    return getTransporter().sendMail({
+      from: `골드럭와인 <${GMAIL_USER}>`,
+      to,
+      replyTo: 'goldluckwine@gmail.com',
+      subject,
+      html,
+    });
+  }
+  // 대안: Resend (도메인 인증 후 사용 시)
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -220,7 +246,9 @@ export default async function handler(req, res) {
     res.status(401).json({ error: 'unauthorized' });
     return;
   }
-  if (!process.env.RESEND_API_KEY || !SB_URL || !SB_KEY) {
+  const mailReady =
+    (GMAIL_USER && GMAIL_PASS) || process.env.RESEND_API_KEY;
+  if (!mailReady || !SB_URL || !SB_KEY) {
     res.status(200).json({ skipped: 'notify not configured' });
     return;
   }
