@@ -222,6 +222,22 @@ export async function adminSubmitOrder(
   return data as number;
 }
 
+/** 관리자 발주 품목 추가 — 발주 가능 여부와 무관(재량), 합계는 서버에서 재계산 */
+export async function adminAddOrderItem(
+  orderId: number,
+  wineId: number,
+  qty: number,
+  unitPrice: number,
+): Promise<void> {
+  const { error } = await supabase.rpc('admin_add_order_item', {
+    p_order_id: orderId,
+    p_wine_id: wineId,
+    p_qty: qty,
+    p_unit_price: unitPrice,
+  });
+  if (error) throw error;
+}
+
 /** 관리자 품목 단가 수정 — 발주 합계·부가세는 서버에서 재계산 */
 export async function adminUpdateItemPrice(
   itemId: number,
