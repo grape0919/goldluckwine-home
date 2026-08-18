@@ -25,6 +25,17 @@ const OrderSignupPage = () => {
   const [verification, setVerification] = useState<BusinessVerification | null>(
     null,
   );
+  // 동의 3종 — '전체 동의' 한 번에 체크 가능, 개별 해제도 가능
+  const [agrees, setAgrees] = useState({
+    terms: false,
+    privacy: false,
+    adult: false,
+  });
+  const allAgreed = agrees.terms && agrees.privacy && agrees.adult;
+  const setAgree = (key: keyof typeof agrees) => (checked: boolean) =>
+    setAgrees((a) => ({ ...a, [key]: checked }));
+  const setAllAgrees = (checked: boolean) =>
+    setAgrees({ terms: checked, privacy: checked, adult: checked });
 
   const handleAccount = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -338,10 +349,20 @@ const OrderSignupPage = () => {
           />
         </label>
         <div className='check-group'>
+          <label style={{ fontWeight: 700 }}>
+            <input
+              type='checkbox'
+              checked={allAgreed}
+              onChange={(e) => setAllAgrees(e.target.checked)}
+            />
+            <span>전체 동의</span>
+          </label>
           <label>
             <input
               type='checkbox'
               required
+              checked={agrees.terms}
+              onChange={(e) => setAgree('terms')(e.target.checked)}
             />
             <span>
               <Link
@@ -357,6 +378,8 @@ const OrderSignupPage = () => {
             <input
               type='checkbox'
               required
+              checked={agrees.privacy}
+              onChange={(e) => setAgree('privacy')(e.target.checked)}
             />
             <span>
               <Link
@@ -372,6 +395,8 @@ const OrderSignupPage = () => {
             <input
               type='checkbox'
               required
+              checked={agrees.adult}
+              onChange={(e) => setAgree('adult')(e.target.checked)}
             />
             <span>
               본인은 만 19세 이상이며, 주류 취급 자격을 갖춘 사업자의 권한 있는
