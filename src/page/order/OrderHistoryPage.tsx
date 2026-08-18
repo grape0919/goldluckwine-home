@@ -79,6 +79,7 @@ const OrderHistoryPage = () => {
               <span className={`badge st-${o.status}`}>
                 {ORDER_STATUS_LABEL[o.status]}
               </span>
+              {o.invoiced_at && <span className='badge st-done'>계산서 ✓</span>}
             </button>
             {open === o.id && (
               <div className='detail'>
@@ -95,6 +96,13 @@ const OrderHistoryPage = () => {
                       {' '}
                       · 입금 기한{' '}
                       {new Date(o.deposit_deadline).toLocaleDateString('ko-KR')}
+                    </>
+                  )}
+                  {o.invoiced_at && (
+                    <>
+                      {' '}
+                      · 세금계산서 발행{' '}
+                      {new Date(o.invoiced_at).toLocaleDateString('ko-KR')}
                     </>
                   )}
                 </div>

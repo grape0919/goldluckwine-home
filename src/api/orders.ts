@@ -51,6 +51,8 @@ export interface OrderRow {
   shipped_at: string | null;
   done_at: string | null;
   canceled_at: string | null;
+  /** 세금계산서 발행 시각 (홈택스 발행 후 관리자가 기록) — null = 미발행 */
+  invoiced_at: string | null;
   created_at: string;
   order_items: OrderItemRow[];
 }
@@ -172,16 +174,31 @@ export interface AdminOrderRow extends OrderRow {
     contact_name: string;
     phone: string;
     email: string;
+    business_no: string;
+    ceo_name: string;
+    address: string;
+    invoice_email: string;
   } | null;
 }
 
 export async function listOrders(): Promise<AdminOrderRow[]> {
   const { data, error } = await supabase
     .from('orders')
-    .select('*, order_items(*), partners(business_name, contact_name, phone, email)')
+    .select(
+      '*, order_items(*), partners(business_name, contact_name, phone, email, business_no, ceo_name, address, invoice_email)',
+    )
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data as AdminOrderRow[];
+}
+
+/** 세금계산서 발행 여부 기록 (홈택스 발행 후 체크) */
+export async function markInvoiced(id: number, on: boolean): Promise<void> {
+  const { error } = await supabase
+    .from('orders')
+    .update({ invoiced_at: on ? new Date().toISOString() : null })
+    .eq('id', id);
+  if (error) throw error;
 }
 
 /** 관리자 상태 변경 — 상태별 시각도 함께 기록 */
