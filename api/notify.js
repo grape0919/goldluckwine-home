@@ -53,14 +53,22 @@ async function getSettings() {
   return map;
 }
 
+const ADMIN_CC = 'goldluckwine@gmail.com';
+
 async function sendEmail(to, subject, html) {
   if (!to) return { skipped: true };
   // 기본: Gmail SMTP (발신자 = GMAIL_USER, 수신 제한 없음)
   if (GMAIL_USER && GMAIL_PASS) {
+    // 거래처에게 나가는 메일은 관리자 주소를 CC — 발송 이력이 메일함에 남는다
+    const cc =
+      to.toLowerCase() === ADMIN_CC || to.toLowerCase() === GMAIL_USER.toLowerCase()
+        ? undefined
+        : ADMIN_CC;
     return getTransporter().sendMail({
       from: `골드럭와인 <${GMAIL_USER}>`,
       to,
-      replyTo: 'goldluckwine@gmail.com',
+      cc,
+      replyTo: ADMIN_CC,
       subject,
       html,
     });
