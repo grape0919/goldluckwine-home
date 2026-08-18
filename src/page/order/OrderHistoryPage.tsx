@@ -12,6 +12,9 @@ import {
   ORDER_STATUS_LABEL,
 } from '@/api/orders';
 import type { OrderRow } from '@/api/orders';
+import { fetchOrderSettings, ORDER_SETTING_DEFAULTS } from '@/api/pricing';
+import type { OrderSettings } from '@/api/pricing';
+import { openStatement } from '@/utils/statement';
 
 const { home } = customedTheme;
 
@@ -22,6 +25,9 @@ const OrderHistoryPage = () => {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [open, setOpen] = useState<number | null>(null);
   const [error, setError] = useState('');
+  const [settings, setSettings] = useState<OrderSettings>({
+    ...ORDER_SETTING_DEFAULTS,
+  });
 
   const load = useCallback(() => {
     listMyOrders()
@@ -30,7 +36,11 @@ const OrderHistoryPage = () => {
   }, []);
 
   useEffect(() => {
-    if (partner) load();
+    if (!partner) return;
+    load();
+    fetchOrderSettings()
+      .then(setSettings)
+      .catch(() => undefined);
   }, [partner, load]);
 
   const handleCancel = async (id: number) => {
@@ -121,6 +131,26 @@ const OrderHistoryPage = () => {
                   >
                     재발주 (장바구니에 담기)
                   </button>
+                  {o.status !== 'canceled' && partner && (
+                    <button
+                      type='button'
+                      onClick={() =>
+                        openStatement(
+                          o,
+                          {
+                            business_name: partner.business_name,
+                            business_no: partner.business_no,
+                            ceo_name: partner.ceo_name,
+                            address: o.address || partner.address,
+                            phone: partner.phone,
+                          },
+                          settings,
+                        )
+                      }
+                    >
+                      거래명세표
+                    </button>
+                  )}
                 </div>
               </div>
             )}

@@ -56,6 +56,12 @@ export const ORDER_SETTING_DEFAULTS = {
   deposit_days: '3',
   notice: '',
   admin_email: '',
+  // 공급자 정보 — 거래명세표 표기용
+  supplier_name: '골드럭와인',
+  supplier_business_no: '',
+  supplier_ceo: '',
+  supplier_address: '',
+  supplier_phone: '',
 } as const;
 
 export type OrderSettingKey = keyof typeof ORDER_SETTING_DEFAULTS;
