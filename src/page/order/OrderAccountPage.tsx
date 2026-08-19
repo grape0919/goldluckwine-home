@@ -6,6 +6,7 @@ import OrderShell from '@/page/order/OrderShell';
 import { useOrderAuth } from '@/page/order/useOrderAuth';
 import { supabase } from '@/lib/supabase';
 import { updateMyPartner } from '@/api/partners';
+import OrderNav from '@/page/order/OrderNav';
 
 /** 마이페이지 — 사업자 정보 수정 + 비밀번호 변경 (재설정 링크 착지점 겸용) */
 const OrderAccountPage = () => {
@@ -80,16 +81,7 @@ const OrderAccountPage = () => {
       />
       <p className='order-eyebrow'>FOR BUSINESS</p>
       <h1>ACCOUNT</h1>
-      <p className='order-hint'>
-        로그인 계정: <b>{session.user.email}</b>{' '}
-        <button
-          type='button'
-          className='verify-button'
-          onClick={() => supabase.auth.signOut()}
-        >
-          로그아웃
-        </button>
-      </p>
+      <OrderNav email={session.user.email} />
 
       {partner ? (
         <form

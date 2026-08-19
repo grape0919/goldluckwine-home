@@ -16,13 +16,14 @@ import type { OrderRow } from '@/api/orders';
 import { fetchOrderSettings, ORDER_SETTING_DEFAULTS } from '@/api/pricing';
 import type { OrderSettings } from '@/api/pricing';
 import { openStatement } from '@/utils/statement';
+import OrderNav from '@/page/order/OrderNav';
 
 const { home } = customedTheme;
 
 /** 내 발주 내역 — 상태 확인, 입금대기 취소, 재발주 */
 const OrderHistoryPage = () => {
   const navigate = useNavigate();
-  const { partner, loading } = useOrderAuth();
+  const { session, partner, loading } = useOrderAuth();
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [open, setOpen] = useState<number | null>(null);
   const [error, setError] = useState('');
@@ -91,6 +92,7 @@ const OrderHistoryPage = () => {
       />
       <p className='order-eyebrow'>FOR BUSINESS</p>
       <h1>ORDER HISTORY</h1>
+      <OrderNav email={session?.user.email} />
       {error && <p className='order-error'>{error}</p>}
       <List>
         {orders.map((o) => (
