@@ -64,6 +64,8 @@ interface WineFormValues {
   image: string | File | undefined;
   // 발주 (B2B) — 공급가를 비우면 발주 목록에 노출되지 않는다
   orderable: boolean;
+  /** 재고(병) — 비우면 재고 관리 안 함 */
+  stock?: number | null;
   price?: number | null;
   sale_price?: number | null;
   // 상품 스펙 — 모두 선택 입력
@@ -171,6 +173,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
       is_visible: row.is_visible !== false,
       sold_out: row.sold_out === true,
       orderable: row.orderable === true,
+      stock: row.stock ?? null,
       price: prices[row.id]?.price ?? null,
       sale_price: prices[row.id]?.sale_price ?? null,
       image: row.image_path,
@@ -225,6 +228,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
         is_visible: values.is_visible ?? true,
         sold_out: values.sold_out ?? false,
         orderable: values.orderable ?? false,
+        stock: values.stock ?? null,
         sort_order: values.sort_order ?? 0,
         image_path,
         vintage: values.vintage ?? '',
@@ -484,6 +488,19 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
                 ),
               },
               {
+                title: '재고',
+                dataIndex: 'stock',
+                width: 70,
+                render: (v: number | null | undefined) =>
+                  v == null ? (
+                    <span style={{ color: '#aaa' }}>—</span>
+                  ) : (
+                    <span style={{ color: v <= 6 ? '#cf1322' : undefined }}>
+                      {v}병
+                    </span>
+                  ),
+              },
+              {
                 title: '발주',
                 dataIndex: 'orderable',
                 width: 96,
@@ -712,6 +729,16 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
                 step={1000}
                 style={{ width: 140 }}
                 placeholder='25000'
+              />
+            </Form.Item>
+            <Form.Item
+              name='stock'
+              label='재고(병) — 비우면 재고 관리 안 함'
+            >
+              <InputNumber
+                min={0}
+                style={{ width: 140 }}
+                placeholder='무제한'
               />
             </Form.Item>
             <Form.Item

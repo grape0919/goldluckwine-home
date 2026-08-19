@@ -73,7 +73,10 @@ const OrderCatalog = ({ partner }: OrderCatalogProps) => {
   }, []);
 
   const changeQty = (wineId: number, next: number) => {
-    const value = Math.max(0, Math.min(999, next));
+    // 재고가 설정된 품목은 남은 수량까지만 담을 수 있다 (발주 시 차감되므로)
+    const stock = wines.find((w) => w.id === wineId)?.stock;
+    const cap = stock == null ? 999 : Math.min(999, stock);
+    const value = Math.max(0, Math.min(cap, next));
     setQty((m) => ({ ...m, [wineId]: value }));
     qtyRef.current = { ...qtyRef.current, [wineId]: value };
     dirty.current.add(wineId);
@@ -272,6 +275,9 @@ const OrderCatalog = ({ partner }: OrderCatalogProps) => {
                   {w.wine_type}
                   {w.vintage ? ` · ${w.vintage}` : ''}
                   {w.volume_ml ? ` · ${w.volume_ml}ml` : ''}
+                  {w.stock != null && w.stock <= 6 && !soldOut && (
+                    <b> · 남은 수량 {w.stock}병</b>
+                  )}
                 </span>
                 <span className='price'>
                   {soldOut ? (
@@ -321,7 +327,7 @@ const OrderCatalog = ({ partner }: OrderCatalogProps) => {
                 <button
                   type='button'
                   aria-label={`${w.name_en} 한 병 더하기`}
-                  disabled={soldOut}
+                  disabled={soldOut || (w.stock != null && q >= w.stock)}
                   onClick={() => changeQty(w.id, q + 1)}
                 >
                   +
