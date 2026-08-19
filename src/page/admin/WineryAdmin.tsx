@@ -232,6 +232,7 @@ const WineryAdmin = ({ onChanged }: { onChanged?: () => void }) => {
             loading={loading}
             dataSource={filtered}
             pagination={false}
+            scroll={{ x: 'max-content' }}
             components={sortable ? { body: { row: SortableRow } } : undefined}
             columns={[
               {

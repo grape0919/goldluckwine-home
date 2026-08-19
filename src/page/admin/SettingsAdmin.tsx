@@ -58,11 +58,13 @@ const SettingsAdmin = () => {
         });
         setLoaded(true);
       })
-      .catch((e) =>
+      .catch((e) => {
         message.error(
           `설정을 불러오지 못했습니다 (마이그레이션 전이면 정상): ${(e as Error).message}`,
-        ),
-      );
+        );
+        // 실패해도 폼은 열어준다 — 스피너로 굳지 않게
+        setLoaded(true);
+      });
   }, [form, message]);
 
   const handleSave = async (values: FormValues) => {

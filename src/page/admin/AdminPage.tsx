@@ -34,9 +34,13 @@ import InquiryAdmin from '@/page/admin/InquiryAdmin';
 import PartnerAdmin from '@/page/admin/PartnerAdmin';
 import OrderAdmin from '@/page/admin/OrderAdmin';
 import SettingsAdmin from '@/page/admin/SettingsAdmin';
+import DashboardAdmin from '@/page/admin/DashboardAdmin';
 import Seo from '@/components/Seo';
 
 const { Title } = Typography;
+
+/** 공개 사이트에 반영(재배포)이 필요한 콘텐츠 탭 — 미반영 안내를 여기서만 띄운다 */
+const CONTENT_TABS = new Set(['wines', 'wineries', 'home', 'dashboard']);
 
 const AdminPage = () => {
   const { message } = App.useApp();
@@ -51,6 +55,24 @@ const AdminPage = () => {
   const [pendingChanges, setPendingChanges] = useState(false);
   const [lastDeployAt, setLastDeployAt] = useState<string | null>(null);
   const [deploying, setDeploying] = useState(false);
+  // 탭 상태를 URL 해시에 유지 — 새로고침·북마크·뒤로가기에서 위치가 보존된다
+  const [tab, setTabState] = useState(
+    () =>
+      (typeof window !== 'undefined' &&
+        window.location.hash.replace('#', '')) ||
+      'dashboard',
+  );
+  const setTab = (key: string) => {
+    setTabState(key);
+    if (typeof window !== 'undefined') window.location.hash = key;
+  };
+
+  useEffect(() => {
+    const onHash = () =>
+      setTabState(window.location.hash.replace('#', '') || 'dashboard');
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
 
   // 저장·삭제 시 호출 — 화면 즉시 반영 + DB 기록 (기록 실패는 치명적이지 않음)
   const markChanged = () => {
@@ -282,7 +304,8 @@ const AdminPage = () => {
         </Space>
       </div>
 
-      {pendingChanges && (
+      {/* 미반영 안내는 SSG 콘텐츠 탭에서만 — 발주·거래처 등 DB 조회형 탭에서는 무관 */}
+      {pendingChanges && CONTENT_TABS.has(tab) && (
         <Alert
           type='info'
           showIcon
@@ -293,8 +316,14 @@ const AdminPage = () => {
       )}
 
       <Tabs
-        defaultActiveKey='wines'
+        activeKey={tab}
+        onChange={setTab}
         items={[
+          {
+            key: 'dashboard',
+            label: '대시보드',
+            children: <DashboardAdmin onGoTab={setTab} />,
+          },
           {
             key: 'wines',
             label: '와인 관리',
@@ -361,16 +390,23 @@ const AdminPage = () => {
 };
 
 const Wrapper = styled.div`
-  max-width: 1080px;
+  /* 발주·거래처 표는 컬럼이 많아 1080px 로는 좁다 */
+  max-width: 1400px;
   margin: 0 auto;
   padding: 48px 24px 96px;
   min-height: 100vh;
 
   .admin-header {
     display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
+  }
+
+  @media (max-width: 768px) {
+    padding: 24px 12px 96px;
   }
 
   .login-card {

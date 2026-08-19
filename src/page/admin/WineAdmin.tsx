@@ -413,6 +413,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
             loading={loading}
             dataSource={filtered}
             pagination={{ pageSize: 20 }}
+            scroll={{ x: 'max-content' }}
             components={{ body: { row: SortableRow } }}
             columns={[
               {

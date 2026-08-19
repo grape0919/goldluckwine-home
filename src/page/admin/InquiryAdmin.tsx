@@ -129,6 +129,7 @@ const InquiryAdmin = () => {
         columns={columns}
         dataSource={rows}
         pagination={{ pageSize: 20 }}
+        scroll={{ x: 'max-content' }}
         expandable={{
           expandedRowRender: (row) => (
             <Typography.Paragraph style={{ whiteSpace: 'pre-wrap', margin: 0 }}>
