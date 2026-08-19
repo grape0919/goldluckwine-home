@@ -34,6 +34,7 @@ import InquiryAdmin from '@/page/admin/InquiryAdmin';
 import PartnerAdmin from '@/page/admin/PartnerAdmin';
 import OrderAdmin from '@/page/admin/OrderAdmin';
 import SettingsAdmin from '@/page/admin/SettingsAdmin';
+import DashboardAdmin from '@/page/admin/DashboardAdmin';
 import Seo from '@/components/Seo';
 
 const { Title } = Typography;
@@ -51,6 +52,24 @@ const AdminPage = () => {
   const [pendingChanges, setPendingChanges] = useState(false);
   const [lastDeployAt, setLastDeployAt] = useState<string | null>(null);
   const [deploying, setDeploying] = useState(false);
+  // 탭 상태를 URL 해시에 유지 — 새로고침·북마크·뒤로가기에서 위치가 보존된다
+  const [tab, setTabState] = useState(
+    () =>
+      (typeof window !== 'undefined' &&
+        window.location.hash.replace('#', '')) ||
+      'dashboard',
+  );
+  const setTab = (key: string) => {
+    setTabState(key);
+    if (typeof window !== 'undefined') window.location.hash = key;
+  };
+
+  useEffect(() => {
+    const onHash = () =>
+      setTabState(window.location.hash.replace('#', '') || 'dashboard');
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
 
   // 저장·삭제 시 호출 — 화면 즉시 반영 + DB 기록 (기록 실패는 치명적이지 않음)
   const markChanged = () => {
@@ -293,8 +312,14 @@ const AdminPage = () => {
       )}
 
       <Tabs
-        defaultActiveKey='wines'
+        activeKey={tab}
+        onChange={setTab}
         items={[
+          {
+            key: 'dashboard',
+            label: '대시보드',
+            children: <DashboardAdmin onGoTab={setTab} />,
+          },
           {
             key: 'wines',
             label: '와인 관리',
@@ -361,7 +386,8 @@ const AdminPage = () => {
 };
 
 const Wrapper = styled.div`
-  max-width: 1080px;
+  /* 발주·거래처 표는 컬럼이 많아 1080px 로는 좁다 */
+  max-width: 1400px;
   margin: 0 auto;
   padding: 48px 24px 96px;
   min-height: 100vh;
