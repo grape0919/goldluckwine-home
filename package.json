@@ -26,9 +26,15 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^5.0.1",
-    "react-router-dom": "^6.22.3",
+    "react-router-dom": "^6.30.4",
     "styled-components": "^6.1.8",
     "vite-react-ssg": "0.8.9"
+  },
+  "//resolutions": "보안 패치를 위한 전이 의존성 고정 — 직접 의존이 아니라 상위 패키지가 올라오면 제거 검토",
+  "resolutions": {
+    "postcss": "^8.5.23",
+    "nanoid": "^3.3.18",
+    "@babel/runtime": "^7.26.10"
   },
   "devDependencies": {
     "@types/node": "^20.11.30",
