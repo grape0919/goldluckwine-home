@@ -133,6 +133,11 @@ const OrderAdmin = () => {
   const [rows, setRows] = useState<AdminOrderRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<OrderStatus | 'all'>('all');
+  const [payFilter, setPayFilter] = useState<'all' | 'unpaid' | 'overdue'>(
+    'all',
+  );
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState<number[]>([]);
   const [settings, setSettings] = useState<OrderSettings>({
     ...ORDER_SETTING_DEFAULTS,
   });
@@ -346,6 +351,31 @@ const OrderAdmin = () => {
     }
   };
 
+  /** 선택 발주 일괄 처리 — 배송중 전환 / 계산서 발행됨 체크 */
+  const bulkRun = async (
+    label: string,
+    fn: (id: number) => Promise<void>,
+  ) => {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    let ok = 0;
+    for (const id of ids) {
+      try {
+        await fn(id);
+        ok += 1;
+      } catch {
+        /* 개별 실패는 건너뛰고 계속 */
+      }
+    }
+    setSelected([]);
+    await load();
+    if (ok === ids.length) {
+      message.success(`${ok}건 ${label} 처리했습니다.`);
+    } else {
+      message.warning(`${ok}/${ids.length}건만 ${label} 처리되었습니다.`);
+    }
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -433,10 +463,30 @@ const OrderAdmin = () => {
     }
   };
 
-  const filtered =
-    filter === 'all' ? rows : rows.filter((r) => r.status === filter);
+  // 상태 필터 + 입금 필터(상태와 독립 축) + 거래처·번호 검색
+  const q = search.trim().toLowerCase();
+  const filtered = rows.filter((r) => {
+    if (filter !== 'all' && r.status !== filter) return false;
+    if (payFilter === 'unpaid' && (r.paid_at || r.status === 'canceled'))
+      return false;
+    if (payFilter === 'overdue' && !overdue(r)) return false;
+    if (
+      q &&
+      !(
+        String(r.id).includes(q) ||
+        (r.partners?.business_name ?? '').toLowerCase().includes(q) ||
+        (r.partners?.contact_name ?? '').toLowerCase().includes(q)
+      )
+    )
+      return false;
+    return true;
+  });
   const countOf = (s: OrderStatus) =>
     rows.filter((r) => r.status === s).length;
+  const unpaidCount = rows.filter(
+    (r) => !r.paid_at && r.status !== 'canceled',
+  ).length;
+  const overdueCount = rows.filter(overdue).length;
 
   const columns: ColumnsType<AdminOrderRow> = [
     {
@@ -462,6 +512,25 @@ const OrderAdmin = () => {
       dataIndex: 'created_at',
       width: 110,
       render: (v: string) => new Date(v).toLocaleDateString('ko-KR'),
+    },
+    {
+      title: '품목',
+      width: 220,
+      render: (_, r) => {
+        const first = r.order_items[0];
+        if (!first) return '—';
+        return (
+          <>
+            {first.name_en} × {first.qty}
+            {r.order_items.length > 1 && (
+              <Typography.Text type='secondary'>
+                {' '}
+                외 {r.order_items.length - 1}건
+              </Typography.Text>
+            )}
+          </>
+        );
+      },
     },
     { title: '병수', dataIndex: 'total_bottles', width: 70 },
     {
@@ -617,6 +686,21 @@ const OrderAdmin = () => {
             </Radio.Button>
           ))}
         </Radio.Group>
+        <Radio.Group
+          value={payFilter}
+          onChange={(e) => setPayFilter(e.target.value)}
+        >
+          <Radio.Button value='all'>입금 전체</Radio.Button>
+          <Radio.Button value='unpaid'>미입금 {unpaidCount}</Radio.Button>
+          <Radio.Button value='overdue'>기한초과 {overdueCount}</Radio.Button>
+        </Radio.Group>
+        <Input.Search
+          allowClear
+          placeholder='발주번호·거래처·담당자 검색'
+          style={{ width: 240 }}
+          onSearch={setSearch}
+          onChange={(e) => setSearch(e.target.value)}
+        />
         <Space size={8}>
           <Button
             type='primary'
@@ -641,6 +725,58 @@ const OrderAdmin = () => {
           </Button>
         </Space>
       </Space>
+
+      {selected.length > 0 && (
+        <Space
+          wrap
+          style={{
+            marginBottom: 12,
+            padding: '8px 12px',
+            background: '#f6f4ef',
+            width: '100%',
+          }}
+        >
+          <b>{selected.length}건 선택</b>
+          <Button
+            size='small'
+            onClick={() =>
+              bulkRun('배송중으로', (id) => updateOrderStatus(id, 'shipping'))
+            }
+          >
+            배송중으로
+          </Button>
+          <Button
+            size='small'
+            onClick={() =>
+              bulkRun('완료로', (id) => updateOrderStatus(id, 'done'))
+            }
+          >
+            완료로
+          </Button>
+          <Button
+            size='small'
+            onClick={() => bulkRun('입금 확인', (id) => markPaid(id, true))}
+          >
+            입금확인
+          </Button>
+          <Button
+            size='small'
+            onClick={() =>
+              bulkRun('계산서 발행됨', (id) => markInvoiced(id, true))
+            }
+          >
+            계산서 발행됨
+          </Button>
+          <Button
+            size='small'
+            type='link'
+            onClick={() => setSelected([])}
+          >
+            선택 해제
+          </Button>
+        </Space>
+      )}
+
       <Table
         rowKey='id'
         size='middle'
@@ -648,6 +784,11 @@ const OrderAdmin = () => {
         columns={columns}
         dataSource={filtered}
         pagination={{ pageSize: 20 }}
+        scroll={{ x: 'max-content' }}
+        rowSelection={{
+          selectedRowKeys: selected,
+          onChange: (keys) => setSelected(keys as number[]),
+        }}
         expandable={{
           expandedRowRender: (r) => (
             <Typography.Paragraph style={{ margin: 0 }}>

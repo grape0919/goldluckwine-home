@@ -39,6 +39,9 @@ import Seo from '@/components/Seo';
 
 const { Title } = Typography;
 
+/** 공개 사이트에 반영(재배포)이 필요한 콘텐츠 탭 — 미반영 안내를 여기서만 띄운다 */
+const CONTENT_TABS = new Set(['wines', 'wineries', 'home', 'dashboard']);
+
 const AdminPage = () => {
   const { message } = App.useApp();
   const [session, setSession] = useState<Session | null>(null);
@@ -301,7 +304,8 @@ const AdminPage = () => {
         </Space>
       </div>
 
-      {pendingChanges && (
+      {/* 미반영 안내는 SSG 콘텐츠 탭에서만 — 발주·거래처 등 DB 조회형 탭에서는 무관 */}
+      {pendingChanges && CONTENT_TABS.has(tab) && (
         <Alert
           type='info'
           showIcon
@@ -394,9 +398,15 @@ const Wrapper = styled.div`
 
   .admin-header {
     display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
+  }
+
+  @media (max-width: 768px) {
+    padding: 24px 12px 96px;
   }
 
   .login-card {

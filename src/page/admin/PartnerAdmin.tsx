@@ -320,6 +320,7 @@ const PartnerAdmin = () => {
         columns={columns}
         dataSource={filtered}
         pagination={{ pageSize: 20 }}
+        scroll={{ x: 'max-content' }}
         expandable={{
           expandedRowRender: (r) => (
             <Typography.Paragraph style={{ margin: 0 }}>

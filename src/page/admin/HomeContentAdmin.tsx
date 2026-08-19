@@ -55,7 +55,12 @@ const HomeContentAdmin = ({ onChanged }: HomeContentAdminProps) => {
         setInitial(content);
         form.setFieldsValue(content);
       })
-      .catch((e) => message.error(`불러오기 실패: ${(e as Error).message}`));
+      .catch((e) => {
+        message.error(`불러오기 실패: ${(e as Error).message}`);
+        // 실패해도 기본값으로 폼을 열어준다 — 스피너로 굳지 않게
+        setInitial({ ...HOME_CONTENT_DEFAULTS });
+        form.setFieldsValue({ ...HOME_CONTENT_DEFAULTS });
+      });
   }, [form, message]);
 
   const handleSave = async (values: FormValues) => {
