@@ -4,6 +4,7 @@ import OrderShell from '@/page/order/OrderShell';
 import { useOrderAuth } from '@/page/order/useOrderAuth';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import OrderCatalog from '@/page/order/OrderCatalog';
+import OrderNav from '@/page/order/OrderNav';
 
 /** /order — 발주 홈. 로그인·거래처 상태에 따라 분기한다.
  *  발주 품목 화면은 Phase 2(PR 2-B)에서 이 자리에 들어온다. */
@@ -79,6 +80,7 @@ const OrderPage = () => {
   }
 
   if (partner.status === 'rejected' || partner.status === 'suspended') {
+    // 반려·중지 — 아래 상태 카드에서 안내
     return (
       <OrderShell>
         <Seo
@@ -124,17 +126,7 @@ const OrderPage = () => {
       />
       <p className='order-eyebrow'>FOR BUSINESS</p>
       <h1>ORDER</h1>
-      <div className='order-links'>
-        <Link to='/order/history'>발주 내역</Link>
-        <Link to='/order/account'>내 정보</Link>
-        <button
-          type='button'
-          className='verify-button'
-          onClick={() => supabase.auth.signOut()}
-        >
-          로그아웃
-        </button>
-      </div>
+      <OrderNav email={session.user.email} />
       <OrderCatalog partner={partner} />
     </OrderShell>
   );
