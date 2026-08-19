@@ -20,6 +20,8 @@ import { listPartners } from '@/api/partners';
 import type { PartnerRow } from '@/api/partners';
 import { listInquiries } from '@/api/inquiries';
 import type { InquiryRow } from '@/api/inquiries';
+import { BarChart, ColumnChart } from '@/page/admin/charts';
+import type { BarDatum } from '@/page/admin/charts';
 
 interface DashboardProps {
   /** 클릭 시 해당 탭으로 이동 */
@@ -80,6 +82,53 @@ const DashboardAdmin = ({ onGoTab }: DashboardProps) => {
   );
   const monthTotal = monthOrders.reduce((s, o) => s + o.total_amount, 0);
   const unpaidTotal = unpaid.reduce((s, o) => s + o.total_amount, 0);
+
+  // ── 차트 데이터 (취소 발주 제외) ─────────────────────────
+  const valid = orders.filter((o) => o.status !== 'canceled');
+
+  /** 최근 6개월 월별 발주 금액 */
+  const monthly: BarDatum[] = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+    const next = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+    const sum = valid
+      .filter((o) => {
+        const t = new Date(o.created_at);
+        return t >= d && t < next;
+      })
+      .reduce((s, o) => s + o.total_amount, 0);
+    return {
+      label: `${d.getMonth() + 1}월`,
+      value: sum,
+      display: `${Math.round(sum / 10000).toLocaleString()}만원`,
+    };
+  });
+
+  /** 거래처별 매출 Top 5 */
+  const byPartner = new Map<string, number>();
+  for (const o of valid) {
+    const name = o.partners?.business_name ?? `#${o.partner_id}`;
+    byPartner.set(name, (byPartner.get(name) ?? 0) + o.total_amount);
+  }
+  const topPartners: BarDatum[] = [...byPartner.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([label, value]) => ({ label, value }));
+
+  /** 와인별 판매 Top 5 (병수) */
+  const byWine = new Map<string, number>();
+  for (const o of valid) {
+    for (const i of o.order_items) {
+      byWine.set(i.name_en, (byWine.get(i.name_en) ?? 0) + i.qty);
+    }
+  }
+  const topWines: BarDatum[] = [...byWine.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([label, value]) => ({
+      label,
+      value,
+      display: `${value}병`,
+    }));
 
   const todoColumns: ColumnsType<AdminOrderRow> = [
     {
@@ -281,6 +330,42 @@ const DashboardAdmin = ({ onGoTab }: DashboardProps) => {
                 </div>
               ))
             )}
+          </Card>
+        </Col>
+      </Row>
+
+      <Card
+        size='small'
+        title='월별 발주 금액 (최근 6개월)'
+        style={{ marginTop: 16 }}
+      >
+        <ColumnChart data={monthly} />
+      </Card>
+
+      <Row
+        gutter={[16, 16]}
+        style={{ marginTop: 16 }}
+      >
+        <Col xs={24} lg={12}>
+          <Card
+            size='small'
+            title='거래처별 매출 Top 5'
+          >
+            <BarChart
+              data={topPartners}
+              empty='발주 데이터가 없습니다'
+            />
+          </Card>
+        </Col>
+        <Col xs={24} lg={12}>
+          <Card
+            size='small'
+            title='와인별 판매 Top 5 (병수)'
+          >
+            <BarChart
+              data={topWines}
+              empty='발주 데이터가 없습니다'
+            />
           </Card>
         </Col>
       </Row>
