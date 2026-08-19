@@ -138,6 +138,11 @@ const OrderAdmin = () => {
   );
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<number[]>([]);
+
+  // 필터·검색이 바뀌면 선택 해제 — 화면에 없는 행에 일괄 처리가 나가지 않게
+  useEffect(() => {
+    setSelected([]);
+  }, [filter, payFilter, search]);
   const [settings, setSettings] = useState<OrderSettings>({
     ...ORDER_SETTING_DEFAULTS,
   });
@@ -354,14 +359,22 @@ const OrderAdmin = () => {
   /** 선택 발주 일괄 처리 — 배송중 전환 / 계산서 발행됨 체크 */
   const bulkRun = async (
     label: string,
+    /** 이 액션을 적용할 수 있는 발주인지 — 해당 없는 선택은 건너뛴다 */
+    applicable: (r: AdminOrderRow) => boolean,
     fn: (id: number) => Promise<void>,
   ) => {
-    const ids = [...selected];
-    if (ids.length === 0) return;
+    const targets = rows.filter(
+      (r) => selected.includes(r.id) && applicable(r),
+    );
+    const skipped = selected.length - targets.length;
+    if (targets.length === 0) {
+      message.info(`선택한 발주 중 ${label} 처리할 수 있는 건이 없습니다.`);
+      return;
+    }
     let ok = 0;
-    for (const id of ids) {
+    for (const r of targets) {
       try {
-        await fn(id);
+        await fn(r.id);
         ok += 1;
       } catch {
         /* 개별 실패는 건너뛰고 계속 */
@@ -369,10 +382,13 @@ const OrderAdmin = () => {
     }
     setSelected([]);
     await load();
-    if (ok === ids.length) {
-      message.success(`${ok}건 ${label} 처리했습니다.`);
+    const skipMsg = skipped > 0 ? ` (해당 없음 ${skipped}건 제외)` : '';
+    if (ok === targets.length) {
+      message.success(`${ok}건 ${label} 처리했습니다.${skipMsg}`);
     } else {
-      message.warning(`${ok}/${ids.length}건만 ${label} 처리되었습니다.`);
+      message.warning(
+        `${ok}/${targets.length}건만 ${label} 처리되었습니다.${skipMsg}`,
+      );
     }
   };
 
@@ -740,7 +756,12 @@ const OrderAdmin = () => {
           <Button
             size='small'
             onClick={() =>
-              bulkRun('배송중으로', (id) => updateOrderStatus(id, 'shipping'))
+              bulkRun(
+                '배송중으로',
+                (r) =>
+                  r.status === 'awaiting_deposit' || r.status === 'paid',
+                (id) => updateOrderStatus(id, 'shipping'),
+              )
             }
           >
             배송중으로
@@ -748,21 +769,35 @@ const OrderAdmin = () => {
           <Button
             size='small'
             onClick={() =>
-              bulkRun('완료로', (id) => updateOrderStatus(id, 'done'))
+              bulkRun(
+                '완료로',
+                (r) => r.status === 'shipping',
+                (id) => updateOrderStatus(id, 'done'),
+              )
             }
           >
             완료로
           </Button>
           <Button
             size='small'
-            onClick={() => bulkRun('입금 확인', (id) => markPaid(id, true))}
+            onClick={() =>
+              bulkRun(
+                '입금 확인',
+                (r) => !r.paid_at && r.status !== 'canceled',
+                (id) => markPaid(id, true),
+              )
+            }
           >
             입금확인
           </Button>
           <Button
             size='small'
             onClick={() =>
-              bulkRun('계산서 발행됨', (id) => markInvoiced(id, true))
+              bulkRun(
+                '계산서 발행됨',
+                (r) => r.status === 'done' && !r.invoiced_at,
+                (id) => markInvoiced(id, true),
+              )
             }
           >
             계산서 발행됨
