@@ -142,8 +142,11 @@ const OrderShell = styled.div`
 
   .order-links {
     display: flex;
-    gap: 24px;
-    margin-top: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 24px;
+    /* 로그아웃 버튼 등 높은 요소가 다음 요소(배너)와 겹치지 않게 아래 여백 확보 */
+    margin: 20px 0 20px;
     font-size: 14px;
 
     a {
