@@ -45,6 +45,8 @@ const OrderCatalog = ({ partner }: OrderCatalogProps) => {
   const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
   const [saveError, setSaveError] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
+  const [keyword, setKeyword] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
 
   useEffect(() => {
     Promise.all([
@@ -71,7 +73,10 @@ const OrderCatalog = ({ partner }: OrderCatalogProps) => {
   }, []);
 
   const changeQty = (wineId: number, next: number) => {
-    const value = Math.max(0, Math.min(999, next));
+    // 재고가 설정된 품목은 남은 수량까지만 담을 수 있다 (발주 시 차감되므로)
+    const stock = wines.find((w) => w.id === wineId)?.stock;
+    const cap = stock == null ? 999 : Math.min(999, stock);
+    const value = Math.max(0, Math.min(cap, next));
     setQty((m) => ({ ...m, [wineId]: value }));
     qtyRef.current = { ...qtyRef.current, [wineId]: value };
     dirty.current.add(wineId);
@@ -154,6 +159,27 @@ const OrderCatalog = ({ partner }: OrderCatalogProps) => {
     [wines],
   );
 
+  // 검색·타입 필터 — 품목이 늘어도 찾을 수 있게 (담긴 품목은 항상 노출)
+  const typeOptions = useMemo(
+    () => [...new Set(wines.map((w) => w.wine_type))],
+    [wines],
+  );
+  const kw = keyword.trim().toLowerCase();
+  const visibleWines = sortedWines.filter((w) => {
+    if ((qty[w.id] ?? 0) > 0) return true; // 담은 품목은 필터와 무관하게 표시
+    if (typeFilter && w.wine_type !== typeFilter) return false;
+    if (
+      kw &&
+      !(
+        w.name_en.toLowerCase().includes(kw) ||
+        w.name_kr.toLowerCase().includes(kw) ||
+        (w.variety ?? []).some((v) => v.toLowerCase().includes(kw))
+      )
+    )
+      return false;
+    return true;
+  });
+
   return (
     <Wrapper>
       {awaiting.length > 0 && settings && (
@@ -181,8 +207,46 @@ const OrderCatalog = ({ partner }: OrderCatalogProps) => {
         {minBottles}병
       </p>
 
+      <div className='filters'>
+        <input
+          type='search'
+          value={keyword}
+          placeholder='이름·품종 검색'
+          aria-label='품목 검색'
+          onChange={(e) => setKeyword(e.target.value)}
+        />
+        <select
+          value={typeFilter}
+          aria-label='와인 타입 필터'
+          onChange={(e) => setTypeFilter(e.target.value)}
+        >
+          <option value=''>전체 타입</option>
+          {typeOptions.map((t) => (
+            <option
+              key={t}
+              value={t}
+            >
+              {t}
+            </option>
+          ))}
+        </select>
+        {(keyword || typeFilter) && (
+          <button
+            type='button'
+            className='filter-reset'
+            onClick={() => {
+              setKeyword('');
+              setTypeFilter('');
+            }}
+          >
+            초기화
+          </button>
+        )}
+        <span className='filter-count'>{visibleWines.length}종</span>
+      </div>
+
       <div className='items'>
-        {sortedWines.map((w) => {
+        {visibleWines.map((w) => {
           const unit = unitOf(w.id);
           if (unit == null) return null; // 가격 미설정 품목은 숨김
           const q = qty[w.id] ?? 0;
@@ -211,6 +275,9 @@ const OrderCatalog = ({ partner }: OrderCatalogProps) => {
                   {w.wine_type}
                   {w.vintage ? ` · ${w.vintage}` : ''}
                   {w.volume_ml ? ` · ${w.volume_ml}ml` : ''}
+                  {w.stock != null && w.stock <= 6 && !soldOut && (
+                    <b> · 남은 수량 {w.stock}병</b>
+                  )}
                 </span>
                 <span className='price'>
                   {soldOut ? (
@@ -260,7 +327,7 @@ const OrderCatalog = ({ partner }: OrderCatalogProps) => {
                 <button
                   type='button'
                   aria-label={`${w.name_en} 한 병 더하기`}
-                  disabled={soldOut}
+                  disabled={soldOut || (w.stock != null && q >= w.stock)}
                   onClick={() => changeQty(w.id, q + 1)}
                 >
                   +
@@ -272,6 +339,9 @@ const OrderCatalog = ({ partner }: OrderCatalogProps) => {
         {!loaded && !error && <p className='hint'>불러오는 중…</p>}
         {loaded && wines.length === 0 && !error && (
           <p className='hint'>발주 가능한 품목을 준비 중입니다.</p>
+        )}
+        {loaded && wines.length > 0 && visibleWines.length === 0 && (
+          <p className='hint'>조건에 맞는 품목이 없습니다.</p>
         )}
       </div>
 
@@ -347,6 +417,52 @@ const Wrapper = styled.div`
   .error {
     color: #b0342a;
     font-size: 14px;
+  }
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+
+    input,
+    select {
+      padding: 8px 10px;
+      border: none;
+      border-bottom: 1px solid ${home.brown};
+      background: transparent;
+      color: ${home.ink};
+      font-family: ${font.kr};
+      font-size: 14px;
+      border-radius: 0;
+
+      &:focus {
+        outline: none;
+        border-bottom-color: ${home.purple};
+      }
+    }
+
+    input {
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .filter-reset {
+      border: none;
+      background: none;
+      color: ${home.gray};
+      font-size: 13px;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      cursor: pointer;
+    }
+
+    .filter-count {
+      margin-left: auto;
+      color: ${home.grayLight};
+      font-size: 13px;
+    }
   }
 
   .items {

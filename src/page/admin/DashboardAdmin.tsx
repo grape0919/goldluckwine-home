@@ -20,6 +20,8 @@ import { listPartners } from '@/api/partners';
 import type { PartnerRow } from '@/api/partners';
 import { listInquiries } from '@/api/inquiries';
 import type { InquiryRow } from '@/api/inquiries';
+import { listWines } from '@/api/admin';
+import type { WineRow } from '@/lib/supabase';
 import { BarChart, ColumnChart } from '@/page/admin/charts';
 import type { BarDatum } from '@/page/admin/charts';
 
@@ -38,19 +40,22 @@ const DashboardAdmin = ({ onGoTab }: DashboardProps) => {
   const [orders, setOrders] = useState<AdminOrderRow[]>([]);
   const [partners, setPartners] = useState<PartnerRow[]>([]);
   const [inquiries, setInquiries] = useState<InquiryRow[]>([]);
+  const [wines, setWines] = useState<WineRow[]>([]);
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [os, ps, qs] = await Promise.all([
+      const [os, ps, qs, ws] = await Promise.all([
         listOrders(),
         listPartners().catch(() => [] as PartnerRow[]),
         listInquiries().catch(() => [] as InquiryRow[]),
+        listWines().catch(() => [] as WineRow[]),
       ]);
       setOrders(os);
       setPartners(ps);
       setInquiries(qs);
+      setWines(ws);
     } catch (e) {
       message.error(`대시보드를 불러오지 못했습니다: ${(e as Error).message}`);
     } finally {
@@ -75,6 +80,10 @@ const DashboardAdmin = ({ onGoTab }: DashboardProps) => {
   const needInvoice = orders.filter((o) => o.status === 'done' && !o.invoiced_at);
   const pendingPartners = partners.filter((p) => p.status === 'pending');
   const newInquiries = inquiries.filter((q) => q.status === 'new');
+  // 재고 관리 중인 발주 품목만 (stock null = 관리 안 함)
+  const lowStock = wines
+    .filter((w) => w.orderable === true && w.stock != null && w.stock <= 6)
+    .sort((a, b) => (a.stock ?? 0) - (b.stock ?? 0));
 
   // 이번 달 매출 (취소 제외, 입금액 기준)
   const monthOrders = orders.filter(
@@ -303,6 +312,34 @@ const DashboardAdmin = ({ onGoTab }: DashboardProps) => {
                   {won(needInvoice.reduce((s, o) => s + o.total_amount, 0))}
                 </Typography.Text>
               </>
+            )}
+          </Card>
+        </Col>
+        <Col xs={24} md={8}>
+          <Card
+            size='small'
+            title='재고 부족 (6병 이하)'
+            extra={
+              <Button
+                size='small'
+                type='link'
+                onClick={() => onGoTab('wines')}
+              >
+                와인 →
+              </Button>
+            }
+          >
+            {lowStock.length === 0 ? (
+              <Typography.Text type='secondary'>없음</Typography.Text>
+            ) : (
+              lowStock.slice(0, 5).map((w) => (
+                <div key={w.id}>
+                  {w.name_en}{' '}
+                  <Typography.Text type={w.stock === 0 ? 'danger' : 'warning'}>
+                    {w.stock}병
+                  </Typography.Text>
+                </div>
+              ))
             )}
           </Card>
         </Col>

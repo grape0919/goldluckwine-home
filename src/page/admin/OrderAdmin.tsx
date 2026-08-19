@@ -433,6 +433,73 @@ const OrderAdmin = () => {
     }
   };
 
+  /** 현재 필터·검색 결과를 엑셀(CSV)로 — 품목은 발주당 한 줄로 요약 */
+  const downloadOrdersCsv = () => {
+    if (filtered.length === 0) {
+      message.info('내려받을 발주가 없습니다.');
+      return;
+    }
+    const header = [
+      '발주번호',
+      '접수일',
+      '거래처',
+      '담당자',
+      '연락처',
+      '상태',
+      '입금',
+      '입금일',
+      '병수',
+      '공급가',
+      '부가세',
+      '입금액',
+      '배송지',
+      '품목',
+      '메모',
+      '세금계산서',
+    ];
+    const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+    const lines = filtered.map((r) => {
+      const { supply, vat } = splitVat(r);
+      const items = r.order_items
+        .map((i) => `${i.name_en} x${i.qty}`)
+        .join(' / ');
+      return [
+        r.id,
+        r.created_at.slice(0, 10),
+        r.partners?.business_name ?? '',
+        r.partners?.contact_name ?? '',
+        r.partners?.phone ?? '',
+        ORDER_STATUS_LABEL[r.status],
+        r.paid_at ? '입금완료' : '미입금',
+        r.paid_at ? r.paid_at.slice(0, 10) : '',
+        r.total_bottles,
+        supply,
+        vat,
+        r.total_amount,
+        r.address,
+        items,
+        r.memo,
+        r.invoiced_at ? '발행' : '',
+      ]
+        .map(esc)
+        .join(',');
+    });
+    // 앞에 BOM — 엑셀에서 UTF-8 한글이 깨지지 않게
+    const blob = new Blob(
+      [`\uFEFF${header.map(esc).join(',')}\n${lines.join('\n')}`],
+      { type: 'text/csv;charset=utf-8' },
+    );
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const today = new Date();
+    const stamp = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+    a.download = `발주내역-${stamp}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    message.success(`${filtered.length}건을 내려받았습니다.`);
+  };
+
   /** 완료 상태·미발행 발주를 홈택스 일괄발행용 대장으로 다운로드 */
   const downloadInvoiceCsv = () => {
     const targets = rows.filter((r) => r.status === 'done' && !r.invoiced_at);
@@ -724,6 +791,7 @@ const OrderAdmin = () => {
           >
             대리 발주
           </Button>
+          <Button onClick={downloadOrdersCsv}>발주 내역 엑셀</Button>
           <Button onClick={downloadInvoiceCsv}>
             세금계산서 대장
             {(() => {

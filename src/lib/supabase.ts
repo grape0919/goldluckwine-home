@@ -51,6 +51,8 @@ export interface WineRow {
   sort_order: number;
   /** 발주 가능 여부 — 가격(wine_prices)과 함께 설정하면 /order 에 노출된다 */
   orderable?: boolean;
+  /** 재고(병) — null 이면 재고 관리 안 함(무제한). 발주 시 차감·취소 시 복구 */
+  stock?: number | null;
   /** 상품 스펙 — 마이그레이션 전 행에는 없을 수 있어 optional, 모두 선택 입력 */
   vintage?: string;
   volume_ml?: number | null;
