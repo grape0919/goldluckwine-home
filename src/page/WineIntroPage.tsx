@@ -10,6 +10,7 @@ import type { WineryInfoType } from '@/types/winery';
 import { customedTheme } from '@/styles/theme';
 import CloverIcon from '@/components/CloverIcon';
 import Seo, { BASE_URL } from '@/components/Seo';
+import OrderQuickAdd from '@/components/OrderQuickAdd';
 
 const { home, font, color } = customedTheme;
 
@@ -159,6 +160,13 @@ const WineIntroPage: React.FC = () => {
               <span className='skeleton skeleton-text' />
             </div>
           )}
+
+          {/* 승인 거래처에게만 공급가·담기 노출 */}
+          <OrderQuickAdd
+            wineId={wine.wineId}
+            soldOut={wine.soldOut}
+            large
+          />
 
           <dl className='spec-table'>
             <div className='spec-row'>

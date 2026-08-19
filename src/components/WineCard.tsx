@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { customedTheme } from '@/styles/theme';
 import CloverIcon from '@/components/CloverIcon';
 import { trackEvent } from '@/lib/analytics';
+import OrderQuickAdd from '@/components/OrderQuickAdd';
 import type { WineInfoType } from '@/types/wine';
 
 const { home, font, color } = customedTheme;
@@ -18,52 +19,71 @@ interface WineCardProps {
 /** 홈 OUR COLLECTION·와인 리스트 공용 와인 카드 (Figma product 프레임).
  *  테두리는 카드가 아니라 그리드(부모)가 그린다. */
 const WineCard = ({ wine, wineryName }: WineCardProps) => (
-  <CardLink
-    to={`/wines/${wine.wineId}`}
-    $soldOut={wine.soldOut}
-    onClick={() =>
-      trackEvent('select_item', {
-        item_id: String(wine.wineId),
-        item_name: wine.wineNameEN,
-        item_category: wine.wineType,
-      })
-    }
-  >
-    <div className='card-image'>
-      {wine.soldOut && <span className='sold-out-badge'>SOLD OUT</span>}
-      <img
-        src={wine.wineImagePath || DEFAULT_WINE_IMAGE}
-        alt={`${wine.wineNameEN} ${wine.wineNameKR}`}
-        loading='lazy'
-        onError={(e) => {
-          // 무한 onError 루프 방지: 디폴트 이미지로는 한 번만 교체
-          if (!e.currentTarget.src.endsWith(DEFAULT_WINE_IMAGE)) {
-            e.currentTarget.src = DEFAULT_WINE_IMAGE;
-          }
-        }}
-      />
-    </div>
-    <div className='card-caption'>
-      <div className='card-names'>
-        <span>{wine.wineNameEN}</span>
-        <span>{wine.wineNameKR}</span>
-      </div>
-      <div className='card-meta'>
-        <span>{wineryName ?? ''}</span>
-        <span className='card-type'>
-          <CloverIcon
-            color={
-              color.wine[wine.wineType as keyof typeof color.wine] ??
-              home.greenSoft
+  // 카드(링크) 아래에 담기 컨트롤을 형제로 둔다 — 링크 안에 버튼을 넣지 않기 위해
+  <CardWrap>
+    <CardLink
+      to={`/wines/${wine.wineId}`}
+      $soldOut={wine.soldOut}
+      onClick={() =>
+        trackEvent('select_item', {
+          item_id: String(wine.wineId),
+          item_name: wine.wineNameEN,
+          item_category: wine.wineType,
+        })
+      }
+    >
+      <div className='card-image'>
+        {wine.soldOut && <span className='sold-out-badge'>SOLD OUT</span>}
+        <img
+          src={wine.wineImagePath || DEFAULT_WINE_IMAGE}
+          alt={`${wine.wineNameEN} ${wine.wineNameKR}`}
+          loading='lazy'
+          onError={(e) => {
+            // 무한 onError 루프 방지: 디폴트 이미지로는 한 번만 교체
+            if (!e.currentTarget.src.endsWith(DEFAULT_WINE_IMAGE)) {
+              e.currentTarget.src = DEFAULT_WINE_IMAGE;
             }
-            size={15}
-          />
-          {wine.wineType}
-        </span>
+          }}
+        />
       </div>
-    </div>
-  </CardLink>
+      <div className='card-caption'>
+        <div className='card-names'>
+          <span>{wine.wineNameEN}</span>
+          <span>{wine.wineNameKR}</span>
+        </div>
+        <div className='card-meta'>
+          <span>{wineryName ?? ''}</span>
+          <span className='card-type'>
+            <CloverIcon
+              color={
+                color.wine[wine.wineType as keyof typeof color.wine] ??
+                home.greenSoft
+              }
+              size={15}
+            />
+            {wine.wineType}
+          </span>
+        </div>
+      </div>
+    </CardLink>
+    {/* 승인 거래처에게만 공급가·담기 노출 (그 외에는 아무것도 렌더하지 않음) */}
+    <OrderQuickAdd
+      wineId={wine.wineId}
+      soldOut={wine.soldOut}
+    />
+  </CardWrap>
 );
+
+const CardWrap = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  /* 그리드 셀이 링크에 주던 flex 를 래퍼가 이어받는다 */
+  > a {
+    flex: 1;
+  }
+`;
 
 const CardLink = styled(Link)<{ $soldOut?: boolean }>`
   display: flex;
