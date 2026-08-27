@@ -1,7 +1,7 @@
 import type { OrderRow } from '@/api/orders';
 import type { OrderSettings } from '@/api/pricing';
 
-/** 거래명세표 — 발주 1건을 인쇄용 창으로 연다 (브라우저 인쇄 → 종이 또는 PDF 저장).
+/** 거래명세표/거래원장 — 인쇄용 창으로 연다 (브라우저 인쇄 → 종이 또는 PDF 저장).
  *  공급자 정보는 관리자 설정 탭(order_settings.supplier_*)에서 입력한다. */
 
 export interface StatementBuyer {
@@ -21,33 +21,31 @@ const bizNo = (s: string) => {
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-export function openStatement(
-  order: OrderRow,
-  buyer: StatementBuyer,
-  settings: OrderSettings,
-): void {
-  // 부가세 별도 발주(vat_amount 기록됨): 품목 금액이 곧 공급가액, 세액은 10%.
-  // 구버전(부가세 포함가 시절) 발주는 역산으로 호환한다.
+/** 발주 1건의 품목별 공급가액·세액.
+ *  부가세 별도 발주(vat_amount 기록됨): 품목 금액이 곧 공급가액, 세액은 10%.
+ *  구버전(부가세 포함가 시절) 발주는 역산으로 호환한다. */
+const calcLines = (order: OrderRow) => {
   const vatExclusive = order.vat_amount > 0;
-  const lines = order.order_items.map((i) => {
+  return order.order_items.map((i) => {
     if (vatExclusive) {
       return { ...i, supply: i.amount, vat: Math.round(i.amount * 0.1) };
     }
     const supply = Math.round(i.amount / 1.1);
     return { ...i, supply, vat: i.amount - supply };
   });
-  const totalSupply = lines.reduce((s, l) => s + l.supply, 0);
-  const totalVat = lines.reduce((s, l) => s + l.vat, 0);
-  const date = (order.done_at ?? order.created_at).slice(0, 10);
+};
 
-  const partyRow = (
-    label: string,
-    name: string,
-    businessNo: string,
-    ceo: string,
-    address: string,
-    phone: string,
-  ) => `
+const orderDate = (order: OrderRow) =>
+  (order.done_at ?? order.created_at).slice(0, 10);
+
+const partyRow = (
+  label: string,
+  name: string,
+  businessNo: string,
+  ceo: string,
+  address: string,
+  phone: string,
+) => `
     <td class="party">
       <div class="party-label">${label}</div>
       <table class="party-table">
@@ -58,10 +56,27 @@ export function openStatement(
       </table>
     </td>`;
 
-  const html = `<!doctype html>
-<html lang="ko"><head><meta charset="utf-8"/>
-<title>거래명세표_No${order.id}_${esc(buyer.business_name)}</title>
-<style>
+const partiesTable = (buyer: StatementBuyer, settings: OrderSettings) => `
+  <table class="parties"><tbody><tr>
+    ${partyRow(
+      '공 급 자',
+      settings.supplier_name,
+      settings.supplier_business_no,
+      settings.supplier_ceo,
+      settings.supplier_address,
+      settings.supplier_phone,
+    )}
+    ${partyRow(
+      '공급받는자',
+      buyer.business_name,
+      buyer.business_no,
+      buyer.ceo_name,
+      buyer.address,
+      buyer.phone ?? '',
+    )}
+  </tr></tbody></table>`;
+
+const SHEET_STYLE = `
   body { font-family: 'Pretendard Variable', Pretendard, 'Malgun Gothic', sans-serif;
          color: #111; margin: 0; padding: 32px; font-size: 12px; }
   .sheet { max-width: 720px; margin: 0 auto; }
@@ -81,39 +96,45 @@ export function openStatement(
   .items th { background: #f2efe8; font-weight: 600; }
   .items td.num { text-align: right; font-variant-numeric: tabular-nums; }
   .items td.center { text-align: center; }
+  .items tr.subtotal td { background: #faf8f2; font-weight: 600; }
+  .unpaid { color: #b3261e; }
+  .paid { color: #2e6b30; }
   tfoot td { font-weight: 700; background: #faf8f2; }
   .note { margin-top: 10px; border: 1px solid #333; padding: 8px 10px; min-height: 34px; }
   .sign { margin-top: 14px; display: flex; justify-content: space-between; }
   .sign div { width: 46%; border-bottom: 1px solid #333; padding: 18px 4px 6px; }
   .toolbar { text-align: center; margin: 20px 0; }
   .toolbar button { padding: 8px 28px; font-size: 14px; cursor: pointer; }
-  @media print { .toolbar { display: none; } body { padding: 0; } }
-</style></head>
+  @media print { .toolbar { display: none; } body { padding: 0; } }`;
+
+const openPrintWindow = (html: string) => {
+  const win = window.open('', '_blank');
+  if (!win) return;
+  win.document.write(html);
+  win.document.close();
+};
+
+export function openStatement(
+  order: OrderRow,
+  buyer: StatementBuyer,
+  settings: OrderSettings,
+): void {
+  const lines = calcLines(order);
+  const totalSupply = lines.reduce((s, l) => s + l.supply, 0);
+  const totalVat = lines.reduce((s, l) => s + l.vat, 0);
+
+  const html = `<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"/>
+<title>거래명세표_No${order.id}_${esc(buyer.business_name)}</title>
+<style>${SHEET_STYLE}</style></head>
 <body>
 <div class="sheet">
   <h1>거래명세표</h1>
   <div class="meta">
     <span>발주 No.${order.id}</span>
-    <span>거래일자: ${date}</span>
+    <span>거래일자: ${orderDate(order)}</span>
   </div>
-  <table class="parties"><tbody><tr>
-    ${partyRow(
-      '공 급 자',
-      settings.supplier_name,
-      settings.supplier_business_no,
-      settings.supplier_ceo,
-      settings.supplier_address,
-      settings.supplier_phone,
-    )}
-    ${partyRow(
-      '공급받는자',
-      buyer.business_name,
-      buyer.business_no,
-      buyer.ceo_name,
-      buyer.address,
-      buyer.phone ?? '',
-    )}
-  </tr></tbody></table>
+  ${partiesTable(buyer, settings)}
 
   <table class="items">
     <thead><tr>
@@ -156,8 +177,124 @@ export function openStatement(
 </div>
 </body></html>`;
 
-  const win = window.open('', '_blank');
-  if (!win) return;
-  win.document.write(html);
-  win.document.close();
+  openPrintWindow(html);
+}
+
+/** 거래원장 — 한 거래처의 발주 여러 건을 한 장에 (미입금 전체 또는 월 단위).
+ *  발주별로 품목을 나열하고 발주 소계·입금 여부, 마지막에 총합계·미입금 합계를 표기한다. */
+export function openLedger(
+  orders: OrderRow[],
+  buyer: StatementBuyer,
+  settings: OrderSettings,
+  subtitle: string,
+): void {
+  const sorted = [...orders].sort((a, b) =>
+    orderDate(a) < orderDate(b) ? -1 : orderDate(a) > orderDate(b) ? 1 : a.id - b.id,
+  );
+
+  let totalBottles = 0;
+  let totalSupply = 0;
+  let totalVat = 0;
+  let totalAmount = 0;
+  let unpaidAmount = 0;
+
+  const bodyRows = sorted
+    .map((order) => {
+      const lines = calcLines(order);
+      const supply = lines.reduce((s, l) => s + l.supply, 0);
+      const vat = lines.reduce((s, l) => s + l.vat, 0);
+      const unpaid = !order.paid_at;
+      totalBottles += order.total_bottles;
+      totalSupply += supply;
+      totalVat += vat;
+      totalAmount += order.total_amount;
+      if (unpaid) unpaidAmount += order.total_amount;
+
+      const itemRows = lines
+        .map(
+          (l, idx) => `<tr>
+        ${
+          idx === 0
+            ? `<td class="center" rowspan="${lines.length}">${orderDate(order)}</td>
+        <td class="center" rowspan="${lines.length}">No.${order.id}</td>`
+            : ''
+        }
+        <td>${esc(l.name_en)}${l.name_kr ? ` <span style="color:#777">${esc(l.name_kr)}</span>` : ''}</td>
+        <td class="center">${l.qty}</td>
+        <td class="num">${won(l.unit_price)}</td>
+        <td class="num">${won(l.supply)}</td>
+        <td class="num">${won(l.vat)}</td>
+        <td class="num">${won(l.supply + l.vat)}</td>
+      </tr>`,
+        )
+        .join('');
+
+      return `${itemRows}
+      <tr class="subtotal">
+        <td colspan="5">No.${order.id} 소계 · ${order.total_bottles}병
+          <span class="${unpaid ? 'unpaid' : 'paid'}">${unpaid ? '(미입금)' : '(입금 완료)'}</span></td>
+        <td class="num">${won(supply)}</td>
+        <td class="num">${won(vat)}</td>
+        <td class="num">${won(order.total_amount)}</td>
+      </tr>`;
+    })
+    .join('');
+
+  const bank =
+    settings.bank_name && settings.bank_account
+      ? `입금 계좌: ${esc(settings.bank_name)} ${esc(settings.bank_account)} (${esc(settings.bank_holder)})`
+      : '';
+
+  const html = `<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"/>
+<title>거래원장_${esc(buyer.business_name)}_${esc(subtitle)}</title>
+<style>${SHEET_STYLE}</style></head>
+<body>
+<div class="sheet">
+  <h1>거래원장</h1>
+  <div class="meta">
+    <span>${esc(subtitle)} · 발주 ${sorted.length}건</span>
+    <span>출력일: ${new Date().toISOString().slice(0, 10)}</span>
+  </div>
+  ${partiesTable(buyer, settings)}
+
+  <table class="items">
+    <thead><tr>
+      <th>거래일자</th><th>발주</th><th>품명</th><th>수량(병)</th><th>단가(공급가)</th><th>공급가액</th><th>세액</th><th>합계</th>
+    </tr></thead>
+    <tbody>${bodyRows}</tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3">총합계 · 발주 ${sorted.length}건</td>
+        <td class="center">${totalBottles}</td>
+        <td></td>
+        <td class="num">${won(totalSupply)}</td>
+        <td class="num">${won(totalVat)}</td>
+        <td class="num">${won(totalAmount)}</td>
+      </tr>
+      ${
+        unpaidAmount > 0
+          ? `<tr>
+        <td colspan="7" class="unpaid">미입금 합계</td>
+        <td class="num unpaid">${won(unpaidAmount)}</td>
+      </tr>`
+          : ''
+      }
+    </tfoot>
+  </table>
+
+  ${bank ? `<div class="note">${bank}</div>` : ''}
+
+  <div class="sign">
+    <div>공급자 확인: (인)</div>
+    <div>인수자 확인: (인)</div>
+  </div>
+
+  <div class="toolbar">
+    <button onclick="window.print()">인쇄 / PDF 저장</button>
+  </div>
+</div>
+</body></html>`;
+
+  openPrintWindow(html);
 }
