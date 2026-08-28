@@ -192,7 +192,22 @@ export async function updatePartnerStatus(
 
 export async function updatePartnerAdmin(
   id: number,
-  input: Partial<Pick<PartnerRow, 'discount_rate' | 'memo'>>,
+  input: Partial<
+    Pick<
+      PartnerRow,
+      | 'discount_rate'
+      | 'memo'
+      // 수기 거래처(user_id null)의 오타 수정용 — 계정 거래처는 본인이 관리
+      | 'business_name'
+      | 'business_no'
+      | 'ceo_name'
+      | 'contact_name'
+      | 'phone'
+      | 'email'
+      | 'invoice_email'
+      | 'address'
+    >
+  >,
 ): Promise<void> {
   const { error } = await supabase.from('partners').update(input).eq('id', id);
   if (error) throw error;

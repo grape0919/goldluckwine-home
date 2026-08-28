@@ -40,6 +40,7 @@ const SettingsAdmin = () => {
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
   // 저장 시 변경분만 upsert 하기 위한 로드 시점 스냅샷 (저장 형태인 문자열 기준)
   const initialRef = useRef<OrderSettings | null>(null);
 
@@ -95,6 +96,7 @@ const SettingsAdmin = () => {
       }
       await upsertOrderSettings(entries);
       initialRef.current = { ...initial, ...entries };
+      setDirty(false);
       message.success('저장했습니다. 발주 화면에 즉시 반영됩니다.');
     } catch (e) {
       message.error(`저장 실패: ${(e as Error).message}`);
@@ -129,6 +131,7 @@ const SettingsAdmin = () => {
       form={form}
       layout='vertical'
       onFinish={handleSave}
+      onValuesChange={() => setDirty(true)}
       style={{ maxWidth: 640 }}
     >
       <Card
@@ -235,14 +238,32 @@ const SettingsAdmin = () => {
         </Form.Item>
       </Card>
 
-      <Button
-        type='primary'
-        htmlType='submit'
-        icon={<SaveOutlined />}
-        loading={saving}
+      <div
+        style={{
+          position: 'sticky',
+          bottom: 0,
+          padding: '12px 0',
+          background: '#f5f5f5',
+          borderTop: '1px solid #e8e8e8',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+        }}
       >
-        저장
-      </Button>
+        <Button
+          type='primary'
+          htmlType='submit'
+          icon={<SaveOutlined />}
+          loading={saving}
+        >
+          저장
+        </Button>
+        {dirty && (
+          <Typography.Text type='warning'>
+            저장되지 않은 변경사항이 있습니다
+          </Typography.Text>
+        )}
+      </div>
     </Form>
   );
 };

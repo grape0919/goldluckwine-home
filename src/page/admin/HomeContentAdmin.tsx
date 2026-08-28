@@ -49,6 +49,7 @@ const HomeContentAdmin = ({ onChanged }: HomeContentAdminProps) => {
   const [initial, setInitial] = useState<HomeContent | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
   const load = useCallback(async () => {
     setLoadError(null);
@@ -104,6 +105,7 @@ const HomeContentAdmin = ({ onChanged }: HomeContentAdminProps) => {
       }
       setInitial(next);
       form.setFieldsValue(next);
+      setDirty(false);
       onChanged();
       message.success(
         '저장했습니다. "사이트 반영"을 눌러야 공개 사이트에 반영됩니다.',
@@ -141,6 +143,7 @@ const HomeContentAdmin = ({ onChanged }: HomeContentAdminProps) => {
       form={form}
       layout='vertical'
       onFinish={handleSave}
+      onValuesChange={() => setDirty(true)}
     >
       <Card
         title='문구'
@@ -199,14 +202,34 @@ const HomeContentAdmin = ({ onChanged }: HomeContentAdminProps) => {
         </Card>
       ))}
 
-      <Button
-        type='primary'
-        htmlType='submit'
-        icon={<SaveOutlined />}
-        loading={saving}
+      <div
+        style={{
+          position: 'sticky',
+          bottom: 0,
+          padding: '12px 0',
+          background: '#f5f5f5',
+          borderTop: '1px solid #e8e8e8',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+        }}
       >
-        저장
-      </Button>
+        <Button
+          type='primary'
+          htmlType='submit'
+          icon={<SaveOutlined />}
+          loading={saving}
+        >
+          저장
+        </Button>
+        {dirty ? (
+          <Text type='warning'>저장되지 않은 변경사항이 있습니다</Text>
+        ) : (
+          <Text type='secondary'>
+            저장 후 &quot;사이트 반영&quot;을 눌러야 공개 사이트에 적용됩니다
+          </Text>
+        )}
+      </div>
     </Form>
   );
 };
