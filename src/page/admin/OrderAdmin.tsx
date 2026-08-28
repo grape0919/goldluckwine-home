@@ -133,7 +133,12 @@ const FILTER_STATUSES: OrderStatus[] = [
 ];
 
 /** 발주 관리 — 상태 변경. 완료 처리 시 세금계산서 자동 발행은 Phase 4 에서 연결된다. */
-const OrderAdmin = () => {
+interface OrderAdminProps {
+  /** 탭 활성 여부 — 활성화될 때마다 재조회 (거래처가 넣은 새 발주 반영) */
+  active?: boolean;
+}
+
+const OrderAdmin = ({ active = true }: OrderAdminProps) => {
   const { message } = App.useApp();
   const [rows, setRows] = useState<AdminOrderRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -484,8 +489,8 @@ const OrderAdmin = () => {
   }, [message]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (active) load();
+  }, [active, load]);
 
   const setStatus = async (row: AdminOrderRow, status: OrderStatus) => {
     try {

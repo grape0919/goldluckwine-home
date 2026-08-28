@@ -363,6 +363,7 @@ const AdminPage = () => {
             children: (
               <WineAdmin
                 refreshKey={wineRefreshKey}
+                active={tab === 'wines'}
                 onChanged={markChanged}
               />
             ),
@@ -390,7 +391,7 @@ const AdminPage = () => {
             key: 'orders',
             // 발주는 DB 조회형 — '사이트 반영'과 무관
             label: '발주',
-            children: <OrderAdmin />,
+            children: <OrderAdmin active={tab === 'orders'} />,
           },
           {
             key: 'stats',
@@ -402,7 +403,7 @@ const AdminPage = () => {
             key: 'partners',
             // 거래처·발주는 DB 조회형 — '사이트 반영'과 무관
             label: '거래처',
-            children: <PartnerAdmin />,
+            children: <PartnerAdmin active={tab === 'partners'} />,
           },
           {
             key: 'inquiries',
