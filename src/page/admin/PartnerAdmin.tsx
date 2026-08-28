@@ -94,11 +94,23 @@ const PartnerAdmin = () => {
     }
   };
 
+  // 서류 열람 — 창을 여러 개 동시에 열면 브라우저가 두 번째부터 차단하므로
+  // 목록 모달을 띄우고 각 서류를 클릭으로 하나씩 연다
+  const [docsFor, setDocsFor] = useState<{
+    name: string;
+    urls: string[];
+  } | null>(null);
+
   const openDocs = async (row: PartnerRow) => {
     try {
-      for (const path of row.license_images) {
-        window.open(await getPartnerDocUrl(path), '_blank', 'noopener');
+      const urls = await Promise.all(
+        row.license_images.map((path) => getPartnerDocUrl(path)),
+      );
+      if (urls.length === 1) {
+        window.open(urls[0], '_blank', 'noopener');
+        return;
       }
+      setDocsFor({ name: row.business_name, urls });
     } catch (e) {
       message.error(`서류 열람 실패: ${(e as Error).message}`);
     }
@@ -267,7 +279,7 @@ const PartnerAdmin = () => {
             <Button
               size='small'
               onClick={() => {
-                setReason('');
+                setReason(r.status_reason);
                 setReasonFor({ row: r, status: 'suspended' });
               }}
             >
@@ -276,8 +288,8 @@ const PartnerAdmin = () => {
           )}
           {(r.status === 'suspended' || r.status === 'rejected') && (
             <Popconfirm
-              title='이 거래처를 승인 상태로 되돌릴까요?'
-              onConfirm={() => setStatus(r, 'approved')}
+              title={`${r.business_name} 을(를) 승인 상태로 되돌릴까요?`}
+              onConfirm={() => setStatus(r, 'approved', r.status_reason)}
             >
               <Button size='small'>승인으로 복귀</Button>
             </Popconfirm>
@@ -470,7 +482,11 @@ const PartnerAdmin = () => {
         open={Boolean(reasonFor)}
         onOk={async () => {
           if (!reasonFor) return;
-          await setStatus(reasonFor.row, reasonFor.status, reason);
+          if (!reason.trim()) {
+            message.warning('사유를 입력해 주세요. 거래처 화면에 표시됩니다.');
+            return;
+          }
+          await setStatus(reasonFor.row, reasonFor.status, reason.trim());
           setReasonFor(null);
         }}
         onCancel={() => setReasonFor(null)}
@@ -484,6 +500,29 @@ const PartnerAdmin = () => {
           onChange={(e) => setReason(e.target.value)}
           placeholder='거래처에게 표시되는 사유입니다.'
         />
+      </Modal>
+
+      <Modal
+        title={docsFor ? `${docsFor.name} — 서류 ${docsFor.urls.length}장` : ''}
+        open={Boolean(docsFor)}
+        onCancel={() => setDocsFor(null)}
+        footer={null}
+        width={320}
+      >
+        <Space
+          direction='vertical'
+          style={{ width: '100%' }}
+        >
+          {docsFor?.urls.map((url, i) => (
+            <Button
+              key={url}
+              block
+              onClick={() => window.open(url, '_blank', 'noopener')}
+            >
+              서류 {i + 1} 열기
+            </Button>
+          ))}
+        </Space>
       </Modal>
     </>
   );

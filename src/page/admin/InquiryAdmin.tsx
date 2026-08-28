@@ -94,9 +94,11 @@ const InquiryAdmin = () => {
       width: 60,
       render: (_: unknown, row) => (
         <Popconfirm
-          title='이 문의를 삭제할까요?'
+          title={`${row.name}${row.company ? ` (${row.company})` : ''} 님의 문의를 삭제할까요?`}
+          description='삭제하면 복구할 수 없습니다.'
           onConfirm={() => remove(row.id)}
           okText='삭제'
+          okButtonProps={{ danger: true }}
           cancelText='취소'
         >
           <Button

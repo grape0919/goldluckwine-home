@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   App,
   Button,
   Card,
@@ -37,47 +38,63 @@ const SettingsAdmin = () => {
   const { message } = App.useApp();
   const [form] = Form.useForm<FormValues>();
   const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // 저장 시 변경분만 upsert 하기 위한 로드 시점 스냅샷 (저장 형태인 문자열 기준)
+  const initialRef = useRef<OrderSettings | null>(null);
+
+  const load = useCallback(async () => {
+    setLoaded(false);
+    setLoadError(null);
+    try {
+      const s = await fetchOrderSettings();
+      initialRef.current = s;
+      form.setFieldsValue({
+        min_bottles: Number(s.min_bottles) || 6,
+        deposit_days: Number(s.deposit_days) || 3,
+        bank_name: s.bank_name,
+        bank_account: s.bank_account,
+        bank_holder: s.bank_holder,
+        notice: s.notice,
+        admin_email: s.admin_email,
+        supplier_name: s.supplier_name,
+        supplier_business_no: s.supplier_business_no,
+        supplier_ceo: s.supplier_ceo,
+        supplier_address: s.supplier_address,
+        supplier_phone: s.supplier_phone,
+      });
+    } catch (e) {
+      // 현재 값을 모르는 채 저장하면 설정 전체가 덮어써진다 — 폼을 열지 않는다
+      setLoadError((e as Error).message);
+    } finally {
+      setLoaded(true);
+    }
+  }, [form]);
 
   useEffect(() => {
-    fetchOrderSettings()
-      .then((s) => {
-        form.setFieldsValue({
-          min_bottles: Number(s.min_bottles) || 6,
-          deposit_days: Number(s.deposit_days) || 3,
-          bank_name: s.bank_name,
-          bank_account: s.bank_account,
-          bank_holder: s.bank_holder,
-          notice: s.notice,
-          admin_email: s.admin_email,
-          supplier_name: s.supplier_name,
-          supplier_business_no: s.supplier_business_no,
-          supplier_ceo: s.supplier_ceo,
-          supplier_address: s.supplier_address,
-          supplier_phone: s.supplier_phone,
-        });
-        setLoaded(true);
-      })
-      .catch((e) => {
-        message.error(
-          `설정을 불러오지 못했습니다 (마이그레이션 전이면 정상): ${(e as Error).message}`,
-        );
-        // 실패해도 폼은 열어준다 — 스피너로 굳지 않게
-        setLoaded(true);
-      });
-  }, [form, message]);
+    load();
+  }, [load]);
 
   const handleSave = async (values: FormValues) => {
+    const initial = initialRef.current;
+    if (!initial) return; // 로드 실패 상태 — 폼이 없어 도달하지 않지만 방어
     setSaving(true);
     try {
+      // 로드 시점과 달라진 키만 저장 — 안 건드린 설정을 덮어쓰지 않는다
       const entries: Partial<OrderSettings> = {};
       for (const key of Object.keys(
         ORDER_SETTING_DEFAULTS,
       ) as OrderSettingKey[]) {
         const raw = values[key as keyof FormValues];
-        entries[key] = raw == null ? '' : String(raw);
+        const next = raw == null ? '' : String(raw);
+        if (next !== initial[key]) entries[key] = next;
+      }
+      if (Object.keys(entries).length === 0) {
+        message.info('변경된 내용이 없습니다.');
+        return;
       }
       await upsertOrderSettings(entries);
+      initialRef.current = { ...initial, ...entries };
       message.success('저장했습니다. 발주 화면에 즉시 반영됩니다.');
     } catch (e) {
       message.error(`저장 실패: ${(e as Error).message}`);
@@ -91,6 +108,19 @@ const SettingsAdmin = () => {
       <div style={{ textAlign: 'center', padding: 48 }}>
         <Spin />
       </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <Alert
+        type='error'
+        showIcon
+        message='설정을 불러오지 못했습니다'
+        description={`현재 값을 확인할 수 없어 편집을 열지 않습니다. 저장하면 기존 설정을 덮어쓸 수 있기 때문입니다. (${loadError})`}
+        action={<Button onClick={load}>다시 시도</Button>}
+        style={{ maxWidth: 640 }}
+      />
     );
   }
 
@@ -199,7 +229,7 @@ const SettingsAdmin = () => {
       >
         <Form.Item
           name='admin_email'
-          label='관리자 알림 수신 이메일 (신규 가입·발주 — Phase 3에서 사용)'
+          label='관리자 알림 수신 이메일 (신규 가입·발주 알림)'
         >
           <Input type='email' />
         </Form.Item>

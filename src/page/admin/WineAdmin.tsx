@@ -495,12 +495,13 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
             >
               이미지 업로드
             </Button>
-            <Button
-              loading={defaultImgSaving}
-              onClick={resetDefaultImg}
+            <Popconfirm
+              title='기본 사진을 초기 이미지로 되돌릴까요?'
+              okText='되돌리기'
+              onConfirm={resetDefaultImg}
             >
-              초기 이미지로
-            </Button>
+              <Button loading={defaultImgSaving}>초기 이미지로</Button>
+            </Popconfirm>
           </Space>
         </Space>
       </Modal>
@@ -668,7 +669,10 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
                       수정
                     </Button>
                     <Popconfirm
-                      title='이 와인을 삭제할까요?'
+                      title={`'${row.name_en}' 을(를) 삭제할까요?`}
+                      description='발주 내역의 스냅샷은 남지만 상품은 복구할 수 없습니다.'
+                      okText='삭제'
+                      okButtonProps={{ danger: true }}
                       onConfirm={() => handleDelete(row)}
                     >
                       <Button

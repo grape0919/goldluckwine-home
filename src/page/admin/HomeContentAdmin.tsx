@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { App, Button, Card, Form, Input, Spin, Typography } from 'antd';
+import { useCallback, useEffect, useState } from 'react';
+import { Alert, App, Button, Card, Form, Input, Spin, Typography } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
 import {
   fetchHomeContent,
@@ -47,21 +47,24 @@ const HomeContentAdmin = ({ onChanged }: HomeContentAdminProps) => {
   const { message } = App.useApp();
   const [form] = Form.useForm<FormValues>();
   const [initial, setInitial] = useState<HomeContent | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const load = useCallback(async () => {
+    setLoadError(null);
+    try {
+      const content = await fetchHomeContent();
+      setInitial(content);
+      form.setFieldsValue(content);
+    } catch (e) {
+      // 현재 값을 모르는 채(기본값 폼) 저장하면 실제 콘텐츠가 덮어써진다 — 폼을 열지 않는다
+      setLoadError((e as Error).message);
+    }
+  }, [form]);
+
   useEffect(() => {
-    fetchHomeContent()
-      .then((content) => {
-        setInitial(content);
-        form.setFieldsValue(content);
-      })
-      .catch((e) => {
-        message.error(`불러오기 실패: ${(e as Error).message}`);
-        // 실패해도 기본값으로 폼을 열어준다 — 스피너로 굳지 않게
-        setInitial({ ...HOME_CONTENT_DEFAULTS });
-        form.setFieldsValue({ ...HOME_CONTENT_DEFAULTS });
-      });
-  }, [form, message]);
+    load();
+  }, [load]);
 
   const handleSave = async (values: FormValues) => {
     if (!initial) return;
@@ -111,6 +114,19 @@ const HomeContentAdmin = ({ onChanged }: HomeContentAdminProps) => {
       setSaving(false);
     }
   };
+
+  if (loadError) {
+    return (
+      <Alert
+        type='error'
+        showIcon
+        message='홈 콘텐츠를 불러오지 못했습니다'
+        description={`현재 값을 확인할 수 없어 편집을 열지 않습니다. 이 상태에서 저장하면 실제 콘텐츠가 기본값으로 덮어써질 수 있기 때문입니다. (${loadError})`}
+        action={<Button onClick={load}>다시 시도</Button>}
+        style={{ maxWidth: 720 }}
+      />
+    );
+  }
 
   if (!initial) {
     return (

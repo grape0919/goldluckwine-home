@@ -252,12 +252,16 @@ const BackLabelAdmin = () => {
                       patch({ items });
                     }}
                   />
-                  <Button
-                    icon={<DeleteOutlined />}
-                    onClick={() =>
+                  <Popconfirm
+                    title='이 항목을 삭제할까요?'
+                    okText='삭제'
+                    okButtonProps={{ danger: true }}
+                    onConfirm={() =>
                       patch({ items: label.items.filter((_, j) => j !== i) })
                     }
-                  />
+                  >
+                    <Button icon={<DeleteOutlined />} />
+                  </Popconfirm>
                 </Space.Compact>
               ))}
               <Button
