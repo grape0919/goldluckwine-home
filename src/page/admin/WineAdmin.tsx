@@ -93,11 +93,14 @@ const WINE_TYPE_OPTIONS = Object.values(WineTypes).map((t) => ({
 
 interface WineAdminProps {
   refreshKey?: number;
+  /** 탭 활성 여부 — antd Tabs 는 비활성 탭을 언마운트하지 않으므로
+   *  다시 활성화될 때 재조회해야 발주로 차감된 재고가 보인다 */
+  active?: boolean;
   /** 저장·삭제·순서변경 등 데이터가 바뀔 때 호출 (미반영 변경 추적용) */
   onChanged?: () => void;
 }
 
-const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
+const WineAdmin = ({ refreshKey, active = true, onChanged }: WineAdminProps) => {
   const { message } = App.useApp();
   const [rows, setRows] = useState<WineRow[]>([]);
   const [wineries, setWineries] = useState<WineryRow[]>([]);
@@ -174,8 +177,8 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
   }, [message]);
 
   useEffect(() => {
-    reload();
-  }, [reload, refreshKey]);
+    if (active) reload();
+  }, [active, reload, refreshKey]);
 
   const wineryName = (id: number) =>
     wineries.find((w) => w.id === id)?.domaine ?? `#${id}`;

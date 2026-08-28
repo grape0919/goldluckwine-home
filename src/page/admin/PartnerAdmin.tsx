@@ -36,7 +36,12 @@ const STATUS_META: Record<PartnerStatus, { label: string; color: string }> = {
 };
 
 /** 거래처 관리 — 가입 승인/반려/중지, 할인율·메모. DB 조회형이라 '사이트 반영' 불필요. */
-const PartnerAdmin = () => {
+interface PartnerAdminProps {
+  /** 탭 활성 여부 — 활성화될 때마다 재조회 (새 가입 신청 반영) */
+  active?: boolean;
+}
+
+const PartnerAdmin = ({ active = true }: PartnerAdminProps) => {
   const { message } = App.useApp();
   const [rows, setRows] = useState<PartnerRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -88,8 +93,8 @@ const PartnerAdmin = () => {
   }, [message]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (active) load();
+  }, [active, load]);
 
   const setStatus = async (
     row: PartnerRow,
