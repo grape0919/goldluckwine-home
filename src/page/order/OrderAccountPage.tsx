@@ -7,6 +7,7 @@ import { useOrderAuth } from '@/page/order/useOrderAuth';
 import { supabase } from '@/lib/supabase';
 import { updateMyPartner } from '@/api/partners';
 import OrderNav from '@/page/order/OrderNav';
+import { formatBizNo } from '@/utils/bizNo';
 
 /** 마이페이지 — 사업자 정보 수정 + 비밀번호 변경 (재설정 링크 착지점 겸용) */
 const OrderAccountPage = () => {
@@ -89,7 +90,8 @@ const OrderAccountPage = () => {
           onSubmit={handleProfile}
         >
           <p className='order-hint'>
-            사업자등록번호({partner.business_no})는 변경할 수 없습니다. 변경이
+            사업자등록번호({formatBizNo(partner.business_no)})는 변경할 수
+            없습니다. 변경이
             필요하면 문의해 주세요.
           </p>
           <div className='field-row'>

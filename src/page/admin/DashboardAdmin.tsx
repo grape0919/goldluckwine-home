@@ -23,6 +23,7 @@ import type { InquiryRow } from '@/api/inquiries';
 import { listWines } from '@/api/admin';
 import type { WineRow } from '@/lib/supabase';
 import { BarChart, ColumnChart } from '@/page/admin/charts';
+import { formatBizNo } from '@/utils/bizNo';
 import type { BarDatum } from '@/page/admin/charts';
 
 interface DashboardProps {
@@ -282,7 +283,7 @@ const DashboardAdmin = ({ onGoTab }: DashboardProps) => {
                 <div key={p.id}>
                   {p.business_name}{' '}
                   <Typography.Text type='secondary'>
-                    {p.business_no}
+                    {formatBizNo(p.business_no)}
                   </Typography.Text>
                 </div>
               ))

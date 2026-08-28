@@ -23,6 +23,7 @@ import {
   createManualPartner,
 } from '@/api/partners';
 import type { PartnerRow, PartnerStatus } from '@/api/partners';
+import { formatBizNo } from '@/utils/bizNo';
 
 const STATUS_META: Record<PartnerStatus, { label: string; color: string }> = {
   pending: { label: '승인대기', color: 'gold' },
@@ -140,11 +141,13 @@ const PartnerAdmin = () => {
   };
 
   const q = search.trim().toLowerCase();
+  // 사업자번호는 숫자만 저장되므로 검색어의 하이픈도 무시하고 비교
+  const qDigits = q.replace(/\D/g, '');
   const filtered = q
     ? rows.filter(
         (r) =>
           r.business_name.toLowerCase().includes(q) ||
-          r.business_no.includes(q) ||
+          (qDigits !== '' && r.business_no.includes(qDigits)) ||
           r.contact_name.toLowerCase().includes(q) ||
           r.email.toLowerCase().includes(q),
       )
@@ -158,7 +161,9 @@ const PartnerAdmin = () => {
         <>
           <b>{r.business_name}</b>
           <br />
-          <Typography.Text type='secondary'>{r.business_no}</Typography.Text>
+          <Typography.Text type='secondary'>
+            {formatBizNo(r.business_no)}
+          </Typography.Text>
           {r.nts_status && (
             <Tag
               style={{ marginLeft: 6 }}

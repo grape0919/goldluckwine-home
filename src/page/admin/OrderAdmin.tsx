@@ -42,6 +42,7 @@ import { listPartners } from '@/api/partners';
 import type { PartnerRow } from '@/api/partners';
 import type { WineRow } from '@/lib/supabase';
 import { openStatement, openLedger } from '@/utils/statement';
+import { formatBizNo } from '@/utils/bizNo';
 
 interface ProxyItem {
   wine_id?: number;
@@ -1190,7 +1191,7 @@ const OrderAdmin = () => {
             optionFilterProp='label'
             options={partners.map((p) => ({
               value: p.id,
-              label: `${p.business_name} (${p.business_no})${p.user_id ? '' : ' [수기]'}`,
+              label: `${p.business_name} (${formatBizNo(p.business_no)})${p.user_id ? '' : ' [수기]'}`,
             }))}
             onChange={(id: number) => {
               setProxyPartnerId(id);

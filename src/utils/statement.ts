@@ -1,5 +1,6 @@
 import type { OrderRow } from '@/api/orders';
 import type { OrderSettings } from '@/api/pricing';
+import { formatBizNo } from '@/utils/bizNo';
 
 /** 거래명세표/거래원장 — 인쇄용 창으로 연다 (브라우저 인쇄 → 종이 또는 PDF 저장).
  *  공급자 정보는 관리자 설정 탭(order_settings.supplier_*)에서 입력한다. */
@@ -13,11 +14,6 @@ export interface StatementBuyer {
 }
 
 const won = (n: number) => n.toLocaleString('ko-KR');
-// DB에는 숫자 10자리로 저장되므로 표기 시 000-00-00000 형식으로 복원한다
-const bizNo = (s: string) => {
-  const d = s.replace(/\D/g, '');
-  return d.length === 10 ? `${d.slice(0, 3)}-${d.slice(3, 5)}-${d.slice(5)}` : s;
-};
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -49,7 +45,7 @@ const partyRow = (
     <td class="party">
       <div class="party-label">${label}</div>
       <table class="party-table">
-        <tr><th>등록번호</th><td>${esc(bizNo(businessNo)) || '-'}</td></tr>
+        <tr><th>등록번호</th><td>${esc(formatBizNo(businessNo)) || '-'}</td></tr>
         <tr><th>상호</th><td>${esc(name)}</td><th>성명</th><td>${esc(ceo) || '-'}</td></tr>
         <tr><th>주소</th><td colspan="3">${esc(address) || '-'}</td></tr>
         <tr><th>연락처</th><td colspan="3">${esc(phone) || '-'}</td></tr>
