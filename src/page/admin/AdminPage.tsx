@@ -35,6 +35,7 @@ import PartnerAdmin from '@/page/admin/PartnerAdmin';
 import OrderAdmin from '@/page/admin/OrderAdmin';
 import SettingsAdmin from '@/page/admin/SettingsAdmin';
 import DashboardAdmin from '@/page/admin/DashboardAdmin';
+import StatsAdmin from '@/page/admin/StatsAdmin';
 import Seo from '@/components/Seo';
 
 const { Title } = Typography;
@@ -358,6 +359,12 @@ const AdminPage = () => {
             // 발주는 DB 조회형 — '사이트 반영'과 무관
             label: '발주',
             children: <OrderAdmin />,
+          },
+          {
+            key: 'stats',
+            // 매출 통계 — DB 조회형, '사이트 반영'과 무관
+            label: '통계',
+            children: <StatsAdmin />,
           },
           {
             key: 'partners',
