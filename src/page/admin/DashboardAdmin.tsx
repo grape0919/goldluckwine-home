@@ -29,6 +29,9 @@ import type { BarDatum } from '@/page/admin/charts';
 interface DashboardProps {
   /** 클릭 시 해당 탭으로 이동 */
   onGoTab: (key: string) => void;
+  /** 탭 활성 여부 — antd Tabs 는 비활성 탭을 언마운트하지 않으므로
+   *  다시 활성화될 때 재조회해야 다른 탭에서 등록한 발주가 보인다 */
+  active: boolean;
 }
 
 const won = (n: number) => `${n.toLocaleString('ko-KR')}원`;
@@ -36,7 +39,7 @@ const isOpen = (o: AdminOrderRow) =>
   o.status !== 'done' && o.status !== 'canceled';
 
 /** 운영 대시보드 — 하루 운영(신규 발주 → 배송 → 입금 → 계산서)을 한 화면에서 파악 */
-const DashboardAdmin = ({ onGoTab }: DashboardProps) => {
+const DashboardAdmin = ({ onGoTab, active }: DashboardProps) => {
   const { message } = App.useApp();
   const [orders, setOrders] = useState<AdminOrderRow[]>([]);
   const [partners, setPartners] = useState<PartnerRow[]>([]);
@@ -65,8 +68,8 @@ const DashboardAdmin = ({ onGoTab }: DashboardProps) => {
   }, [message]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (active) load();
+  }, [active, load]);
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);

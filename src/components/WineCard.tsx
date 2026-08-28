@@ -8,17 +8,23 @@ import type { WineInfoType } from '@/types/wine';
 
 const { home, font, color } = customedTheme;
 
-/** 이미지 로딩 실패 시 대체 이미지 (와인 상세 페이지와 동일) */
-const DEFAULT_WINE_IMAGE = '/wines/default.png';
+/** 이미지 로딩 실패 시 최종 폴백 (관리자 설정 이미지도 깨졌을 때) */
+const STATIC_DEFAULT = '/wines/default.png';
 
 interface WineCardProps {
   wine: WineInfoType;
   wineryName?: string;
+  /** 제품 사진이 없을 때 쓸 기본 이미지 — 로더가 home_content 에서 읽어 전달 */
+  defaultImage?: string;
 }
 
 /** 홈 OUR COLLECTION·와인 리스트 공용 와인 카드 (Figma product 프레임).
  *  테두리는 카드가 아니라 그리드(부모)가 그린다. */
-const WineCard = ({ wine, wineryName }: WineCardProps) => (
+const WineCard = ({
+  wine,
+  wineryName,
+  defaultImage = STATIC_DEFAULT,
+}: WineCardProps) => (
   // 카드(링크) 아래에 담기 컨트롤을 형제로 둔다 — 링크 안에 버튼을 넣지 않기 위해
   <CardWrap>
     <CardLink
@@ -35,13 +41,13 @@ const WineCard = ({ wine, wineryName }: WineCardProps) => (
       <div className='card-image'>
         {wine.soldOut && <span className='sold-out-badge'>SOLD OUT</span>}
         <img
-          src={wine.wineImagePath || DEFAULT_WINE_IMAGE}
+          src={wine.wineImagePath || defaultImage}
           alt={`${wine.wineNameEN} ${wine.wineNameKR}`}
           loading='lazy'
           onError={(e) => {
-            // 무한 onError 루프 방지: 디폴트 이미지로는 한 번만 교체
-            if (!e.currentTarget.src.endsWith(DEFAULT_WINE_IMAGE)) {
-              e.currentTarget.src = DEFAULT_WINE_IMAGE;
+            // 무한 onError 루프 방지: 정적 디폴트로는 한 번만 교체
+            if (!e.currentTarget.src.endsWith(STATIC_DEFAULT)) {
+              e.currentTarget.src = STATIC_DEFAULT;
             }
           }}
         />

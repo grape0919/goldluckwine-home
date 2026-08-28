@@ -3,6 +3,9 @@ import {
   App,
   Badge,
   Button,
+  Descriptions,
+  Divider,
+  Drawer,
   Input,
   InputNumber,
   Modal,
@@ -357,6 +360,13 @@ const OrderAdmin = () => {
       message.error(`저장 실패: ${(e as Error).message}`);
     }
   };
+
+  // ── 발주 상세 Drawer — 행 클릭으로 열림, 수정·부가 액션의 진입점 ──
+  const [detailId, setDetailId] = useState<number | null>(null);
+  // 상태 변경·수정 후 load() 로 rows 가 바뀌어도 열린 상세가 최신을 보도록 id 로 참조
+  const detail = detailId == null
+    ? null
+    : rows.find((r) => r.id === detailId) ?? null;
 
   // ── 거래원장 (거래처별 미입금 전체 / 월 단위) ─────────────
   const [ledgerOpen, setLedgerOpen] = useState(false);
@@ -715,8 +725,9 @@ const OrderAdmin = () => {
       ),
     },
     {
+      // 자주 쓰는 액션만 행에 — 나머지(수정·명세표·복사·취소·계산서)는 상세 Drawer 로
       title: '',
-      width: 220,
+      width: 150,
       render: (_, r) => {
         const action = NEXT_ACTION[r.status];
         return (
@@ -724,22 +735,14 @@ const OrderAdmin = () => {
             size={4}
             wrap
           >
-            {r.status !== 'canceled' &&
-              (r.paid_at ? (
-                <Popconfirm
-                  title={`No.${r.id} 입금 확인을 취소할까요?`}
-                  onConfirm={() => togglePaid(r, false)}
-                >
-                  <Button size='small'>입금취소</Button>
-                </Popconfirm>
-              ) : (
-                <Popconfirm
-                  title={`No.${r.id} 입금을 확인 처리할까요?`}
-                  onConfirm={() => togglePaid(r, true)}
-                >
-                  <Button size='small'>입금확인</Button>
-                </Popconfirm>
-              ))}
+            {r.status !== 'canceled' && !r.paid_at && (
+              <Popconfirm
+                title={`No.${r.id} 입금을 확인 처리할까요?`}
+                onConfirm={() => togglePaid(r, true)}
+              >
+                <Button size='small'>입금확인</Button>
+              </Popconfirm>
+            )}
             {action && (
               <Popconfirm
                 title={`No.${r.id} 을 '${ORDER_STATUS_LABEL[action.next]}' 처리할까요?`}
@@ -753,61 +756,6 @@ const OrderAdmin = () => {
                 </Button>
               </Popconfirm>
             )}
-            {r.status !== 'canceled' && r.status !== 'done' && (
-              <Popconfirm
-                title={`No.${r.id} 을 취소할까요?`}
-                onConfirm={() => setStatus(r, 'canceled')}
-              >
-                <Button
-                  size='small'
-                  danger
-                >
-                  취소
-                </Button>
-              </Popconfirm>
-            )}
-            {r.status !== 'canceled' && (
-              <Button
-                size='small'
-                onClick={() =>
-                  openStatement(
-                    r,
-                    {
-                      business_name: r.partners?.business_name ?? '',
-                      business_no: r.partners?.business_no ?? '',
-                      ceo_name: r.partners?.ceo_name ?? '',
-                      address: r.address || (r.partners?.address ?? ''),
-                      phone: r.partners?.phone,
-                    },
-                    settings,
-                  )
-                }
-              >
-                명세표
-              </Button>
-            )}
-            <Button
-              size='small'
-              onClick={() => copyOrder(r)}
-            >
-              복사
-            </Button>
-            {r.status === 'done' &&
-              (r.invoiced_at ? (
-                <Button
-                  size='small'
-                  onClick={() => toggleInvoiced(r, false)}
-                >
-                  발행 취소
-                </Button>
-              ) : (
-                <Button
-                  size='small'
-                  onClick={() => toggleInvoiced(r, true)}
-                >
-                  계산서 발행됨
-                </Button>
-              ))}
           </Space>
         );
       },
@@ -963,89 +911,15 @@ const OrderAdmin = () => {
           selectedRowKeys: selected,
           onChange: (keys) => setSelected(keys as number[]),
         }}
-        expandable={{
-          expandedRowRender: (r) => (
-            <Typography.Paragraph style={{ margin: 0 }}>
-              {r.order_items.map((i) => (
-                <span key={i.id}>
-                  {i.name_en} × {i.qty}병 = {i.amount.toLocaleString()}원 (병당{' '}
-                  {i.unit_price.toLocaleString()}원)
-                  <br />
-                </span>
-              ))}
-              {r.status !== 'canceled' && (
-                <Button
-                  size='small'
-                  type='link'
-                  onClick={() => openEditOrder(r)}
-                >
-                  품목·수량·단가 수정
-                </Button>
-              )}
-              <br />
-              공급가 {r.subtotal.toLocaleString()}원 · 할인 −
-              {r.discount_amount.toLocaleString()}원
-              {r.vat_amount > 0 && (
-                <> · 부가세 {r.vat_amount.toLocaleString()}원</>
-              )}{' '}
-              · 입금액 <b>{r.total_amount.toLocaleString()}원</b>
-              <br />
-              배송지 {r.address || '—'}
-              {r.deposit_deadline && (
-                <>
-                  {' '}
-                  · 입금 기한{' '}
-                  {new Date(r.deposit_deadline).toLocaleDateString('ko-KR')}
-                </>
-              )}
-              <br />
-              {editingMemo?.id === r.id ? (
-                <Space
-                  style={{ marginTop: 4, width: '100%' }}
-                >
-                  <Input.TextArea
-                    autoSize={{ minRows: 1, maxRows: 3 }}
-                    style={{ width: 360 }}
-                    value={editingMemo.memo}
-                    onChange={(e) =>
-                      setEditingMemo({ id: r.id, memo: e.target.value })
-                    }
-                    placeholder='명세표 비고란에 표시됩니다'
-                  />
-                  <Button
-                    size='small'
-                    type='primary'
-                    onClick={saveMemo}
-                  >
-                    저장
-                  </Button>
-                  <Button
-                    size='small'
-                    onClick={() => setEditingMemo(null)}
-                  >
-                    취소
-                  </Button>
-                </Space>
-              ) : (
-                <>
-                  메모 {r.memo || '—'}
-                  <Button
-                    size='small'
-                    type='link'
-                    onClick={() =>
-                      setEditingMemo({ id: r.id, memo: r.memo })
-                    }
-                  >
-                    메모 수정
-                  </Button>
-                  <Typography.Text type='secondary'>
-                    (거래명세표 비고란에 표시)
-                  </Typography.Text>
-                </>
-              )}
-            </Typography.Paragraph>
-          ),
-        }}
+        onRow={(r) => ({
+          style: { cursor: 'pointer' },
+          onClick: (e) => {
+            // 행 안의 버튼·체크박스 클릭은 상세를 열지 않는다
+            const el = e.target as HTMLElement;
+            if (el.closest('button, a, .ant-checkbox-wrapper')) return;
+            setDetailId(r.id);
+          },
+        })}
       />
 
       <Modal
@@ -1295,6 +1169,262 @@ const OrderAdmin = () => {
           </Typography.Text>
         </Space>
       </Modal>
+
+      <Drawer
+        title={detail ? `발주 No.${detail.id}` : ''}
+        open={detail != null}
+        onClose={() => {
+          setDetailId(null);
+          setEditingMemo(null);
+        }}
+        width={560}
+      >
+        {detail && (
+          <Space
+            direction='vertical'
+            size={16}
+            style={{ width: '100%' }}
+          >
+            <div>
+              <Tag color={STATUS_COLOR[detail.status]}>
+                {ORDER_STATUS_LABEL[detail.status]}
+              </Tag>
+              {detail.status !== 'canceled' && (
+                <Tag color={detail.paid_at ? 'green' : 'gold'}>
+                  {detail.paid_at ? '입금완료' : '미입금'}
+                </Tag>
+              )}
+              {overdue(detail) && <Tag color='red'>기한초과</Tag>}
+              {detail.status === 'done' && (
+                <Tag color={detail.invoiced_at ? 'green' : 'orange'}>
+                  {detail.invoiced_at ? '계산서 발행됨' : '계산서 미발행'}
+                </Tag>
+              )}
+            </div>
+
+            <Descriptions
+              size='small'
+              column={1}
+              bordered
+              items={[
+                {
+                  key: 'partner',
+                  label: '거래처',
+                  children: (
+                    <>
+                      {detail.partners?.business_name ?? `#${detail.partner_id}`}
+                      {detail.partners && (
+                        <Typography.Text type='secondary'>
+                          {' '}
+                          · {detail.partners.contact_name}{' '}
+                          {detail.partners.phone}
+                        </Typography.Text>
+                      )}
+                    </>
+                  ),
+                },
+                {
+                  key: 'created',
+                  label: '접수일',
+                  children: new Date(detail.created_at).toLocaleString('ko-KR'),
+                },
+                {
+                  key: 'address',
+                  label: '배송지',
+                  children: detail.address || '—',
+                },
+                ...(detail.deposit_deadline
+                  ? [
+                      {
+                        key: 'deadline',
+                        label: '입금 기한',
+                        children: new Date(
+                          detail.deposit_deadline,
+                        ).toLocaleDateString('ko-KR'),
+                      },
+                    ]
+                  : []),
+              ]}
+            />
+
+            <Table
+              size='small'
+              rowKey='id'
+              pagination={false}
+              dataSource={detail.order_items}
+              columns={[
+                {
+                  title: '품명',
+                  render: (_, i) => (
+                    <>
+                      {i.name_en}
+                      {i.name_kr && (
+                        <Typography.Text type='secondary'>
+                          {' '}
+                          {i.name_kr}
+                        </Typography.Text>
+                      )}
+                    </>
+                  ),
+                },
+                {
+                  title: '수량',
+                  dataIndex: 'qty',
+                  width: 60,
+                  align: 'right',
+                },
+                {
+                  title: '단가',
+                  dataIndex: 'unit_price',
+                  width: 90,
+                  align: 'right',
+                  render: (v: number) => v.toLocaleString(),
+                },
+                {
+                  title: '금액',
+                  dataIndex: 'amount',
+                  width: 100,
+                  align: 'right',
+                  render: (v: number) => v.toLocaleString(),
+                },
+              ]}
+            />
+
+            <Typography.Paragraph style={{ margin: 0 }}>
+              공급가 {detail.subtotal.toLocaleString()}원 · 할인 −
+              {detail.discount_amount.toLocaleString()}원
+              {detail.vat_amount > 0 && (
+                <> · 부가세 {detail.vat_amount.toLocaleString()}원</>
+              )}{' '}
+              · 입금액 <b>{detail.total_amount.toLocaleString()}원</b> (
+              {detail.total_bottles}병)
+            </Typography.Paragraph>
+
+            {editingMemo?.id === detail.id ? (
+              <Space style={{ width: '100%' }}>
+                <Input.TextArea
+                  autoSize={{ minRows: 1, maxRows: 3 }}
+                  style={{ width: 360 }}
+                  value={editingMemo.memo}
+                  onChange={(e) =>
+                    setEditingMemo({ id: detail.id, memo: e.target.value })
+                  }
+                  placeholder='명세표 비고란에 표시됩니다'
+                />
+                <Button
+                  size='small'
+                  type='primary'
+                  onClick={saveMemo}
+                >
+                  저장
+                </Button>
+                <Button
+                  size='small'
+                  onClick={() => setEditingMemo(null)}
+                >
+                  취소
+                </Button>
+              </Space>
+            ) : (
+              <Typography.Paragraph style={{ margin: 0 }}>
+                메모 {detail.memo || '—'}
+                <Button
+                  size='small'
+                  type='link'
+                  onClick={() =>
+                    setEditingMemo({ id: detail.id, memo: detail.memo })
+                  }
+                >
+                  메모 수정
+                </Button>
+                <Typography.Text type='secondary'>
+                  (거래명세표 비고란에 표시)
+                </Typography.Text>
+              </Typography.Paragraph>
+            )}
+
+            <Divider style={{ margin: '4px 0' }} />
+
+            <Space
+              size={8}
+              wrap
+            >
+              {detail.status !== 'canceled' &&
+                (detail.paid_at ? (
+                  <Popconfirm
+                    title={`No.${detail.id} 입금 확인을 취소할까요?`}
+                    onConfirm={() => togglePaid(detail, false)}
+                  >
+                    <Button>입금취소</Button>
+                  </Popconfirm>
+                ) : (
+                  <Popconfirm
+                    title={`No.${detail.id} 입금을 확인 처리할까요?`}
+                    onConfirm={() => togglePaid(detail, true)}
+                  >
+                    <Button>입금확인</Button>
+                  </Popconfirm>
+                ))}
+              {NEXT_ACTION[detail.status] && (
+                <Popconfirm
+                  title={`No.${detail.id} 을 '${ORDER_STATUS_LABEL[NEXT_ACTION[detail.status]!.next]}' 처리할까요?`}
+                  onConfirm={() =>
+                    setStatus(detail, NEXT_ACTION[detail.status]!.next)
+                  }
+                >
+                  <Button type='primary'>
+                    {NEXT_ACTION[detail.status]!.label}
+                  </Button>
+                </Popconfirm>
+              )}
+              {detail.status !== 'canceled' && (
+                <Button onClick={() => openEditOrder(detail)}>
+                  품목·수량·단가 수정
+                </Button>
+              )}
+              {detail.status !== 'canceled' && (
+                <Button
+                  onClick={() =>
+                    openStatement(
+                      detail,
+                      {
+                        business_name: detail.partners?.business_name ?? '',
+                        business_no: detail.partners?.business_no ?? '',
+                        ceo_name: detail.partners?.ceo_name ?? '',
+                        address:
+                          detail.address || (detail.partners?.address ?? ''),
+                        phone: detail.partners?.phone,
+                      },
+                      settings,
+                    )
+                  }
+                >
+                  명세표
+                </Button>
+              )}
+              <Button onClick={() => copyOrder(detail)}>복사해 새 발주</Button>
+              {detail.status === 'done' &&
+                (detail.invoiced_at ? (
+                  <Button onClick={() => toggleInvoiced(detail, false)}>
+                    계산서 발행 취소
+                  </Button>
+                ) : (
+                  <Button onClick={() => toggleInvoiced(detail, true)}>
+                    계산서 발행됨
+                  </Button>
+                ))}
+              {detail.status !== 'canceled' && detail.status !== 'done' && (
+                <Popconfirm
+                  title={`No.${detail.id} 을 취소할까요?`}
+                  onConfirm={() => setStatus(detail, 'canceled')}
+                >
+                  <Button danger>발주 취소</Button>
+                </Popconfirm>
+              )}
+            </Space>
+          </Space>
+        )}
+      </Drawer>
 
       <Modal
         title='거래원장 출력'

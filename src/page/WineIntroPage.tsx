@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import styled from 'styled-components';
 
 import { fetchWineById, fetchWineryById } from '@/api/wines';
+import { fetchDefaultWineImage } from '@/api/homeContent';
 import { trackEvent } from '@/lib/analytics';
 import type { WineInfoType } from '@/types/wine';
 import type { WineryInfoType } from '@/types/winery';
@@ -15,11 +16,13 @@ import OrderQuickAdd from '@/components/OrderQuickAdd';
 const { home, font, color } = customedTheme;
 
 /** 이미지 로딩 실패 시 대체 이미지 (와인 카드와 동일) */
-const DEFAULT_WINE_IMAGE = '/wines/default.png';
+/** 이미지 로딩 실패 시 최종 폴백 (관리자 설정 이미지도 깨졌을 때) */
+const STATIC_DEFAULT = '/wines/default.png';
 
 interface WineLoaderData {
   wine: WineInfoType;
   winery: WineryInfoType | null;
+  defaultImage: string;
 }
 
 /** 빌드(SSG)·클라이언트 네비게이션 시점에 와인 데이터를 미리 로드 →
@@ -28,15 +31,18 @@ export async function wineLoader({ params }: LoaderFunctionArgs) {
   const wine = await fetchWineById(Number(params.wineId));
   // 존재하지 않는 id (클라이언트에서 직접 접근) — 404 로 (SSG 빌드 중엔 발생 안 함)
   if (!wine) throw redirect('/not-found');
-  const winery = await fetchWineryById(wine.wineryId);
-  return { wine, winery };
+  const [winery, defaultImage] = await Promise.all([
+    fetchWineryById(wine.wineryId),
+    fetchDefaultWineImage(),
+  ]);
+  return { wine, winery, defaultImage };
 }
 
 /** 와인 상세 (Figma 3557:5871) — 리스트와 같은 스플릿 타이틀 헤더 +
  *  풀블리드 프로덕트 로우(좌 보틀 / 우 반투명 정보 패널 + 스펙 테이블) */
 const WineIntroPage: React.FC = () => {
   const { wineId } = useParams<{ wineId: string }>();
-  const { wine, winery } = useLoaderData() as WineLoaderData;
+  const { wine, winery, defaultImage } = useLoaderData() as WineLoaderData;
 
   // GA4: 어떤 와인이 조회되는지 수집 (SSG 빌드 시점엔 실행 안 됨)
   useEffect(() => {
@@ -124,12 +130,12 @@ const WineIntroPage: React.FC = () => {
         <div className='thumbnail'>
           {wine && (
             <img
-              src={wine.wineImagePath || DEFAULT_WINE_IMAGE}
+              src={wine.wineImagePath || defaultImage}
               alt={`${wine.wineNameEN} ${wine.wineNameKR} 와인 보틀`}
               onError={(e) => {
                 // 무한 onError 루프 방지: 디폴트 이미지로는 한 번만 교체
-                if (!e.currentTarget.src.endsWith(DEFAULT_WINE_IMAGE)) {
-                  e.currentTarget.src = DEFAULT_WINE_IMAGE;
+                if (!e.currentTarget.src.endsWith(STATIC_DEFAULT)) {
+                  e.currentTarget.src = STATIC_DEFAULT;
                 }
               }}
             />

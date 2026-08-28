@@ -323,7 +323,12 @@ const AdminPage = () => {
           {
             key: 'dashboard',
             label: '대시보드',
-            children: <DashboardAdmin onGoTab={setTab} />,
+            children: (
+              <DashboardAdmin
+                onGoTab={setTab}
+                active={tab === 'dashboard'}
+              />
+            ),
           },
           {
             key: 'wines',
@@ -364,7 +369,7 @@ const AdminPage = () => {
             key: 'stats',
             // 매출 통계 — DB 조회형, '사이트 반영'과 무관
             label: '통계',
-            children: <StatsAdmin />,
+            children: <StatsAdmin active={tab === 'stats'} />,
           },
           {
             key: 'partners',

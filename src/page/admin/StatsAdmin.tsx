@@ -20,9 +20,14 @@ interface StatRow {
   total: number;
 }
 
+interface StatsProps {
+  /** 탭 활성 여부 — 활성화될 때마다 재조회 (다른 탭의 발주 등록 반영) */
+  active: boolean;
+}
+
 /** 매출 통계 — 연도를 골라 월별 추이 차트 + 거래처×월 매출 표.
  *  매출 = 취소 제외 발주의 입금액(total_amount, 공급가+부가세). */
-const StatsAdmin = () => {
+const StatsAdmin = ({ active }: StatsProps) => {
   const { message } = App.useApp();
   const [orders, setOrders] = useState<AdminOrderRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -40,8 +45,8 @@ const StatsAdmin = () => {
   }, [message]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (active) load();
+  }, [active, load]);
 
   const valid = orders.filter((o) => o.status !== 'canceled');
 

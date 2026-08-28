@@ -10,6 +10,7 @@ import {
 } from 'motion/react';
 import { customedTheme } from '@/styles/theme';
 import { fetchWineries, fetchWines } from '@/api/wines';
+import { fetchDefaultWineImage } from '@/api/homeContent';
 import type { WineInfoType } from '@/types/wine';
 import type { WineryInfoType } from '@/types/winery';
 import { WineTypes } from '@/enum/wine';
@@ -90,19 +91,25 @@ const CHEVRON =
 interface WineListLoaderData {
   wines: WineInfoType[];
   wineries: WineryInfoType[];
+  defaultImage: string;
 }
 
 /** 빌드(SSG) 시점에 전체 와인·도멘을 로드 → 프리렌더 HTML에 카드와
  *  상세 페이지 링크가 박힌다 (크롤러가 /wines/:id 를 발견하는 경로).
  *  필터는 하이드레이션 후 클라이언트에서 URL 쿼리로 동작한다. */
 export async function wineListLoader() {
-  const [wines, wineries] = await Promise.all([fetchWines(), fetchWineries()]);
-  return { wines, wineries };
+  const [wines, wineries, defaultImage] = await Promise.all([
+    fetchWines(),
+    fetchWineries(),
+    fetchDefaultWineImage(),
+  ]);
+  return { wines, wineries, defaultImage };
 }
 
 /** 와인 리스트 (Figma 3557:345) — 스플릿 타이틀 + 밑줄 드롭다운 필터 + 풀블리드 카드 그리드 */
 const WineListPage: React.FC = () => {
-  const { wines, wineries } = useLoaderData() as WineListLoaderData;
+  const { wines, wineries, defaultImage } =
+    useLoaderData() as WineListLoaderData;
   const [searchParams, setSearchParams] = useSearchParams();
 
   // 필터 상태는 URL 쿼리에 보관 — 뒤로가기·링크 공유 시 유지
@@ -319,6 +326,7 @@ const WineListPage: React.FC = () => {
                 <WineCard
                   wine={wine}
                   wineryName={wineryNameById[wine.wineryId]}
+                  defaultImage={defaultImage}
                 />
               </GridCell>
             ))}

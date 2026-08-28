@@ -26,6 +26,9 @@ export const HOME_CONTENT_DEFAULTS = {
   gallery_3: '/home/gallery/gallery-3.webp',
   gallery_4: '/home/gallery/gallery-4.webp',
   gallery_5: '/home/gallery/gallery-5.webp',
+  // 제품 사진이 없는 와인에 쓰는 기본 이미지 — 와인 관리 탭에서 교체 (홈 전용 값은 아니지만
+  // home_content 가 유일한 '공개 read + 관리자 write' key-value 라 여기 둔다)
+  wine_default_image: '/wines/default.png',
 } as const;
 
 export type HomeContentKey = keyof typeof HOME_CONTENT_DEFAULTS;
@@ -53,6 +56,20 @@ export async function fetchHomeContent(): Promise<HomeContent> {
     }
   }
   return content;
+}
+
+/** 제품 사진이 없는 와인의 기본 이미지 URL — SSG 로더에서 호출해 프리렌더에 굽는다.
+ *  (관리자에서 교체 후 '사이트 반영'을 눌러야 공개 사이트에 반영) */
+export async function fetchDefaultWineImage(): Promise<string> {
+  const fallback = HOME_CONTENT_DEFAULTS.wine_default_image;
+  if (!isSupabaseConfigured) return fallback;
+  const { data, error } = await supabase
+    .from('home_content')
+    .select('value')
+    .eq('key', 'wine_default_image')
+    .maybeSingle();
+  if (error || !data?.value?.trim()) return fallback;
+  return data.value;
 }
 
 /** 관리자 저장 — 변경된 키만 upsert */
