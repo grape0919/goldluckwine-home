@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { App, Button, Card, Form, Input, Spin, Typography } from 'antd';
+import { useCallback, useEffect, useState } from 'react';
+import { Alert, App, Button, Card, Form, Input, Spin, Typography } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
 import {
   fetchHomeContent,
@@ -47,21 +47,25 @@ const HomeContentAdmin = ({ onChanged }: HomeContentAdminProps) => {
   const { message } = App.useApp();
   const [form] = Form.useForm<FormValues>();
   const [initial, setInitial] = useState<HomeContent | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoadError(null);
+    try {
+      const content = await fetchHomeContent();
+      setInitial(content);
+      form.setFieldsValue(content);
+    } catch (e) {
+      // 현재 값을 모르는 채(기본값 폼) 저장하면 실제 콘텐츠가 덮어써진다 — 폼을 열지 않는다
+      setLoadError((e as Error).message);
+    }
+  }, [form]);
 
   useEffect(() => {
-    fetchHomeContent()
-      .then((content) => {
-        setInitial(content);
-        form.setFieldsValue(content);
-      })
-      .catch((e) => {
-        message.error(`불러오기 실패: ${(e as Error).message}`);
-        // 실패해도 기본값으로 폼을 열어준다 — 스피너로 굳지 않게
-        setInitial({ ...HOME_CONTENT_DEFAULTS });
-        form.setFieldsValue({ ...HOME_CONTENT_DEFAULTS });
-      });
-  }, [form, message]);
+    load();
+  }, [load]);
 
   const handleSave = async (values: FormValues) => {
     if (!initial) return;
@@ -101,6 +105,7 @@ const HomeContentAdmin = ({ onChanged }: HomeContentAdminProps) => {
       }
       setInitial(next);
       form.setFieldsValue(next);
+      setDirty(false);
       onChanged();
       message.success(
         '저장했습니다. "사이트 반영"을 눌러야 공개 사이트에 반영됩니다.',
@@ -111,6 +116,19 @@ const HomeContentAdmin = ({ onChanged }: HomeContentAdminProps) => {
       setSaving(false);
     }
   };
+
+  if (loadError) {
+    return (
+      <Alert
+        type='error'
+        showIcon
+        message='홈 콘텐츠를 불러오지 못했습니다'
+        description={`현재 값을 확인할 수 없어 편집을 열지 않습니다. 이 상태에서 저장하면 실제 콘텐츠가 기본값으로 덮어써질 수 있기 때문입니다. (${loadError})`}
+        action={<Button onClick={load}>다시 시도</Button>}
+        style={{ maxWidth: 720 }}
+      />
+    );
+  }
 
   if (!initial) {
     return (
@@ -125,6 +143,7 @@ const HomeContentAdmin = ({ onChanged }: HomeContentAdminProps) => {
       form={form}
       layout='vertical'
       onFinish={handleSave}
+      onValuesChange={() => setDirty(true)}
     >
       <Card
         title='문구'
@@ -183,14 +202,34 @@ const HomeContentAdmin = ({ onChanged }: HomeContentAdminProps) => {
         </Card>
       ))}
 
-      <Button
-        type='primary'
-        htmlType='submit'
-        icon={<SaveOutlined />}
-        loading={saving}
+      <div
+        style={{
+          position: 'sticky',
+          bottom: 0,
+          padding: '12px 0',
+          background: '#f5f5f5',
+          borderTop: '1px solid #e8e8e8',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+        }}
       >
-        저장
-      </Button>
+        <Button
+          type='primary'
+          htmlType='submit'
+          icon={<SaveOutlined />}
+          loading={saving}
+        >
+          저장
+        </Button>
+        {dirty ? (
+          <Text type='warning'>저장되지 않은 변경사항이 있습니다</Text>
+        ) : (
+          <Text type='secondary'>
+            저장 후 &quot;사이트 반영&quot;을 눌러야 공개 사이트에 적용됩니다
+          </Text>
+        )}
+      </div>
     </Form>
   );
 };

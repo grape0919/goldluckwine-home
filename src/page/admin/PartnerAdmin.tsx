@@ -2,6 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   App,
+  Descriptions,
+  Divider,
+  Drawer,
   Button,
   Form,
   Input,
@@ -46,7 +49,19 @@ const PartnerAdmin = () => {
   const [reason, setReason] = useState('');
   const [manualOpen, setManualOpen] = useState(false);
   const [manualSaving, setManualSaving] = useState(false);
-  const [form] = Form.useForm<{ discount_rate: number; memo: string }>();
+  const [form] = Form.useForm<{
+    discount_rate: number;
+    memo: string;
+    // 수기 거래처 전용 — 계정 거래처 모달에서는 렌더되지 않는다
+    business_name?: string;
+    business_no?: string;
+    ceo_name?: string;
+    contact_name?: string;
+    phone?: string;
+    email?: string;
+    invoice_email?: string;
+    address?: string;
+  }>();
   const [manualForm] = Form.useForm<{
     business_name: string;
     business_no: string;
@@ -94,11 +109,26 @@ const PartnerAdmin = () => {
     }
   };
 
+  // 행 클릭 → 상세 Drawer (발주 탭과 동일 패턴). 상태 변경 후에도 최신을 보도록 id 참조
+  const [detailId, setDetailId] = useState<number | null>(null);
+
+  // 서류 열람 — 창을 여러 개 동시에 열면 브라우저가 두 번째부터 차단하므로
+  // 목록 모달을 띄우고 각 서류를 클릭으로 하나씩 연다
+  const [docsFor, setDocsFor] = useState<{
+    name: string;
+    urls: string[];
+  } | null>(null);
+
   const openDocs = async (row: PartnerRow) => {
     try {
-      for (const path of row.license_images) {
-        window.open(await getPartnerDocUrl(path), '_blank', 'noopener');
+      const urls = await Promise.all(
+        row.license_images.map((path) => getPartnerDocUrl(path)),
+      );
+      if (urls.length === 1) {
+        window.open(urls[0], '_blank', 'noopener');
+        return;
       }
+      setDocsFor({ name: row.business_name, urls });
     } catch (e) {
       message.error(`서류 열람 실패: ${(e as Error).message}`);
     }
@@ -128,6 +158,9 @@ const PartnerAdmin = () => {
   const saveEdit = async () => {
     if (!editing) return;
     const values = await form.validateFields();
+    if (typeof values.business_no === 'string') {
+      values.business_no = values.business_no.replace(/\D/g, '');
+    }
     try {
       await updatePartnerAdmin(editing.id, values);
       setRows((rs) =>
@@ -153,6 +186,8 @@ const PartnerAdmin = () => {
       )
     : rows;
   const pendingCount = rows.filter((r) => r.status === 'pending').length;
+  const detail =
+    detailId == null ? null : rows.find((r) => r.id === detailId) ?? null;
 
   const columns: ColumnsType<PartnerRow> = [
     {
@@ -212,78 +247,35 @@ const PartnerAdmin = () => {
       render: (_, r) => `${r.discount_rate}%`,
     },
     {
+      // 자주 쓰는 승인·반려만 행에 — 나머지(서류·수정·중지·복귀)는 상세 Drawer 로
       title: '',
-      width: 300,
-      render: (_, r) => (
-        <Space size={4} wrap>
-          {r.license_images.length > 0 && (
-            <Button
-              size='small'
-              type='text'
-              icon={<FileImageOutlined />}
-              onClick={() => openDocs(r)}
-            >
-              서류 {r.license_images.length}
-            </Button>
-          )}
-          <Button
-            size='small'
-            onClick={() => {
-              setEditing(r);
-              form.setFieldsValue({
-                discount_rate: r.discount_rate,
-                memo: r.memo,
-              });
-            }}
-          >
-            수정
-          </Button>
-          {r.status === 'pending' && (
-            <>
-              <Popconfirm
-                title={`${r.business_name} 을(를) 승인할까요?`}
-                onConfirm={() => setStatus(r, 'approved')}
-              >
-                <Button
-                  size='small'
-                  type='primary'
-                >
-                  승인
-                </Button>
-              </Popconfirm>
-              <Button
-                size='small'
-                danger
-                onClick={() => {
-                  setReason(r.status_reason);
-                  setReasonFor({ row: r, status: 'rejected' });
-                }}
-              >
-                반려
-              </Button>
-            </>
-          )}
-          {r.status === 'approved' && (
-            <Button
-              size='small'
-              onClick={() => {
-                setReason('');
-                setReasonFor({ row: r, status: 'suspended' });
-              }}
-            >
-              중지
-            </Button>
-          )}
-          {(r.status === 'suspended' || r.status === 'rejected') && (
+      width: 150,
+      render: (_, r) =>
+        r.status === 'pending' ? (
+          <Space size={4}>
             <Popconfirm
-              title='이 거래처를 승인 상태로 되돌릴까요?'
+              title={`${r.business_name} 을(를) 승인할까요?`}
               onConfirm={() => setStatus(r, 'approved')}
             >
-              <Button size='small'>승인으로 복귀</Button>
+              <Button
+                size='small'
+                type='primary'
+              >
+                승인
+              </Button>
             </Popconfirm>
-          )}
-        </Space>
-      ),
+            <Button
+              size='small'
+              danger
+              onClick={() => {
+                setReason(r.status_reason);
+                setReasonFor({ row: r, status: 'rejected' });
+              }}
+            >
+              반려
+            </Button>
+          </Space>
+        ) : null,
     },
   ];
 
@@ -326,30 +318,14 @@ const PartnerAdmin = () => {
         dataSource={filtered}
         pagination={{ pageSize: 20 }}
         scroll={{ x: 'max-content' }}
-        expandable={{
-          expandedRowRender: (r) => (
-            <Typography.Paragraph style={{ margin: 0 }}>
-              대표자 {r.ceo_name || '—'} · 배송지 {r.address || '—'} ·
-              세금계산서 {r.invoice_email || r.email}
-              <br />
-              가입 {new Date(r.created_at).toLocaleString('ko-KR')}
-              {r.terms_agreed_at &&
-                ` · 약관 동의 ${new Date(r.terms_agreed_at).toLocaleString('ko-KR')}`}
-              {r.status_reason && (
-                <>
-                  <br />
-                  사유: {r.status_reason}
-                </>
-              )}
-              {r.memo && (
-                <>
-                  <br />
-                  메모: {r.memo}
-                </>
-              )}
-            </Typography.Paragraph>
-          ),
-        }}
+        onRow={(r) => ({
+          style: { cursor: 'pointer' },
+          onClick: (e) => {
+            const el = e.target as HTMLElement;
+            if (el.closest('button, a, .ant-checkbox-wrapper')) return;
+            setDetailId(r.id);
+          },
+        })}
       />
 
       <Modal
@@ -430,7 +406,7 @@ const PartnerAdmin = () => {
       </Modal>
 
       <Modal
-        title={`${editing?.business_name ?? ''} — 할인율·메모`}
+        title={`${editing?.business_name ?? ''} — ${editing && !editing.user_id ? '정보 수정' : '할인율·메모'}`}
         open={Boolean(editing)}
         onOk={saveEdit}
         onCancel={() => setEditing(null)}
@@ -442,6 +418,66 @@ const PartnerAdmin = () => {
           form={form}
           layout='vertical'
         >
+          {editing && !editing.user_id && (
+            <>
+              <Typography.Text
+                type='secondary'
+                style={{ display: 'block', marginBottom: 12 }}
+              >
+                수기 거래처는 계정이 없어 관리자가 정보를 직접 수정합니다.
+              </Typography.Text>
+              <Form.Item
+                name='business_name'
+                label='상호'
+                rules={[{ required: true, message: '상호를 입력하세요' }]}
+              >
+                <Input />
+              </Form.Item>
+              <Form.Item
+                name='business_no'
+                label='사업자등록번호'
+                rules={[{ required: true, message: '사업자번호를 입력하세요' }]}
+              >
+                <Input placeholder='000-00-00000' />
+              </Form.Item>
+              <Form.Item
+                name='ceo_name'
+                label='대표자'
+              >
+                <Input />
+              </Form.Item>
+              <Form.Item
+                name='contact_name'
+                label='담당자'
+              >
+                <Input />
+              </Form.Item>
+              <Form.Item
+                name='phone'
+                label='연락처'
+              >
+                <Input />
+              </Form.Item>
+              <Form.Item
+                name='email'
+                label='이메일'
+              >
+                <Input type='email' />
+              </Form.Item>
+              <Form.Item
+                name='invoice_email'
+                label='세금계산서 수신 이메일'
+              >
+                <Input type='email' />
+              </Form.Item>
+              <Form.Item
+                name='address'
+                label='배송지 주소'
+              >
+                <Input />
+              </Form.Item>
+            </>
+          )}
           <Form.Item
             name='discount_rate'
             label='거래처 할인율(%) — 품목 단가 위에 곱해서 적용'
@@ -450,6 +486,7 @@ const PartnerAdmin = () => {
               min={0}
               max={99}
               step={0.5}
+              suffix='%'
             />
           </Form.Item>
           <Form.Item
@@ -470,7 +507,11 @@ const PartnerAdmin = () => {
         open={Boolean(reasonFor)}
         onOk={async () => {
           if (!reasonFor) return;
-          await setStatus(reasonFor.row, reasonFor.status, reason);
+          if (!reason.trim()) {
+            message.warning('사유를 입력해 주세요. 거래처 화면에 표시됩니다.');
+            return;
+          }
+          await setStatus(reasonFor.row, reasonFor.status, reason.trim());
           setReasonFor(null);
         }}
         onCancel={() => setReasonFor(null)}
@@ -484,6 +525,200 @@ const PartnerAdmin = () => {
           onChange={(e) => setReason(e.target.value)}
           placeholder='거래처에게 표시되는 사유입니다.'
         />
+      </Modal>
+
+      <Drawer
+        title={detail ? detail.business_name : ''}
+        open={detail != null}
+        onClose={() => setDetailId(null)}
+        width={520}
+      >
+        {detail && (
+          <Space
+            direction='vertical'
+            size={16}
+            style={{ width: '100%' }}
+          >
+            <div>
+              <Tag color={STATUS_META[detail.status].color}>
+                {STATUS_META[detail.status].label}
+              </Tag>
+              {!detail.user_id && <Tag>수기</Tag>}
+              {detail.nts_status && (
+                <Tag
+                  color={detail.nts_status === '계속사업자' ? 'green' : 'orange'}
+                >
+                  {detail.nts_status}
+                </Tag>
+              )}
+            </div>
+
+            <Descriptions
+              size='small'
+              column={1}
+              bordered
+              items={[
+                {
+                  key: 'no',
+                  label: '사업자번호',
+                  children: formatBizNo(detail.business_no),
+                },
+                { key: 'ceo', label: '대표자', children: detail.ceo_name || '—' },
+                {
+                  key: 'contact',
+                  label: '담당자',
+                  children: `${detail.contact_name || '—'} · ${detail.phone || '—'}`,
+                },
+                { key: 'email', label: '이메일', children: detail.email || '—' },
+                {
+                  key: 'invoice',
+                  label: '세금계산서',
+                  children: detail.invoice_email || detail.email || '—',
+                },
+                {
+                  key: 'address',
+                  label: '배송지',
+                  children: detail.address || '—',
+                },
+                {
+                  key: 'discount',
+                  label: '할인율',
+                  children: `${detail.discount_rate}%`,
+                },
+                {
+                  key: 'created',
+                  label: '가입일',
+                  children: new Date(detail.created_at).toLocaleString('ko-KR'),
+                },
+                ...(detail.terms_agreed_at
+                  ? [
+                      {
+                        key: 'terms',
+                        label: '약관 동의',
+                        children: new Date(
+                          detail.terms_agreed_at,
+                        ).toLocaleString('ko-KR'),
+                      },
+                    ]
+                  : []),
+                ...(detail.status_reason
+                  ? [
+                      {
+                        key: 'reason',
+                        label: '사유',
+                        children: detail.status_reason,
+                      },
+                    ]
+                  : []),
+                ...(detail.memo
+                  ? [{ key: 'memo', label: '메모', children: detail.memo }]
+                  : []),
+              ]}
+            />
+
+            <Divider style={{ margin: '4px 0' }} />
+
+            <Space
+              size={8}
+              wrap
+            >
+              {detail.license_images.length > 0 && (
+                <Button
+                  icon={<FileImageOutlined />}
+                  onClick={() => openDocs(detail)}
+                >
+                  서류 {detail.license_images.length}
+                </Button>
+              )}
+              <Button
+                onClick={() => {
+                  setEditing(detail);
+                  form.setFieldsValue(
+                    detail.user_id
+                      ? { discount_rate: detail.discount_rate, memo: detail.memo }
+                      : {
+                          business_name: detail.business_name,
+                          business_no: formatBizNo(detail.business_no),
+                          ceo_name: detail.ceo_name,
+                          contact_name: detail.contact_name,
+                          phone: detail.phone,
+                          email: detail.email,
+                          invoice_email: detail.invoice_email,
+                          address: detail.address,
+                          discount_rate: detail.discount_rate,
+                          memo: detail.memo,
+                        },
+                  );
+                }}
+              >
+                {detail.user_id ? '할인율·메모 수정' : '정보 수정'}
+              </Button>
+              {detail.status === 'pending' && (
+                <>
+                  <Popconfirm
+                    title={`${detail.business_name} 을(를) 승인할까요?`}
+                    onConfirm={() => setStatus(detail, 'approved')}
+                  >
+                    <Button type='primary'>승인</Button>
+                  </Popconfirm>
+                  <Button
+                    danger
+                    onClick={() => {
+                      setReason(detail.status_reason);
+                      setReasonFor({ row: detail, status: 'rejected' });
+                    }}
+                  >
+                    반려
+                  </Button>
+                </>
+              )}
+              {detail.status === 'approved' && (
+                <Button
+                  onClick={() => {
+                    setReason(detail.status_reason);
+                    setReasonFor({ row: detail, status: 'suspended' });
+                  }}
+                >
+                  중지
+                </Button>
+              )}
+              {(detail.status === 'suspended' ||
+                detail.status === 'rejected') && (
+                <Popconfirm
+                  title={`${detail.business_name} 을(를) 승인 상태로 되돌릴까요?`}
+                  onConfirm={() =>
+                    setStatus(detail, 'approved', detail.status_reason)
+                  }
+                >
+                  <Button>승인으로 복귀</Button>
+                </Popconfirm>
+              )}
+            </Space>
+          </Space>
+        )}
+      </Drawer>
+
+      <Modal
+        title={docsFor ? `${docsFor.name} — 서류 ${docsFor.urls.length}장` : ''}
+        open={Boolean(docsFor)}
+        onCancel={() => setDocsFor(null)}
+        footer={null}
+        width={320}
+      >
+        <Space
+          direction='vertical'
+          style={{ width: '100%' }}
+        >
+          {docsFor?.urls.map((url, i) => (
+            <Button
+              key={url}
+              block
+              onClick={() => window.open(url, '_blank', 'noopener')}
+            >
+              서류 {i + 1} 열기
+            </Button>
+          ))}
+        </Space>
       </Modal>
     </>
   );

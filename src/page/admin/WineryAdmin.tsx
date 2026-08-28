@@ -12,7 +12,7 @@ import {
   Table,
   Tooltip,
 } from 'antd';
-import { ExportOutlined, PlusOutlined } from '@ant-design/icons';
+import { ExportOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import {
   DndContext,
   PointerSensor,
@@ -210,6 +210,12 @@ const WineryAdmin = ({ onChanged }: { onChanged?: () => void }) => {
           onChange={(e) => setSearch(e.target.value)}
         />
         <Button
+          icon={<ReloadOutlined />}
+          onClick={reload}
+        >
+          새로고침
+        </Button>
+        <Button
           type='primary'
           icon={<PlusOutlined />}
           onClick={openCreate}
@@ -229,6 +235,7 @@ const WineryAdmin = ({ onChanged }: { onChanged?: () => void }) => {
         >
           <Table<WineryRow>
             rowKey='id'
+            size='middle'
             loading={loading}
             dataSource={filtered}
             pagination={false}

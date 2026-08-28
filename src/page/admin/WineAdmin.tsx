@@ -15,7 +15,12 @@ import {
   Tooltip,
   Typography,
 } from 'antd';
-import { CopyOutlined, ExportOutlined, PlusOutlined } from '@ant-design/icons';
+import {
+  CopyOutlined,
+  ExportOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons';
 import {
   DndContext,
   PointerSensor,
@@ -440,6 +445,12 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
           {soldOutCount > 0 ? ` · 솔드아웃 ${soldOutCount}개` : ''}
         </Typography.Text>
         <div style={{ flex: 1 }} />
+        <Button
+          icon={<ReloadOutlined />}
+          onClick={reload}
+        >
+          새로고침
+        </Button>
         <Button onClick={openDefaultImg}>기본 사진</Button>
         <Button
           type='primary'
@@ -495,12 +506,13 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
             >
               이미지 업로드
             </Button>
-            <Button
-              loading={defaultImgSaving}
-              onClick={resetDefaultImg}
+            <Popconfirm
+              title='기본 사진을 초기 이미지로 되돌릴까요?'
+              okText='되돌리기'
+              onConfirm={resetDefaultImg}
             >
-              초기 이미지로
-            </Button>
+              <Button loading={defaultImgSaving}>초기 이미지로</Button>
+            </Popconfirm>
           </Space>
         </Space>
       </Modal>
@@ -516,6 +528,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
         >
           <Table<WineRow>
             rowKey='id'
+            size='middle'
             loading={loading}
             dataSource={filtered}
             pagination={{ pageSize: 20 }}
@@ -612,11 +625,20 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
                     size={0}
                     align='center'
                   >
-                    <Switch
-                      size='small'
-                      checked={row.orderable === true}
-                      onChange={(next) => toggleOrderable(row, next)}
-                    />
+                    <Tooltip
+                      title={
+                        prices[row.id]
+                          ? undefined
+                          : '공급가를 먼저 입력해야 발주 목록에 노출됩니다 (수정에서 입력)'
+                      }
+                    >
+                      <Switch
+                        size='small'
+                        checked={row.orderable === true}
+                        disabled={!prices[row.id] && row.orderable !== true}
+                        onChange={(next) => toggleOrderable(row, next)}
+                      />
+                    </Tooltip>
                     <span style={{ fontSize: 11, color: '#888' }}>
                       {prices[row.id]
                         ? `${(
@@ -632,16 +654,19 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
                 dataIndex: 'is_featured',
                 width: 90,
                 render: (v: boolean, row) => (
-                  <Switch
-                    size='small'
-                    checked={v}
-                    onChange={(next) => toggleFeatured(row, next)}
-                  />
+                  <Tooltip title='홈 OUR COLLECTION — 켠 것 중 정렬순 앞 3개만 표시'>
+                    <Switch
+                      size='small'
+                      checked={v}
+                      onChange={(next) => toggleFeatured(row, next)}
+                    />
+                  </Tooltip>
                 ),
               },
               {
                 title: '',
                 width: 190,
+                fixed: 'right',
                 render: (_, row) => (
                   <Space size={4}>
                     <Tooltip title='공개 페이지 보기'>
@@ -668,7 +693,10 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
                       수정
                     </Button>
                     <Popconfirm
-                      title='이 와인을 삭제할까요?'
+                      title={`'${row.name_en}' 을(를) 삭제할까요?`}
+                      description='발주 내역의 스냅샷은 남지만 상품은 복구할 수 없습니다.'
+                      okText='삭제'
+                      okButtonProps={{ danger: true }}
                       onConfirm={() => handleDelete(row)}
                     >
                       <Button

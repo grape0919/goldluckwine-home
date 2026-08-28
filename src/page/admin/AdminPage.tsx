@@ -9,7 +9,9 @@ import {
   Input,
   Popconfirm,
   Space,
+  Spin,
   Tabs,
+  Tag,
   Tooltip,
   Typography,
 } from 'antd';
@@ -171,7 +173,15 @@ const AdminPage = () => {
     );
   }
 
-  if (checking) return null;
+  if (checking)
+    return (
+    <Wrapper>
+      <div style={{ textAlign: 'center', paddingTop: 160 }}>
+        <Spin size='large' />
+      </div>
+    </Wrapper>
+  );
+
 
   if (!session) {
     return (
@@ -220,7 +230,15 @@ const AdminPage = () => {
   }
 
   // 관리자 여부 확인 중 — 일반 사용자에게 관리자 UI가 잠깐이라도 보이지 않게
-  if (isAdmin === null) return null;
+  if (isAdmin === null)
+    return (
+    <Wrapper>
+      <div style={{ textAlign: 'center', paddingTop: 160 }}>
+        <Spin size='large' />
+      </div>
+    </Wrapper>
+  );
+
 
   if (!isAdmin) {
     return (
@@ -240,6 +258,14 @@ const AdminPage = () => {
             이 계정({session.user.email})은 관리자로 등록되어 있지 않습니다.
             거래처 발주는 발주 페이지를 이용해 주세요.
           </Typography.Paragraph>
+          <Button
+            type='primary'
+            block
+            href='/order'
+            style={{ marginBottom: 8 }}
+          >
+            발주 페이지로 이동
+          </Button>
           <Button
             block
             onClick={() => supabase.auth.signOut()}
@@ -281,6 +307,7 @@ const AdminPage = () => {
               okText='반영'
               cancelText='취소'
             >
+              {pendingChanges && <Tag color='orange'>미반영 변경 있음</Tag>}
               <Badge dot={pendingChanges}>
                 <Button
                   type='primary'
