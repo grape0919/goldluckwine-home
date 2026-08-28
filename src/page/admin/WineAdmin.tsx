@@ -49,6 +49,11 @@ import {
   deleteWinePrice,
 } from '@/api/pricing';
 import type { WinePriceRow } from '@/api/pricing';
+import {
+  fetchDefaultWineImage,
+  upsertHomeContent,
+  HOME_CONTENT_DEFAULTS,
+} from '@/api/homeContent';
 
 interface WineFormValues {
   winery_id: number;
@@ -97,6 +102,47 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
   const [saving, setSaving] = useState(false);
   const [prices, setPrices] = useState<Record<number, WinePriceRow>>({});
   const [form] = Form.useForm<WineFormValues>();
+
+  // ── 기본 제품 사진 (사진 없는 와인의 공개 사이트 표시용) ──
+  const [defaultImgOpen, setDefaultImgOpen] = useState(false);
+  const [defaultImg, setDefaultImg] = useState('');
+  const [defaultImgSaving, setDefaultImgSaving] = useState(false);
+
+  const openDefaultImg = async () => {
+    setDefaultImgOpen(true);
+    setDefaultImg(await fetchDefaultWineImage());
+  };
+
+  const saveDefaultImg = async (file: File) => {
+    setDefaultImgSaving(true);
+    try {
+      const url = await uploadImage(file, 'wines');
+      await upsertHomeContent({ wine_default_image: url });
+      setDefaultImg(url);
+      onChanged?.(); // SSG — '사이트 반영' 후 공개 사이트에 적용
+      message.success(
+        '기본 사진을 저장했습니다. "사이트 반영"을 눌러야 공개 사이트에 적용됩니다.',
+      );
+    } catch (e) {
+      message.error(`저장 실패: ${(e as Error).message}`);
+    } finally {
+      setDefaultImgSaving(false);
+    }
+  };
+
+  const resetDefaultImg = async () => {
+    setDefaultImgSaving(true);
+    try {
+      await upsertHomeContent({ wine_default_image: '' });
+      setDefaultImg(HOME_CONTENT_DEFAULTS.wine_default_image);
+      onChanged?.();
+      message.success('기본 사진을 초기 이미지로 되돌렸습니다.');
+    } catch (e) {
+      message.error(`저장 실패: ${(e as Error).message}`);
+    } finally {
+      setDefaultImgSaving(false);
+    }
+  };
 
   // 테이블 필터 — 이름 검색 · 도멘 · 타입
   const [search, setSearch] = useState('');
@@ -394,6 +440,7 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
           {soldOutCount > 0 ? ` · 솔드아웃 ${soldOutCount}개` : ''}
         </Typography.Text>
         <div style={{ flex: 1 }} />
+        <Button onClick={openDefaultImg}>기본 사진</Button>
         <Button
           type='primary'
           icon={<PlusOutlined />}
@@ -402,6 +449,61 @@ const WineAdmin = ({ refreshKey, onChanged }: WineAdminProps) => {
           와인 추가
         </Button>
       </Space>
+
+      <Modal
+        title='기본 제품 사진'
+        open={defaultImgOpen}
+        onCancel={() => setDefaultImgOpen(false)}
+        footer={null}
+        width={380}
+      >
+        <Space
+          direction='vertical'
+          size={12}
+          style={{ width: '100%' }}
+        >
+          <Typography.Text type='secondary'>
+            제품 사진이 없는 와인은 공개 사이트에서 이 이미지로 표시됩니다.
+            저장 후 &quot;사이트 반영&quot;을 눌러야 적용됩니다.
+          </Typography.Text>
+          {defaultImg && (
+            <img
+              src={defaultImg}
+              alt='기본 제품 사진 미리보기'
+              style={{
+                maxWidth: '100%',
+                maxHeight: 240,
+                display: 'block',
+                margin: '0 auto',
+                background: '#f5f3ee',
+              }}
+            />
+          )}
+          <Space>
+            <Button
+              loading={defaultImgSaving}
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = () => {
+                  const f = input.files?.[0];
+                  if (f) saveDefaultImg(f);
+                };
+                input.click();
+              }}
+            >
+              이미지 업로드
+            </Button>
+            <Button
+              loading={defaultImgSaving}
+              onClick={resetDefaultImg}
+            >
+              초기 이미지로
+            </Button>
+          </Space>
+        </Space>
+      </Modal>
 
       <DndContext
         sensors={sensors}

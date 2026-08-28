@@ -3,6 +3,7 @@ import type { LoaderFunctionArgs } from 'react-router-dom';
 import React from 'react';
 import styled from 'styled-components';
 import { fetchWines, fetchWineryById } from '@/api/wines';
+import { fetchDefaultWineImage } from '@/api/homeContent';
 import type { WineInfoType } from '@/types/wine';
 import type { WineryInfoType } from '@/types/winery';
 import { customedTheme } from '@/styles/theme';
@@ -14,21 +15,26 @@ const { home, font } = customedTheme;
 interface WineryLoaderData {
   winery: WineryInfoType;
   wineList: WineInfoType[];
+  defaultImage: string;
 }
 
 /** 빌드(SSG)·클라이언트 네비게이션 시점에 도멘·소속 와인을 미리 로드 */
 export async function wineryLoader({ params }: LoaderFunctionArgs) {
   const winery = await fetchWineryById(Number(params.wineryId));
   if (!winery) throw redirect('/not-found');
-  const all = await fetchWines();
+  const [all, defaultImage] = await Promise.all([
+    fetchWines(),
+    fetchDefaultWineImage(),
+  ]);
   const wineList = all.filter((wine) => wine.wineryId === winery.id);
-  return { winery, wineList };
+  return { winery, wineList, defaultImage };
 }
 
 /** 와이너리 상세 (Figma 3525 wineries_depth) — 목록과 같은 스플릿 타이틀 헤더 +
  *  블루 밴드(좌 도멘 소개 / 우 420px 사진) + 와인 카드 그리드 */
 const WineryIntroPage: React.FC = () => {
-  const { winery, wineList } = useLoaderData() as WineryLoaderData;
+  const { winery, wineList, defaultImage } =
+    useLoaderData() as WineryLoaderData;
 
   // schema.org Organization — 와이너리(생산자)를 조직으로 인식.
   // 소속 와인은 hasOfferCatalog(ItemList)로 연결해 크롤러가 라인업을 파악.
@@ -100,6 +106,7 @@ const WineryIntroPage: React.FC = () => {
               key={wine.wineId}
               wine={wine}
               wineryName={winery.domaine}
+              defaultImage={defaultImage}
             />
           ))}
         </div>

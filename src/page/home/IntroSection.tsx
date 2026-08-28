@@ -124,6 +124,7 @@ const IntroSection = ({
             <WineCard
               wine={wine}
               wineryName={wineryNameById[wine.wineryId]}
+              defaultImage={content.wine_default_image}
             />
           </Reveal>
         ))}
