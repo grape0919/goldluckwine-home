@@ -26,6 +26,7 @@ import {
   adminUpdateOrderMemo,
   markPaid,
   ORDER_STATUS_LABEL,
+  isUnpaid,
 } from '@/api/orders';
 import { listWines } from '@/api/admin';
 import type { AdminOrderRow, OrderStatus } from '@/api/orders';
@@ -40,7 +41,7 @@ import type { OrderSettings, WinePriceRow } from '@/api/pricing';
 import { listPartners } from '@/api/partners';
 import type { PartnerRow } from '@/api/partners';
 import type { WineRow } from '@/lib/supabase';
-import { openStatement } from '@/utils/statement';
+import { openStatement, openLedger } from '@/utils/statement';
 
 interface ProxyItem {
   wine_id?: number;
@@ -354,6 +355,74 @@ const OrderAdmin = () => {
     } catch (e) {
       message.error(`저장 실패: ${(e as Error).message}`);
     }
+  };
+
+  // ── 거래원장 (거래처별 미입금 전체 / 월 단위) ─────────────
+  const [ledgerOpen, setLedgerOpen] = useState(false);
+  const [ledgerPartnerId, setLedgerPartnerId] = useState<number | undefined>();
+  const [ledgerMode, setLedgerMode] = useState<'unpaid' | 'month'>('unpaid');
+  const [ledgerMonth, setLedgerMonth] = useState<string | undefined>(); // 'YYYY-MM'
+
+  /** 발주가 있는 거래처만 — 원장 대상 후보 (buyer 정보도 발주의 partners 조인에서) */
+  const ledgerPartners = (() => {
+    const map = new Map<number, string>();
+    for (const r of rows) {
+      if (r.status === 'canceled' || !r.partners) continue;
+      if (!map.has(r.partner_id)) {
+        map.set(r.partner_id, r.partners.business_name);
+      }
+    }
+    return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1], 'ko'));
+  })();
+
+  const ledgerMonthOf = (r: AdminOrderRow) =>
+    (r.done_at ?? r.created_at).slice(0, 7);
+
+  /** 선택 거래처의 발주가 있는 월 목록 (최신 먼저) */
+  const ledgerMonths = [
+    ...new Set(
+      rows
+        .filter(
+          (r) => r.partner_id === ledgerPartnerId && r.status !== 'canceled',
+        )
+        .map(ledgerMonthOf),
+    ),
+  ].sort((a, b) => b.localeCompare(a));
+
+  const printLedger = () => {
+    const base = rows.filter(
+      (r) => r.partner_id === ledgerPartnerId && r.status !== 'canceled',
+    );
+    const targets =
+      ledgerMode === 'unpaid'
+        ? base.filter(isUnpaid)
+        : base.filter((r) => ledgerMonthOf(r) === ledgerMonth);
+    if (targets.length === 0 || !targets[0].partners) {
+      message.info(
+        ledgerMode === 'unpaid'
+          ? '해당 거래처에 미입금 발주가 없습니다.'
+          : '해당 월에 발주가 없습니다.',
+      );
+      return;
+    }
+    const p = targets[0].partners;
+    const subtitle =
+      ledgerMode === 'unpaid'
+        ? '미입금 거래분'
+        : `${ledgerMonth!.slice(0, 4)}년 ${Number(ledgerMonth!.slice(5))}월 거래분`;
+    openLedger(
+      targets,
+      {
+        business_name: p.business_name,
+        business_no: p.business_no,
+        ceo_name: p.ceo_name,
+        address: p.address,
+        phone: p.phone,
+      },
+      settings,
+      subtitle,
+    );
+    setLedgerOpen(false);
   };
 
   /** 선택 발주 일괄 처리 — 배송중 전환 / 계산서 발행됨 체크 */
@@ -792,6 +861,7 @@ const OrderAdmin = () => {
             대리 발주
           </Button>
           <Button onClick={downloadOrdersCsv}>발주 내역 엑셀</Button>
+          <Button onClick={() => setLedgerOpen(true)}>거래원장</Button>
           <Button onClick={downloadInvoiceCsv}>
             세금계산서 대장
             {(() => {
@@ -1221,6 +1291,65 @@ const OrderAdmin = () => {
             >
               (단가는 거래처 적용가 기본, 수정 가능 · 최소 병수 미적용)
             </Typography.Text>
+          </Typography.Text>
+        </Space>
+      </Modal>
+
+      <Modal
+        title='거래원장 출력'
+        open={ledgerOpen}
+        onCancel={() => setLedgerOpen(false)}
+        onOk={printLedger}
+        okText='원장 열기'
+        okButtonProps={{
+          disabled:
+            !ledgerPartnerId || (ledgerMode === 'month' && !ledgerMonth),
+        }}
+        width={420}
+      >
+        <Space
+          direction='vertical'
+          style={{ width: '100%' }}
+          size={12}
+        >
+          <Select
+            showSearch
+            optionFilterProp='label'
+            placeholder='거래처 선택'
+            style={{ width: '100%' }}
+            value={ledgerPartnerId}
+            onChange={(v) => {
+              setLedgerPartnerId(v);
+              setLedgerMonth(undefined);
+            }}
+            options={ledgerPartners.map(([id, name]) => ({
+              value: id,
+              label: name,
+            }))}
+          />
+          <Radio.Group
+            value={ledgerMode}
+            onChange={(e) => setLedgerMode(e.target.value)}
+          >
+            <Radio.Button value='unpaid'>미입금 전체</Radio.Button>
+            <Radio.Button value='month'>월 단위</Radio.Button>
+          </Radio.Group>
+          {ledgerMode === 'month' && (
+            <Select
+              placeholder='월 선택'
+              style={{ width: '100%' }}
+              value={ledgerMonth}
+              onChange={setLedgerMonth}
+              options={ledgerMonths.map((m) => ({
+                value: m,
+                label: `${m.slice(0, 4)}년 ${Number(m.slice(5))}월`,
+              }))}
+              notFoundContent='발주 내역이 없습니다'
+            />
+          )}
+          <Typography.Text type='secondary'>
+            취소된 발주는 제외됩니다. 발주별 소계에 입금 여부가 표시되고, 미입금
+            합계가 마지막 줄에 나옵니다.
           </Typography.Text>
         </Space>
       </Modal>
