@@ -27,6 +27,7 @@ import {
   adminAddOrderItem,
   adminUpdateOrderItem,
   adminUpdateOrderMemo,
+  adminUpdateOrderAddress,
   markPaid,
   markInvoiceAmended,
   ORDER_STATUS_LABEL,
@@ -523,6 +524,30 @@ const OrderAdmin = ({ active = true }: OrderAdminProps) => {
       );
     } catch (e) {
       message.error(`기록 실패: ${(e as Error).message}`);
+    }
+  };
+
+  // ── 배송지 수정 (발주 스냅샷 주소 — 명세표·원장에 반영) ──
+  const [editingAddr, setEditingAddr] = useState<{
+    id: number;
+    address: string;
+  } | null>(null);
+
+  const saveAddr = async () => {
+    if (!editingAddr) return;
+    try {
+      await adminUpdateOrderAddress(editingAddr.id, editingAddr.address.trim());
+      setRows((rs) =>
+        rs.map((r) =>
+          r.id === editingAddr.id
+            ? { ...r, address: editingAddr.address.trim() }
+            : r,
+        ),
+      );
+      setEditingAddr(null);
+      message.success('배송지를 수정했습니다. 명세표에 반영됩니다.');
+    } catch (e) {
+      message.error(`저장 실패: ${(e as Error).message}`);
     }
   };
 
@@ -1217,6 +1242,7 @@ const OrderAdmin = ({ active = true }: OrderAdminProps) => {
         onClose={() => {
           setDetailId(null);
           setEditingMemo(null);
+          setEditingAddr(null);
         }}
         width={560}
       >
@@ -1276,7 +1302,48 @@ const OrderAdmin = ({ active = true }: OrderAdminProps) => {
                 {
                   key: 'address',
                   label: '배송지',
-                  children: detail.address || '—',
+                  children:
+                    editingAddr?.id === detail.id ? (
+                      <Space.Compact style={{ width: '100%' }}>
+                        <Input
+                          value={editingAddr.address}
+                          onChange={(e) =>
+                            setEditingAddr({
+                              id: detail.id,
+                              address: e.target.value,
+                            })
+                          }
+                          onPressEnter={saveAddr}
+                        />
+                        <Button
+                          type='primary'
+                          onClick={saveAddr}
+                        >
+                          저장
+                        </Button>
+                        <Button onClick={() => setEditingAddr(null)}>
+                          취소
+                        </Button>
+                      </Space.Compact>
+                    ) : (
+                      <>
+                        {detail.address || '—'}
+                        {detail.status !== 'canceled' && (
+                          <Button
+                            size='small'
+                            type='link'
+                            onClick={() =>
+                              setEditingAddr({
+                                id: detail.id,
+                                address: detail.address,
+                              })
+                            }
+                          >
+                            수정
+                          </Button>
+                        )}
+                      </>
+                    ),
                 },
                 ...(detail.deposit_deadline
                   ? [
