@@ -336,6 +336,18 @@ export async function adminUpdateOrderMemo(
   if (error) throw error;
 }
 
+/** 관리자 배송지 수정 — 발주 스냅샷의 주소를 고친다 (명세표·원장에 반영) */
+export async function adminUpdateOrderAddress(
+  id: number,
+  address: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('orders')
+    .update({ address })
+    .eq('id', id);
+  if (error) throw error;
+}
+
 /** 관리자 상태 변경 — 상태별 시각도 함께 기록 */
 export async function updateOrderStatus(
   id: number,
