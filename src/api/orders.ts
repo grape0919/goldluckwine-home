@@ -24,6 +24,25 @@ export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
 export const isUnpaid = (o: { paid_at: string | null; status: OrderStatus }) =>
   !o.paid_at && o.status !== 'canceled';
 
+/** 환불 — 입금까지 받았던 발주가 취소됨 (paid_at 은 유지해 환불 필요가 기록에 남는다) */
+export const isRefund = (o: {
+  paid_at: string | null;
+  status: OrderStatus;
+}): boolean => o.status === 'canceled' && o.paid_at != null;
+
+/** 세금계산서 수정(취소)발행 필요 — 발행 후 금액이 바뀌었거나(부분 환불),
+ *  발행된 발주가 취소됐는데(전체 환불) 아직 수기 처리 전인 경우 */
+export const needsInvoiceAmend = (o: {
+  status: OrderStatus;
+  total_amount: number;
+  invoiced_at: string | null;
+  invoiced_amount: number | null;
+  invoice_amended_at: string | null;
+}): boolean =>
+  o.invoiced_at != null &&
+  ((o.invoiced_amount != null && o.invoiced_amount !== o.total_amount) ||
+    (o.status === 'canceled' && o.invoice_amended_at == null));
+
 export interface CartItemRow {
   id: number;
   partner_id: number;
@@ -63,6 +82,10 @@ export interface OrderRow {
   canceled_at: string | null;
   /** 세금계산서 발행 시각 (홈택스 발행 후 관리자가 기록) — null = 미발행 */
   invoiced_at: string | null;
+  /** 계산서 발행 시점의 입금액 스냅샷 — 현재 금액과 다르면 수정발행 필요 */
+  invoiced_amount: number | null;
+  /** 수정(취소)세금계산서 수기 처리 완료 시각 */
+  invoice_amended_at: string | null;
   created_at: string;
   order_items: OrderItemRow[];
 }
@@ -203,10 +226,35 @@ export async function listOrders(): Promise<AdminOrderRow[]> {
 }
 
 /** 세금계산서 발행 여부 기록 (홈택스 발행 후 체크) */
-export async function markInvoiced(id: number, on: boolean): Promise<void> {
+export async function markInvoiced(
+  id: number,
+  on: boolean,
+  /** 발행 시점 금액 스냅샷 — 이후 금액이 바뀌면 수정발행 필요로 표시된다 */
+  totalAmount?: number,
+): Promise<void> {
   const { error } = await supabase
     .from('orders')
-    .update({ invoiced_at: on ? new Date().toISOString() : null })
+    .update(
+      on
+        ? { invoiced_at: new Date().toISOString(), invoiced_amount: totalAmount ?? null }
+        : { invoiced_at: null, invoiced_amount: null, invoice_amended_at: null },
+    )
+    .eq('id', id);
+  if (error) throw error;
+}
+
+/** 수정(취소)세금계산서 수기 처리 완료 기록 — 스냅샷을 현재 금액으로 갱신해
+ *  이후 또 금액이 바뀌면 다시 '수정발행 필요'가 뜬다 */
+export async function markInvoiceAmended(
+  id: number,
+  totalAmount: number,
+): Promise<void> {
+  const { error } = await supabase
+    .from('orders')
+    .update({
+      invoice_amended_at: new Date().toISOString(),
+      invoiced_amount: totalAmount,
+    })
     .eq('id', id);
   if (error) throw error;
 }

@@ -28,8 +28,11 @@ import {
   adminUpdateOrderItem,
   adminUpdateOrderMemo,
   markPaid,
+  markInvoiceAmended,
   ORDER_STATUS_LABEL,
   isUnpaid,
+  isRefund,
+  needsInvoiceAmend,
 } from '@/api/orders';
 import { listWines } from '@/api/admin';
 import type { AdminOrderRow, OrderStatus } from '@/api/orders';
@@ -505,14 +508,40 @@ const OrderAdmin = ({ active = true }: OrderAdminProps) => {
   /** 홈택스 발행 후 발행 여부 기록 */
   const toggleInvoiced = async (row: AdminOrderRow, on: boolean) => {
     try {
-      await markInvoiced(row.id, on);
+      await markInvoiced(row.id, on, row.total_amount);
       setRows((rs) =>
         rs.map((r) =>
           r.id === row.id
-            ? { ...r, invoiced_at: on ? new Date().toISOString() : null }
+            ? {
+                ...r,
+                invoiced_at: on ? new Date().toISOString() : null,
+                invoiced_amount: on ? row.total_amount : null,
+                invoice_amended_at: on ? r.invoice_amended_at : null,
+              }
             : r,
         ),
       );
+    } catch (e) {
+      message.error(`기록 실패: ${(e as Error).message}`);
+    }
+  };
+
+  /** 수정(취소)세금계산서를 홈택스에서 수기 발행한 뒤 완료 기록 */
+  const markAmended = async (row: AdminOrderRow) => {
+    try {
+      await markInvoiceAmended(row.id, row.total_amount);
+      setRows((rs) =>
+        rs.map((r) =>
+          r.id === row.id
+            ? {
+                ...r,
+                invoice_amended_at: new Date().toISOString(),
+                invoiced_amount: row.total_amount,
+              }
+            : r,
+        ),
+      );
+      message.success('수정발행 완료로 기록했습니다.');
     } catch (e) {
       message.error(`기록 실패: ${(e as Error).message}`);
     }
@@ -721,10 +750,14 @@ const OrderAdmin = ({ active = true }: OrderAdminProps) => {
             </Tag>
           )}
           {overdue(r) && <Tag color='red'>기한초과</Tag>}
+          {isRefund(r) && <Tag color='red'>환불</Tag>}
           {r.status === 'done' && (
             <Tag color={r.invoiced_at ? 'green' : 'orange'}>
               {r.invoiced_at ? '계산서 ✓' : '계산서 미발행'}
             </Tag>
+          )}
+          {needsInvoiceAmend(r) && (
+            <Tag color='volcano'>계산서 수정발행 필요</Tag>
           )}
         </>
       ),
@@ -888,7 +921,10 @@ const OrderAdmin = ({ active = true }: OrderAdminProps) => {
               bulkRun(
                 '계산서 발행됨',
                 (r) => r.status === 'done' && !r.invoiced_at,
-                (id) => markInvoiced(id, true),
+                (id) => {
+                  const row = rows.find((r) => r.id === id);
+                  return markInvoiced(id, true, row?.total_amount);
+                },
               )
             }
           >
@@ -1200,10 +1236,14 @@ const OrderAdmin = ({ active = true }: OrderAdminProps) => {
                 </Tag>
               )}
               {overdue(detail) && <Tag color='red'>기한초과</Tag>}
+              {isRefund(detail) && <Tag color='red'>환불</Tag>}
               {detail.status === 'done' && (
                 <Tag color={detail.invoiced_at ? 'green' : 'orange'}>
                   {detail.invoiced_at ? '계산서 발행됨' : '계산서 미발행'}
                 </Tag>
+              )}
+              {needsInvoiceAmend(detail) && (
+                <Tag color='volcano'>계산서 수정발행 필요</Tag>
               )}
             </div>
 
@@ -1426,7 +1466,43 @@ const OrderAdmin = ({ active = true }: OrderAdminProps) => {
                   <Button danger>발주 취소</Button>
                 </Popconfirm>
               )}
+              {detail.status === 'done' && (
+                <Popconfirm
+                  title={`No.${detail.id} 을 환불(취소) 처리할까요?`}
+                  description={
+                    <>
+                      재고는 자동 복구되고 입금 기록은 유지됩니다.
+                      {detail.invoiced_at &&
+                        ' 발행된 세금계산서는 홈택스에서 취소발행이 필요합니다.'}
+                    </>
+                  }
+                  okText='환불(취소)'
+                  okButtonProps={{ danger: true }}
+                  onConfirm={() => setStatus(detail, 'canceled')}
+                >
+                  <Button danger>환불(전체 취소)</Button>
+                </Popconfirm>
+              )}
+              {needsInvoiceAmend(detail) && (
+                <Popconfirm
+                  title='홈택스에서 수정(취소)세금계산서를 발행하셨나요?'
+                  description='완료로 기록하면 표시가 사라집니다. 이후 금액이 또 바뀌면 다시 표시됩니다.'
+                  okText='발행 완료'
+                  onConfirm={() => markAmended(detail)}
+                >
+                  <Button type='primary'>계산서 수정발행 완료</Button>
+                </Popconfirm>
+              )}
             </Space>
+
+            {detail.status === 'done' && detail.paid_at && (
+              <Typography.Text type='secondary'>
+                부분 환불은 &quot;품목·수량·단가 수정&quot;에서 수량을 줄이면
+                됩니다 — 재고가 복구되고 금액이 재계산되며, 차액을 환불하면
+                됩니다. 계산서 발행 후라면 &quot;계산서 수정발행 필요&quot;
+                표시가 뜹니다.
+              </Typography.Text>
+            )}
           </Space>
         )}
       </Drawer>

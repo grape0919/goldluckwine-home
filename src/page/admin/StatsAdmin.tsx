@@ -48,20 +48,23 @@ const StatsAdmin = ({ active }: StatsProps) => {
     if (active) load();
   }, [active, load]);
 
-  const valid = orders.filter((o) => o.status !== 'canceled');
-
-  const years = [...new Set(valid.map((o) => Number(dateOf(o).slice(0, 4))))]
+  const years = [...new Set(orders.map((o) => Number(dateOf(o).slice(0, 4))))]
     .sort((a, b) => b - a);
   const selectedYear = year ?? years[0];
 
-  const inYear = valid.filter(
+  const yearOrders = orders.filter(
     (o) => Number(dateOf(o).slice(0, 4)) === selectedYear,
   );
+  // 매출 = 취소 제외. 취소는 별도 집계해 '취소 포함 합계'와 함께 보여준다
+  const inYear = yearOrders.filter((o) => o.status !== 'canceled');
+  const canceledYear = yearOrders.filter((o) => o.status === 'canceled');
   const monthOf = (o: AdminOrderRow) => Number(dateOf(o).slice(5, 7)) - 1;
 
   // ── 월별 합계 (차트 + 표의 합계 행) ─────────────────────
   const monthTotals = Array.from({ length: 12 }, () => 0);
   for (const o of inYear) monthTotals[monthOf(o)] += o.total_amount;
+  const cancelMonthTotals = Array.from({ length: 12 }, () => 0);
+  for (const o of canceledYear) cancelMonthTotals[monthOf(o)] += o.total_amount;
 
   const chartData: BarDatum[] = monthTotals.map((sum, i) => ({
     label: `${i + 1}월`,
@@ -88,6 +91,7 @@ const StatsAdmin = ({ active }: StatsProps) => {
   const rows = [...byPartner.values()].sort((a, b) => b.total - a.total);
 
   const yearTotal = monthTotals.reduce((s, v) => s + v, 0);
+  const cancelTotal = cancelMonthTotals.reduce((s, v) => s + v, 0);
   const unpaidTotal = inYear
     .filter(isUnpaid)
     .reduce((s, o) => s + o.total_amount, 0);
@@ -145,6 +149,13 @@ const StatsAdmin = ({ active }: StatsProps) => {
             <Typography.Text>
               {selectedYear}년 매출 <b>{won(yearTotal)}</b> · 발주{' '}
               {inYear.length}건
+              {cancelTotal > 0 && (
+                <Typography.Text type='secondary'>
+                  {' '}
+                  · 취소 {won(cancelTotal)} ({canceledYear.length}건) · 취소
+                  포함 총 {won(yearTotal + cancelTotal)}
+                </Typography.Text>
+              )}
               {unpaidTotal > 0 && (
                 <Typography.Text type='danger'>
                   {' '}
@@ -185,11 +196,11 @@ const StatsAdmin = ({ active }: StatsProps) => {
           pagination={false}
           scroll={{ x: 1480 }}
           summary={() =>
-            rows.length > 0 ? (
+            rows.length > 0 || cancelTotal > 0 ? (
               <Table.Summary fixed>
                 <Table.Summary.Row>
                   <Table.Summary.Cell index={0}>
-                    <b>월 합계</b>
+                    <b>월 합계 (매출)</b>
                   </Table.Summary.Cell>
                   {monthTotals.map((v, i) => (
                     <Table.Summary.Cell
@@ -207,6 +218,58 @@ const StatsAdmin = ({ active }: StatsProps) => {
                     <b>{yearTotal.toLocaleString('ko-KR')}</b>
                   </Table.Summary.Cell>
                 </Table.Summary.Row>
+                {cancelTotal > 0 && (
+                  <>
+                    <Table.Summary.Row>
+                      <Table.Summary.Cell index={0}>
+                        <Typography.Text type='secondary'>
+                          취소 ({canceledYear.length}건)
+                        </Typography.Text>
+                      </Table.Summary.Cell>
+                      {cancelMonthTotals.map((v, i) => (
+                        <Table.Summary.Cell
+                          key={i}
+                          index={i + 1}
+                          align='right'
+                        >
+                          <Typography.Text type='secondary'>
+                            {v === 0 ? '-' : v.toLocaleString('ko-KR')}
+                          </Typography.Text>
+                        </Table.Summary.Cell>
+                      ))}
+                      <Table.Summary.Cell
+                        index={13}
+                        align='right'
+                      >
+                        <Typography.Text type='secondary'>
+                          {cancelTotal.toLocaleString('ko-KR')}
+                        </Typography.Text>
+                      </Table.Summary.Cell>
+                    </Table.Summary.Row>
+                    <Table.Summary.Row>
+                      <Table.Summary.Cell index={0}>
+                        <b>합계 (취소 포함)</b>
+                      </Table.Summary.Cell>
+                      {monthTotals.map((v, i) => (
+                        <Table.Summary.Cell
+                          key={i}
+                          index={i + 1}
+                          align='right'
+                        >
+                          {cell(v + cancelMonthTotals[i])}
+                        </Table.Summary.Cell>
+                      ))}
+                      <Table.Summary.Cell
+                        index={13}
+                        align='right'
+                      >
+                        <b>
+                          {(yearTotal + cancelTotal).toLocaleString('ko-KR')}
+                        </b>
+                      </Table.Summary.Cell>
+                    </Table.Summary.Row>
+                  </>
+                )}
               </Table.Summary>
             ) : null
           }
@@ -215,8 +278,10 @@ const StatsAdmin = ({ active }: StatsProps) => {
           type='secondary'
           style={{ display: 'block', marginTop: 8 }}
         >
-          금액은 부가세 포함 입금액 기준, 취소 발주 제외. 귀속월은 완료일(완료
-          전에는 접수일) 기준으로 명세표·원장과 같습니다. 단위: 원
+          금액은 부가세 포함 입금액 기준. 거래처별 표와 매출 행은 취소(환불)
+          발주 제외이며, 취소분은 별도 행과 '합계 (취소 포함)'에서 확인합니다.
+          귀속월은 완료일(완료 전에는 접수일) 기준으로 명세표·원장과 같습니다.
+          단위: 원
         </Typography.Text>
       </Card>
     </Space>
