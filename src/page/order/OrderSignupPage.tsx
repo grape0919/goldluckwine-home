@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Seo from '@/components/Seo';
 import OrderShell from '@/page/order/OrderShell';
+import AddressField from '@/page/order/AddressField';
 import { useOrderAuth } from '@/page/order/useOrderAuth';
 import { supabase } from '@/lib/supabase';
 import {
@@ -331,14 +332,7 @@ const OrderSignupPage = () => {
             type='email'
           />
         </label>
-        <label>
-          배송지 주소
-          <input
-            name='address'
-            required
-            autoComplete='street-address'
-          />
-        </label>
+        <AddressField required />
         <label>
           사업자등록증·영업신고증 등 서류 (이미지, 선택 — 승인 심사에 활용)
           <input

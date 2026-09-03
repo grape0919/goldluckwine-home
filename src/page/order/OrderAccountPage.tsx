@@ -7,6 +7,7 @@ import { useOrderAuth } from '@/page/order/useOrderAuth';
 import { supabase } from '@/lib/supabase';
 import { updateMyPartner } from '@/api/partners';
 import OrderNav from '@/page/order/OrderNav';
+import AddressField from '@/page/order/AddressField';
 import { formatBizNo } from '@/utils/bizNo';
 
 /** 마이페이지 — 사업자 정보 수정 + 비밀번호 변경 (재설정 링크 착지점 겸용) */
@@ -139,14 +140,10 @@ const OrderAccountPage = () => {
               defaultValue={partner.invoice_email}
             />
           </label>
-          <label>
-            배송지 주소
-            <input
-              name='address'
-              required
-              defaultValue={partner.address}
-            />
-          </label>
+          <AddressField
+            required
+            defaultValue={partner.address}
+          />
           {profileMsg && (
             <p
               className={profileMsg.isError ? 'order-error' : 'verify-ok'}
