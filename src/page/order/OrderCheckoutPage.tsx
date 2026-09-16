@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import Seo from '@/components/Seo';
 import OrderShell from '@/page/order/OrderShell';
+import AddressField from '@/page/order/AddressField';
 import { useOrderAuth } from '@/page/order/useOrderAuth';
 import {
   fetchWinePrices,
@@ -150,14 +151,10 @@ const OrderCheckoutPage = () => {
             className='order-form'
             onSubmit={handleSubmit}
           >
-            <label>
-              배송지 주소
-              <input
-                name='address'
-                required
-                defaultValue={partner.address}
-              />
-            </label>
+            <AddressField
+              required
+              defaultValue={partner.address}
+            />
             <label>
               요청 메모 (선택)
               <textarea

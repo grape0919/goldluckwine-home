@@ -27,6 +27,7 @@ import {
 } from '@/api/partners';
 import type { PartnerRow, PartnerStatus } from '@/api/partners';
 import { formatBizNo } from '@/utils/bizNo';
+import { openPostcode } from '@/utils/postcode';
 
 const STATUS_META: Record<PartnerStatus, { label: string; color: string }> = {
   pending: { label: '승인대기', color: 'gold' },
@@ -395,7 +396,23 @@ const PartnerAdmin = ({ active = true }: PartnerAdminProps) => {
             name='address'
             label='배송지 주소'
           >
-            <Input />
+            <Input
+              placeholder='주소 검색 후 상세주소를 이어서 입력'
+              addonAfter={
+                <Button
+                  size='small'
+                  type='text'
+                  onClick={async () => {
+                    const r = await openPostcode().catch(() => null);
+                    if (r) {
+                      manualForm.setFieldValue('address', `${r.address} `);
+                    }
+                  }}
+                >
+                  검색
+                </Button>
+              }
+            />
           </Form.Item>
           <Form.Item
             name='discount_rate'
@@ -479,7 +496,21 @@ const PartnerAdmin = ({ active = true }: PartnerAdminProps) => {
                 name='address'
                 label='배송지 주소'
               >
-                <Input />
+                <Input
+                  placeholder='주소 검색 후 상세주소를 이어서 입력'
+                  addonAfter={
+                    <Button
+                      size='small'
+                      type='text'
+                      onClick={async () => {
+                        const r = await openPostcode().catch(() => null);
+                        if (r) form.setFieldValue('address', `${r.address} `);
+                      }}
+                    >
+                      검색
+                    </Button>
+                  }
+                />
               </Form.Item>
             </>
           )}

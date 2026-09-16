@@ -50,6 +50,7 @@ import type { PartnerRow } from '@/api/partners';
 import type { WineRow } from '@/lib/supabase';
 import { openStatement, openLedger } from '@/utils/statement';
 import { formatBizNo } from '@/utils/bizNo';
+import { openPostcode } from '@/utils/postcode';
 
 interface ProxyItem {
   wine_id?: number;
@@ -1213,9 +1214,21 @@ const OrderAdmin = ({ active = true }: OrderAdminProps) => {
             + 품목 추가
           </Button>
           <Input
-            placeholder='배송지 (비우면 거래처 기본 주소)'
+            placeholder='배송지 (비우면 거래처 기본 주소) — 검색 후 상세주소 이어쓰기'
             value={proxyAddress}
             onChange={(e) => setProxyAddress(e.target.value)}
+            addonAfter={
+              <Button
+                size='small'
+                type='text'
+                onClick={async () => {
+                  const r = await openPostcode().catch(() => null);
+                  if (r) setProxyAddress(`${r.address} `);
+                }}
+              >
+                검색
+              </Button>
+            }
           />
           <Input
             placeholder='메모 (선택)'
@@ -1315,6 +1328,18 @@ const OrderAdmin = ({ active = true }: OrderAdminProps) => {
                           }
                           onPressEnter={saveAddr}
                         />
+                        <Button
+                          onClick={async () => {
+                            const r = await openPostcode().catch(() => null);
+                            if (r)
+                              setEditingAddr({
+                                id: detail.id,
+                                address: `${r.address} `,
+                              });
+                          }}
+                        >
+                          검색
+                        </Button>
                         <Button
                           type='primary'
                           onClick={saveAddr}
