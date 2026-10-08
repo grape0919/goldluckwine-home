@@ -868,7 +868,10 @@ const OrderAdmin = ({ active = true }: OrderAdminProps) => {
           onSearch={setSearch}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <Space size={8}>
+        <Space
+          size={8}
+          wrap
+        >
           <Button
             type='primary'
             onClick={openProxy}
