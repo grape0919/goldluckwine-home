@@ -294,6 +294,7 @@ const AdminPage = () => {
           {lastDeployAt && (
             <Typography.Text
               type='secondary'
+              className='deploy-time'
               style={{ fontSize: 12 }}
             >
               마지막 반영 요청 {new Date(lastDeployAt).toLocaleString('ko-KR')}
@@ -446,7 +447,42 @@ const Wrapper = styled.div`
   }
 
   @media (max-width: 768px) {
-    padding: 24px 12px 96px;
+    padding: 16px 12px 96px;
+
+    .admin-header {
+      margin-bottom: 12px;
+
+      h3 {
+        font-size: 18px;
+      }
+    }
+
+    /* 마지막 반영 시각은 좁은 화면에서 숨김 — 버튼이 한 줄에 들어가게 */
+    .deploy-time {
+      display: none;
+    }
+
+    /* 상태·입금 필터(Radio.Button 묶음)가 화면 밖으로 넘치지 않게 줄바꿈 */
+    .ant-radio-group {
+      display: inline-flex;
+      flex-wrap: wrap;
+      row-gap: 4px;
+    }
+
+    /* 탭 바 터치 스크롤 여백 축소 */
+    .ant-tabs-nav {
+      margin-bottom: 12px;
+    }
+    .ant-tabs-tab + .ant-tabs-tab {
+      margin-left: 16px;
+    }
+
+    /* 툴바의 고정폭 검색창·셀렉트가 화면 폭을 넘지 않게 */
+    .ant-input-search,
+    .ant-input-affix-wrapper,
+    .ant-select {
+      max-width: 100%;
+    }
   }
 
   .login-card {

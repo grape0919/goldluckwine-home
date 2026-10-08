@@ -716,6 +716,8 @@ const OrderAdmin = ({ active = true }: OrderAdminProps) => {
       title: 'No.',
       dataIndex: 'id',
       width: 70,
+      // 모바일 가로 스크롤 중에도 어느 발주인지 보이게 고정
+      fixed: 'left',
       render: (v: number) => <b>{v}</b>,
     },
     {
@@ -1006,8 +1008,11 @@ const OrderAdmin = ({ active = true }: OrderAdminProps) => {
           size={10}
         >
           {editRows.map((row) => (
-            <Space key={row.item_id}>
-              <span style={{ display: 'inline-block', width: 220 }}>
+            <Space
+              key={row.item_id}
+              wrap
+            >
+              <span style={{ display: 'inline-block', maxWidth: 220 }}>
                 {row.name}
               </span>
               <InputNumber
@@ -1029,7 +1034,10 @@ const OrderAdmin = ({ active = true }: OrderAdminProps) => {
             </Space>
           ))}
           {editAdds.map((a, idx) => (
-            <Space key={`add-${idx}`}>
+            <Space
+              key={`add-${idx}`}
+              wrap
+            >
               <Select
                 showSearch
                 placeholder='추가 품목 (발주Off·숨김 포함)'
@@ -1155,7 +1163,10 @@ const OrderAdmin = ({ active = true }: OrderAdminProps) => {
             }}
           />
           {proxyItems.map((it, idx) => (
-            <Space key={idx}>
+            <Space
+              key={idx}
+              wrap
+            >
               <Select
                 showSearch
                 placeholder='품목'
@@ -1257,7 +1268,7 @@ const OrderAdmin = ({ active = true }: OrderAdminProps) => {
           setEditingMemo(null);
           setEditingAddr(null);
         }}
-        width={560}
+        width='min(560px, 100vw)'
       >
         {detail && (
           <Space
