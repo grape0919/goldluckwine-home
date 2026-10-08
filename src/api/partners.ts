@@ -78,6 +78,28 @@ export async function getPartnerDocUrl(path: string): Promise<string> {
   return data.signedUrl;
 }
 
+/** 관리자가 거래처 서류를 대신 등록 — 미제출 거래처에게 따로 받아 올리는 용도.
+ *  partners.license_images 배열 갱신은 호출 측(updatePartnerAdmin)에서 한다. */
+export async function adminUploadPartnerDoc(
+  partnerId: number,
+  file: File,
+): Promise<string> {
+  const optimized = await optimizeImageFile(file);
+  const ext = optimized.name.split('.').pop() ?? 'png';
+  const path = `admin/${partnerId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage
+    .from(DOCS_BUCKET)
+    .upload(path, optimized);
+  if (error) throw error;
+  return path;
+}
+
+/** 서류 파일 삭제 (관리자 전용 RLS) — license_images 갱신은 호출 측에서 */
+export async function removePartnerDoc(path: string): Promise<void> {
+  const { error } = await supabase.storage.from(DOCS_BUCKET).remove([path]);
+  if (error) throw error;
+}
+
 /** 가입 2단계 — 사업자 정보 + 동의 기록 생성 */
 export async function createMyPartner(
   input: PartnerProfileInput,
@@ -206,6 +228,8 @@ export async function updatePartnerAdmin(
       | 'email'
       | 'invoice_email'
       | 'address'
+      // 서류 등록·삭제 (관리자가 파일 업로드/삭제 후 경로 배열 갱신)
+      | 'license_images'
     >
   >,
 ): Promise<void> {

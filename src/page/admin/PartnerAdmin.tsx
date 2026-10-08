@@ -23,6 +23,8 @@ import {
   updatePartnerStatus,
   updatePartnerAdmin,
   getPartnerDocUrl,
+  adminUploadPartnerDoc,
+  removePartnerDoc,
   createManualPartner,
 } from '@/api/partners';
 import type { PartnerRow, PartnerStatus } from '@/api/partners';
@@ -77,6 +79,8 @@ const PartnerAdmin = ({ active = true }: PartnerAdminProps) => {
     email: string;
     invoice_email: string;
     address: string;
+    /** 저장 시 address 에 합쳐진다 — DB 는 단일 주소 텍스트 */
+    address_detail?: string;
     discount_rate: number;
   }>();
 
@@ -118,37 +122,73 @@ const PartnerAdmin = ({ active = true }: PartnerAdminProps) => {
   // 행 클릭 → 상세 Drawer (발주 탭과 동일 패턴). 상태 변경 후에도 최신을 보도록 id 참조
   const [detailId, setDetailId] = useState<number | null>(null);
 
-  // 서류 열람 — 창을 여러 개 동시에 열면 브라우저가 두 번째부터 차단하므로
-  // 목록 모달을 띄우고 각 서류를 클릭으로 하나씩 연다
-  const [docsFor, setDocsFor] = useState<{
-    name: string;
-    urls: string[];
-  } | null>(null);
+  // ── 서류 관리 — 개별 열람·등록·삭제 (미제출 거래처는 따로 받아 관리자가 등록) ──
+  const [docBusy, setDocBusy] = useState(false);
 
-  const openDocs = async (row: PartnerRow) => {
+  const openDoc = async (path: string) => {
     try {
-      const urls = await Promise.all(
-        row.license_images.map((path) => getPartnerDocUrl(path)),
-      );
-      if (urls.length === 1) {
-        window.open(urls[0], '_blank', 'noopener');
-        return;
-      }
-      setDocsFor({ name: row.business_name, urls });
+      window.open(await getPartnerDocUrl(path), '_blank', 'noopener');
     } catch (e) {
       message.error(`서류 열람 실패: ${(e as Error).message}`);
     }
   };
 
+  const setDocs = async (row: PartnerRow, next: string[]) => {
+    await updatePartnerAdmin(row.id, { license_images: next });
+    setRows((rs) =>
+      rs.map((r) => (r.id === row.id ? { ...r, license_images: next } : r)),
+    );
+  };
+
+  const addDoc = (row: PartnerRow) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      setDocBusy(true);
+      try {
+        const path = await adminUploadPartnerDoc(row.id, file);
+        await setDocs(row, [...row.license_images, path]);
+        message.success('서류를 등록했습니다.');
+      } catch (e) {
+        message.error(`서류 등록 실패: ${(e as Error).message}`);
+      } finally {
+        setDocBusy(false);
+      }
+    };
+    input.click();
+  };
+
+  const removeDoc = async (row: PartnerRow, path: string) => {
+    setDocBusy(true);
+    try {
+      await removePartnerDoc(path);
+      await setDocs(
+        row,
+        row.license_images.filter((p) => p !== path),
+      );
+      message.success('서류를 삭제했습니다.');
+    } catch (e) {
+      message.error(`서류 삭제 실패: ${(e as Error).message}`);
+    } finally {
+      setDocBusy(false);
+    }
+  };
+
   /** 계정 없는 수기 거래처 등록 — 대리 발주·명세표·계산서용 */
   const saveManual = async () => {
-    const values = await manualForm.validateFields();
+    const { address_detail, ...values } = await manualForm.validateFields();
     setManualSaving(true);
     try {
       await createManualPartner({
         ...values,
         business_no: values.business_no.replace(/\D/g, ''),
         discount_rate: values.discount_rate ?? 0,
+        address: [values.address?.trim(), address_detail?.trim()]
+          .filter(Boolean)
+          .join(' '),
       });
       setManualOpen(false);
       manualForm.resetFields();
@@ -397,7 +437,7 @@ const PartnerAdmin = ({ active = true }: PartnerAdminProps) => {
             label='배송지 주소'
           >
             <Input
-              placeholder='주소 검색 후 상세주소를 이어서 입력'
+              placeholder='[검색]으로 입력 (직접 입력 가능)'
               addonAfter={
                 <Button
                   size='small'
@@ -405,7 +445,8 @@ const PartnerAdmin = ({ active = true }: PartnerAdminProps) => {
                   onClick={async () => {
                     const r = await openPostcode().catch(() => null);
                     if (r) {
-                      manualForm.setFieldValue('address', `${r.address} `);
+                      manualForm.setFieldValue('address', r.address);
+                      manualForm.getFieldInstance?.('address_detail')?.focus?.();
                     }
                   }}
                 >
@@ -413,6 +454,12 @@ const PartnerAdmin = ({ active = true }: PartnerAdminProps) => {
                 </Button>
               }
             />
+          </Form.Item>
+          <Form.Item
+            name='address_detail'
+            label='상세주소'
+          >
+            <Input placeholder='동·호수·층 등 (없으면 비워두세요)' />
           </Form.Item>
           <Form.Item
             name='discount_rate'
@@ -652,20 +699,65 @@ const PartnerAdmin = ({ active = true }: PartnerAdminProps) => {
               ]}
             />
 
+            <div>
+              <Typography.Text strong>
+                서류 (사업자등록증·영업신고증)
+              </Typography.Text>
+              <Space
+                direction='vertical'
+                size={6}
+                style={{ width: '100%', marginTop: 8 }}
+              >
+                {detail.license_images.length === 0 && (
+                  <Typography.Text type='secondary'>
+                    제출된 서류가 없습니다 — 거래처에게 받아 아래에서 등록해
+                    주세요.
+                  </Typography.Text>
+                )}
+                {detail.license_images.map((path, i) => (
+                  <Space key={path}>
+                    <Button
+                      size='small'
+                      icon={<FileImageOutlined />}
+                      onClick={() => openDoc(path)}
+                    >
+                      서류 {i + 1} 열기
+                    </Button>
+                    <Popconfirm
+                      title={`서류 ${i + 1} 을 삭제할까요?`}
+                      description='파일이 함께 삭제되며 복구할 수 없습니다.'
+                      okText='삭제'
+                      okButtonProps={{ danger: true }}
+                      onConfirm={() => removeDoc(detail, path)}
+                    >
+                      <Button
+                        size='small'
+                        danger
+                        type='text'
+                        loading={docBusy}
+                      >
+                        삭제
+                      </Button>
+                    </Popconfirm>
+                  </Space>
+                ))}
+                <Button
+                  size='small'
+                  loading={docBusy}
+                  onClick={() => addDoc(detail)}
+                >
+                  + 서류 등록 (이미지)
+                </Button>
+              </Space>
+            </div>
+
             <Divider style={{ margin: '4px 0' }} />
 
             <Space
               size={8}
               wrap
             >
-              {detail.license_images.length > 0 && (
-                <Button
-                  icon={<FileImageOutlined />}
-                  onClick={() => openDocs(detail)}
-                >
-                  서류 {detail.license_images.length}
-                </Button>
-              )}
+
               <Button
                 onClick={() => {
                   setEditing(detail);
@@ -734,28 +826,6 @@ const PartnerAdmin = ({ active = true }: PartnerAdminProps) => {
         )}
       </Drawer>
 
-      <Modal
-        title={docsFor ? `${docsFor.name} — 서류 ${docsFor.urls.length}장` : ''}
-        open={Boolean(docsFor)}
-        onCancel={() => setDocsFor(null)}
-        footer={null}
-        width={320}
-      >
-        <Space
-          direction='vertical'
-          style={{ width: '100%' }}
-        >
-          {docsFor?.urls.map((url, i) => (
-            <Button
-              key={url}
-              block
-              onClick={() => window.open(url, '_blank', 'noopener')}
-            >
-              서류 {i + 1} 열기
-            </Button>
-          ))}
-        </Space>
-      </Modal>
     </>
   );
 };
