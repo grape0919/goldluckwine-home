@@ -190,7 +190,7 @@ const InquiryAdmin = () => {
         }
         open={detail != null}
         onClose={() => setDetailId(null)}
-        width={520}
+        width='min(520px, 100vw)'
       >
         {detail && (
           <Space

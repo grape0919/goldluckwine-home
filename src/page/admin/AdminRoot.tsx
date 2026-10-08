@@ -1,6 +1,24 @@
 import { lazy, Suspense } from 'react';
 import { App as AntdApp, ConfigProvider } from 'antd';
+import { createGlobalStyle } from 'styled-components';
 import { customedTheme } from '@/styles/theme';
+
+/** 모달·드로어는 body 포털로 렌더되어 AdminPage Wrapper 의 미디어 쿼리가 닿지 않는다.
+ *  좁은 화면에서 고정폭 모달(기본 520px 등)이 화면 밖으로 넘치는 것을 막는다. */
+const AdminGlobal = createGlobalStyle`
+  @media (max-width: 768px) {
+    .ant-modal {
+      max-width: calc(100vw - 24px) !important;
+      margin: 0 auto;
+    }
+    .ant-modal .ant-modal-content {
+      padding: 16px;
+    }
+    .ant-drawer-content-wrapper {
+      max-width: 100vw;
+    }
+  }
+`;
 
 // 관리자 화면은 방문자 번들에서 분리 (antd Form/Table 등 큰 의존성 포함)
 const AdminPage = lazy(() => import('@/page/admin/AdminPage'));
@@ -29,6 +47,7 @@ const AdminRoot = () => (
     }}
   >
     <AntdApp message={{ maxCount: 1 }}>
+      <AdminGlobal />
       <Suspense fallback={null}>
         <AdminPage />
       </Suspense>

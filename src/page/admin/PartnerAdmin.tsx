@@ -567,7 +567,7 @@ const PartnerAdmin = ({ active = true }: PartnerAdminProps) => {
         title={detail ? detail.business_name : ''}
         open={detail != null}
         onClose={() => setDetailId(null)}
-        width={520}
+        width='min(520px, 100vw)'
       >
         {detail && (
           <Space
