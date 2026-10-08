@@ -77,6 +77,8 @@ const PartnerAdmin = ({ active = true }: PartnerAdminProps) => {
     email: string;
     invoice_email: string;
     address: string;
+    /** 저장 시 address 에 합쳐진다 — DB 는 단일 주소 텍스트 */
+    address_detail?: string;
     discount_rate: number;
   }>();
 
@@ -142,13 +144,16 @@ const PartnerAdmin = ({ active = true }: PartnerAdminProps) => {
 
   /** 계정 없는 수기 거래처 등록 — 대리 발주·명세표·계산서용 */
   const saveManual = async () => {
-    const values = await manualForm.validateFields();
+    const { address_detail, ...values } = await manualForm.validateFields();
     setManualSaving(true);
     try {
       await createManualPartner({
         ...values,
         business_no: values.business_no.replace(/\D/g, ''),
         discount_rate: values.discount_rate ?? 0,
+        address: [values.address?.trim(), address_detail?.trim()]
+          .filter(Boolean)
+          .join(' '),
       });
       setManualOpen(false);
       manualForm.resetFields();
@@ -397,7 +402,7 @@ const PartnerAdmin = ({ active = true }: PartnerAdminProps) => {
             label='배송지 주소'
           >
             <Input
-              placeholder='주소 검색 후 상세주소를 이어서 입력'
+              placeholder='[검색]으로 입력 (직접 입력 가능)'
               addonAfter={
                 <Button
                   size='small'
@@ -405,7 +410,8 @@ const PartnerAdmin = ({ active = true }: PartnerAdminProps) => {
                   onClick={async () => {
                     const r = await openPostcode().catch(() => null);
                     if (r) {
-                      manualForm.setFieldValue('address', `${r.address} `);
+                      manualForm.setFieldValue('address', r.address);
+                      manualForm.getFieldInstance?.('address_detail')?.focus?.();
                     }
                   }}
                 >
@@ -413,6 +419,12 @@ const PartnerAdmin = ({ active = true }: PartnerAdminProps) => {
                 </Button>
               }
             />
+          </Form.Item>
+          <Form.Item
+            name='address_detail'
+            label='상세주소'
+          >
+            <Input placeholder='동·호수·층 등 (없으면 비워두세요)' />
           </Form.Item>
           <Form.Item
             name='discount_rate'

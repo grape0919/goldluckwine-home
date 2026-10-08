@@ -93,6 +93,12 @@ const OrderSignupPage = () => {
     const data = new FormData(form);
     setBusy(true);
     setError('');
+    // readOnly 입력은 required 가 무시되므로 제출 시점에 직접 검증
+    if (!String(data.get('address_base') ?? '').trim()) {
+      setError('배송지 주소를 [주소 검색]으로 입력해 주세요.');
+      setBusy(false);
+      return;
+    }
     try {
       // 아직 조회가 안 됐으면(빠른 제출·일시 오류) 제출 시점에 한 번 더 —
       // 그래도 실패하면 빈 값으로 두고 관리자가 수동 확인한다
@@ -120,7 +126,12 @@ const OrderSignupPage = () => {
           contact_name: String(data.get('contact_name') ?? '').trim(),
           phone: String(data.get('phone') ?? '').trim(),
           invoice_email: String(data.get('invoice_email') ?? '').trim(),
-          address: String(data.get('address') ?? '').trim(),
+          address: [
+            String(data.get('address_base') ?? '').trim(),
+            String(data.get('address_detail') ?? '').trim(),
+          ]
+            .filter(Boolean)
+            .join(' '),
         },
         paths,
         nts?.available ? (nts.status ?? '') : '',
@@ -332,7 +343,10 @@ const OrderSignupPage = () => {
             type='email'
           />
         </label>
-        <AddressField required />
+        <AddressField
+          required
+          requireSearch
+        />
         <label>
           사업자등록증·영업신고증 등 서류 (이미지, 선택 — 승인 심사에 활용)
           <input
