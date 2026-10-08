@@ -348,7 +348,7 @@ const OrderSignupPage = () => {
           requireSearch
         />
         <label>
-          사업자등록증·영업신고증 등 서류 (이미지, 선택 — 승인 심사에 활용)
+          사업자등록증·영업신고증 등 서류 (이미지, 선택 — 미제출 시 승인 과정에서 따로 요청드릴 수 있습니다)
           <input
             name='licenses'
             type='file'
