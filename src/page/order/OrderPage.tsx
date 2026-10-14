@@ -1,6 +1,7 @@
 import { Link, Navigate } from 'react-router-dom';
 import Seo from '@/components/Seo';
 import OrderShell from '@/page/order/OrderShell';
+import { SIGNUP_OPEN, SIGNUP_CONTACT } from '@/page/order/signupConfig';
 import { useOrderAuth } from '@/page/order/useOrderAuth';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import OrderCatalog from '@/page/order/OrderCatalog';
@@ -40,8 +41,14 @@ const OrderPage = () => {
         </p>
         <div className='order-links'>
           <Link to='/order/login'>로그인</Link>
-          <Link to='/order/signup'>사업자 회원가입</Link>
+          {SIGNUP_OPEN && <Link to='/order/signup'>사업자 회원가입</Link>}
         </div>
+        {!SIGNUP_OPEN && (
+          <p className='order-hint'>
+            신규 거래처 가입은 잠시 문의로만 받고 있습니다 —{' '}
+            {SIGNUP_CONTACT.email} · {SIGNUP_CONTACT.phone}
+          </p>
+        )}
       </OrderShell>
     );
   }
