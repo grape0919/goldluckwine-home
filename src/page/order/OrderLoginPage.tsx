@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Seo from '@/components/Seo';
 import OrderShell from '@/page/order/OrderShell';
+import { SIGNUP_OPEN, SIGNUP_CONTACT } from '@/page/order/signupConfig';
 import { supabase } from '@/lib/supabase';
 
 const OrderLoginPage = () => {
@@ -71,9 +72,15 @@ const OrderLoginPage = () => {
         </button>
       </form>
       <div className='order-links'>
-        <Link to='/order/signup'>사업자 회원가입</Link>
+        {SIGNUP_OPEN && <Link to='/order/signup'>사업자 회원가입</Link>}
         <Link to='/order/reset'>비밀번호 재설정</Link>
       </div>
+      {!SIGNUP_OPEN && (
+        <p className='order-hint'>
+          신규 거래처 가입은 잠시 문의로만 받고 있습니다 —{' '}
+          {SIGNUP_CONTACT.email} · {SIGNUP_CONTACT.phone}
+        </p>
+      )}
     </OrderShell>
   );
 };

@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Seo from '@/components/Seo';
 import OrderShell from '@/page/order/OrderShell';
+import { SIGNUP_OPEN, SIGNUP_CONTACT } from '@/page/order/signupConfig';
 import AddressField from '@/page/order/AddressField';
 import { useOrderAuth } from '@/page/order/useOrderAuth';
 import { supabase } from '@/lib/supabase';
@@ -164,7 +165,30 @@ const OrderSignupPage = () => {
     );
   }
 
-  // 1단계 — 계정 생성
+  // 1단계 — 계정 생성 (가입을 닫아둔 동안은 안내만 — 2단계는 아래에서 계속 동작)
+  if (!session && !SIGNUP_OPEN) {
+    return (
+      <OrderShell>
+        <Seo
+          title='사업자 회원가입'
+          noindex
+        />
+        <p className='order-eyebrow'>FOR BUSINESS</p>
+        <h1>SIGN UP</h1>
+        <div className='status-card'>
+          신규 거래처 가입은 잠시 <strong>문의로만</strong> 받고 있습니다.
+          <br />
+          {SIGNUP_CONTACT.email} · {SIGNUP_CONTACT.phone} 로 연락 주시면
+          안내드리겠습니다.
+        </div>
+        <div className='order-links'>
+          <Link to='/order/login'>로그인</Link>
+          <Link to='/order'>발주 안내로 돌아가기</Link>
+        </div>
+      </OrderShell>
+    );
+  }
+
   if (!session) {
     return (
       <OrderShell>
